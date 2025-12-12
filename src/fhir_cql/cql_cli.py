@@ -1,14 +1,16 @@
-"""CQL CLI - Command line interface for CQL parsing and analysis."""
+"""CQL CLI - Command line interface for CQL parsing, analysis, and evaluation."""
 
+import json
 import sys
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated, Any, Optional
 
 import typer
 from rich import print as rprint
 from rich.console import Console
 from rich.panel import Panel
 from rich.syntax import Syntax
+from rich.table import Table
 from rich.tree import Tree
 
 # Add generated directory to path
@@ -18,6 +20,9 @@ from antlr4 import CommonTokenStream, InputStream
 from antlr4.error.ErrorListener import ErrorListener
 from cqlLexer import cqlLexer
 from cqlParser import cqlParser
+
+from fhir_cql.engine.cql import CQLEvaluator
+from fhir_cql.engine.exceptions import CQLError
 
 app = typer.Typer(
     name="cql",
@@ -275,6 +280,173 @@ def definitions(
                 find_definitions(child, indent + 1)
 
     find_definitions(tree)
+
+
+def _format_result(value: Any) -> str:
+    """Format a CQL result value for display."""
+    if value is None:
+        return "[dim]null[/dim]"
+    if isinstance(value, bool):
+        return f"[cyan]{value}[/cyan]"
+    if isinstance(value, (int, float)):
+        return f"[green]{value}[/green]"
+    if isinstance(value, str):
+        return f"[yellow]'{value}'[/yellow]"
+    if isinstance(value, list):
+        if len(value) == 0:
+            return "[dim]{}[/dim]"
+        items = ", ".join(_format_result(item) for item in value)
+        return f"{{ {items} }}"
+    if isinstance(value, dict):
+        items = ", ".join(f"{k}: {_format_result(v)}" for k, v in value.items())
+        return f"{{ {items} }}"
+    return str(value)
+
+
+@app.command(name="eval")
+def evaluate(
+    expression: Annotated[str, typer.Argument(help="CQL expression to evaluate")],
+    library: Annotated[Optional[Path], typer.Option("--library", "-l", help="CQL library file for context")] = None,
+    data: Annotated[Optional[Path], typer.Option("--data", "-d", help="JSON data file for context")] = None,
+) -> None:
+    """Evaluate a CQL expression.
+
+    Examples:
+        cql eval "1 + 2 * 3"
+        cql eval "Sum" --library example.cql
+        cql eval "Patient.name" --data patient.json
+    """
+    evaluator = CQLEvaluator()
+
+    # Load library if provided
+    if library:
+        if not library.exists():
+            rprint(f"[red]Error:[/red] Library file not found: {library}")
+            raise typer.Exit(1)
+
+        try:
+            source = library.read_text()
+            evaluator.compile(source)
+        except CQLError as e:
+            rprint(f"[red]Error compiling library:[/red] {e}")
+            raise typer.Exit(1)
+
+    # Load data if provided
+    resource = None
+    if data:
+        if not data.exists():
+            rprint(f"[red]Error:[/red] Data file not found: {data}")
+            raise typer.Exit(1)
+
+        try:
+            resource = json.loads(data.read_text())
+        except json.JSONDecodeError as e:
+            rprint(f"[red]Error parsing JSON:[/red] {e}")
+            raise typer.Exit(1)
+
+    try:
+        # Try as definition first if library is loaded
+        if evaluator.current_library and expression in evaluator.current_library.definitions:
+            result = evaluator.evaluate_definition(expression, resource=resource)
+        else:
+            result = evaluator.evaluate_expression(expression, resource=resource)
+
+        rprint(_format_result(result))
+
+    except CQLError as e:
+        rprint(f"[red]Evaluation error:[/red] {e}")
+        raise typer.Exit(1)
+
+
+@app.command()
+def run(
+    file: Annotated[Path, typer.Argument(help="CQL library file to run")],
+    definition: Annotated[
+        Optional[str], typer.Option("--definition", "-e", help="Specific definition to evaluate")
+    ] = None,
+    data: Annotated[Optional[Path], typer.Option("--data", "-d", help="JSON data file for context")] = None,
+    output: Annotated[Optional[Path], typer.Option("--output", "-o", help="Output file for results (JSON)")] = None,
+) -> None:
+    """Run a CQL library and evaluate definitions.
+
+    Examples:
+        cql run library.cql
+        cql run library.cql --definition Sum
+        cql run library.cql --data patient.json --output results.json
+    """
+    if not file.exists():
+        rprint(f"[red]Error:[/red] File not found: {file}")
+        raise typer.Exit(1)
+
+    evaluator = CQLEvaluator()
+
+    try:
+        source = file.read_text()
+        lib = evaluator.compile(source)
+    except CQLError as e:
+        rprint(f"[red]Error compiling library:[/red] {e}")
+        raise typer.Exit(1)
+
+    # Load data if provided
+    resource = None
+    if data:
+        if not data.exists():
+            rprint(f"[red]Error:[/red] Data file not found: {data}")
+            raise typer.Exit(1)
+
+        try:
+            resource = json.loads(data.read_text())
+        except json.JSONDecodeError as e:
+            rprint(f"[red]Error parsing JSON:[/red] {e}")
+            raise typer.Exit(1)
+
+    rprint(f"[bold blue]Library:[/bold blue] {lib.name}" + (f" v{lib.version}" if lib.version else ""))
+    rprint()
+
+    try:
+        if definition:
+            # Evaluate specific definition
+            if definition not in lib.definitions:
+                rprint(f"[red]Error:[/red] Definition not found: {definition}")
+                raise typer.Exit(1)
+
+            result = evaluator.evaluate_definition(definition, resource=resource)
+            rprint(f"[bold]{definition}:[/bold] {_format_result(result)}")
+            results = {definition: result}
+        else:
+            # Evaluate all definitions
+            results = evaluator.evaluate_all_definitions(resource=resource)
+
+            table = Table(title="Results", show_header=True, header_style="bold")
+            table.add_column("Definition", style="cyan")
+            table.add_column("Value")
+
+            for name, value in results.items():
+                if isinstance(value, Exception):
+                    table.add_row(name, f"[red]Error: {value}[/red]")
+                else:
+                    table.add_row(name, _format_result(value))
+
+            console.print(table)
+
+        # Write output if requested
+        if output:
+            # Convert results to JSON-serializable format
+            json_results = {}
+            for name, value in results.items():
+                if isinstance(value, Exception):
+                    json_results[name] = {"error": str(value)}
+                elif hasattr(value, "model_dump"):
+                    json_results[name] = value.model_dump()
+                else:
+                    json_results[name] = value
+
+            output.write_text(json.dumps(json_results, indent=2, default=str))
+            rprint(f"\n[dim]Results written to {output}[/dim]")
+
+    except CQLError as e:
+        rprint(f"[red]Evaluation error:[/red] {e}")
+        raise typer.Exit(1)
 
 
 if __name__ == "__main__":

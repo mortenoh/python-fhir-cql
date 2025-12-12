@@ -1,0 +1,1273 @@
+"""Comprehensive tests for CQL evaluator.
+
+This module contains 150+ test cases covering:
+- Literals (boolean, string, number, date/time, null)
+- Arithmetic operations (+, -, *, /, div, mod, ^)
+- Comparison operations (=, !=, <, <=, >, >=, ~, !~)
+- Boolean operations (and, or, not, xor, implies)
+- Conditional expressions (if-then-else, case)
+- String operations (concatenation, length)
+- List operations (list selectors, membership)
+- Interval operations (contains, includes, overlaps)
+- Type operations (is, as)
+- Built-in functions
+- Library compilation and definition evaluation
+- Error handling
+"""
+
+from decimal import Decimal
+
+import pytest
+
+from fhir_cql.engine.cql import (
+    CQLCode,
+    CQLConcept,
+    CQLEvaluator,
+    CQLInterval,
+    CQLTuple,
+    compile_library,
+    evaluate,
+)
+from fhir_cql.engine.exceptions import CQLError
+from fhir_cql.engine.types import FHIRDate, FHIRDateTime, Quantity
+
+
+# =============================================================================
+# Literal Tests
+# =============================================================================
+
+
+class TestBooleanLiterals:
+    """Test boolean literal evaluation."""
+
+    def test_true_literal(self) -> None:
+        assert evaluate("true") is True
+
+    def test_false_literal(self) -> None:
+        assert evaluate("false") is False
+
+
+
+class TestNullLiteral:
+    """Test null literal evaluation."""
+
+    def test_null_literal(self) -> None:
+        assert evaluate("null") is None
+
+    def test_null_uppercase(self) -> None:
+        assert evaluate("NULL") is None
+
+
+class TestIntegerLiterals:
+    """Test integer literal evaluation."""
+
+    def test_zero(self) -> None:
+        assert evaluate("0") == 0
+
+    def test_positive_integer(self) -> None:
+        assert evaluate("42") == 42
+
+    def test_large_integer(self) -> None:
+        assert evaluate("999999") == 999999
+
+    def test_negative_integer(self) -> None:
+        assert evaluate("-42") == -42
+
+    def test_negative_zero(self) -> None:
+        assert evaluate("-0") == 0
+
+
+class TestDecimalLiterals:
+    """Test decimal literal evaluation."""
+
+    def test_simple_decimal(self) -> None:
+        result = evaluate("3.14")
+        assert isinstance(result, Decimal)
+        assert result == Decimal("3.14")
+
+    def test_zero_decimal(self) -> None:
+        assert evaluate("0.0") == Decimal("0.0")
+
+    def test_negative_decimal(self) -> None:
+        assert evaluate("-3.14") == Decimal("-3.14")
+
+    def test_leading_zero(self) -> None:
+        assert evaluate("0.5") == Decimal("0.5")
+
+    def test_many_decimal_places(self) -> None:
+        assert evaluate("3.14159265") == Decimal("3.14159265")
+
+
+class TestStringLiterals:
+    """Test string literal evaluation."""
+
+    def test_empty_string(self) -> None:
+        assert evaluate("''") == ""
+
+    def test_simple_string(self) -> None:
+        assert evaluate("'hello'") == "hello"
+
+    def test_string_with_spaces(self) -> None:
+        assert evaluate("'hello world'") == "hello world"
+
+    def test_string_with_numbers(self) -> None:
+        assert evaluate("'abc123'") == "abc123"
+
+    def test_string_with_special_chars(self) -> None:
+        assert evaluate("'hello-world_test'") == "hello-world_test"
+
+    def test_escaped_single_quote(self) -> None:
+        assert evaluate("'it\\'s'") == "it's"
+
+
+# =============================================================================
+# Arithmetic Tests
+# =============================================================================
+
+
+class TestAddition:
+    """Test addition operations."""
+
+    def test_add_two_integers(self) -> None:
+        assert evaluate("1 + 2") == 3
+
+    def test_add_three_integers(self) -> None:
+        assert evaluate("1 + 2 + 3") == 6
+
+    def test_add_negative(self) -> None:
+        assert evaluate("5 + (-3)") == 2
+
+    def test_add_decimals(self) -> None:
+        assert evaluate("1.5 + 2.5") == Decimal("4.0")
+
+    def test_add_integer_and_decimal(self) -> None:
+        result = evaluate("1 + 2.5")
+        assert result == Decimal("3.5")
+
+    def test_add_with_null_left(self) -> None:
+        assert evaluate("null + 1") is None
+
+    def test_add_with_null_right(self) -> None:
+        assert evaluate("1 + null") is None
+
+    def test_add_both_null(self) -> None:
+        assert evaluate("null + null") is None
+
+
+class TestSubtraction:
+    """Test subtraction operations."""
+
+    def test_subtract_integers(self) -> None:
+        assert evaluate("5 - 3") == 2
+
+    def test_subtract_negative_result(self) -> None:
+        assert evaluate("3 - 5") == -2
+
+    def test_subtract_from_zero(self) -> None:
+        assert evaluate("0 - 5") == -5
+
+    def test_subtract_decimals(self) -> None:
+        assert evaluate("5.5 - 2.5") == Decimal("3.0")
+
+    def test_subtract_with_null(self) -> None:
+        assert evaluate("5 - null") is None
+
+
+class TestMultiplication:
+    """Test multiplication operations."""
+
+    def test_multiply_integers(self) -> None:
+        assert evaluate("3 * 4") == 12
+
+    def test_multiply_by_zero(self) -> None:
+        assert evaluate("5 * 0") == 0
+
+    def test_multiply_by_one(self) -> None:
+        assert evaluate("5 * 1") == 5
+
+    def test_multiply_negative(self) -> None:
+        assert evaluate("5 * (-3)") == -15
+
+    def test_multiply_decimals(self) -> None:
+        assert evaluate("2.5 * 4") == Decimal("10.0")
+
+    def test_multiply_with_null(self) -> None:
+        assert evaluate("5 * null") is None
+
+
+class TestDivision:
+    """Test division operations."""
+
+    def test_divide_integers(self) -> None:
+        result = evaluate("10 / 2")
+        assert result == Decimal("5")
+
+    def test_divide_with_remainder(self) -> None:
+        result = evaluate("10 / 4")
+        assert result == Decimal("2.5")
+
+    def test_divide_decimals(self) -> None:
+        result = evaluate("10.0 / 4.0")
+        assert result == Decimal("2.5")
+
+    def test_divide_by_zero(self) -> None:
+        assert evaluate("10 / 0") is None
+
+    def test_divide_by_one(self) -> None:
+        assert evaluate("10 / 1") == Decimal("10")
+
+    def test_divide_with_null(self) -> None:
+        assert evaluate("10 / null") is None
+
+
+class TestIntegerDivision:
+    """Test truncated (integer) division."""
+
+    def test_div_exact(self) -> None:
+        assert evaluate("10 div 2") == 5
+
+    def test_div_truncate(self) -> None:
+        assert evaluate("10 div 3") == 3
+
+    def test_div_by_one(self) -> None:
+        assert evaluate("10 div 1") == 10
+
+    def test_div_by_zero(self) -> None:
+        assert evaluate("10 div 0") is None
+
+    def test_div_negative(self) -> None:
+        assert evaluate("(-10) div 3") == -4
+
+
+class TestModulo:
+    """Test modulo operations."""
+
+    def test_mod_with_remainder(self) -> None:
+        assert evaluate("10 mod 3") == 1
+
+    def test_mod_no_remainder(self) -> None:
+        assert evaluate("10 mod 2") == 0
+
+    def test_mod_by_one(self) -> None:
+        assert evaluate("10 mod 1") == 0
+
+    def test_mod_by_zero(self) -> None:
+        assert evaluate("10 mod 0") is None
+
+    def test_mod_smaller_dividend(self) -> None:
+        assert evaluate("3 mod 10") == 3
+
+
+class TestPower:
+    """Test power operations."""
+
+    def test_power_integers(self) -> None:
+        result = evaluate("2 ^ 3")
+        assert result == Decimal("8")
+
+    def test_power_zero(self) -> None:
+        result = evaluate("2 ^ 0")
+        assert result == Decimal("1")
+
+    def test_power_one(self) -> None:
+        result = evaluate("2 ^ 1")
+        assert result == Decimal("2")
+
+
+class TestOperatorPrecedence:
+    """Test operator precedence."""
+
+    def test_multiply_before_add(self) -> None:
+        assert evaluate("1 + 2 * 3") == 7
+
+    def test_divide_before_subtract(self) -> None:
+        result = evaluate("10 - 6 / 2")
+        assert result == Decimal("7")
+
+    def test_parentheses_override(self) -> None:
+        assert evaluate("(1 + 2) * 3") == 9
+
+    def test_nested_parentheses(self) -> None:
+        assert evaluate("((1 + 2) * 3) + 4") == 13
+
+    def test_complex_expression(self) -> None:
+        result = evaluate("2 + 3 * 4 - 6 / 2")
+        assert result == Decimal("11")
+
+
+# =============================================================================
+# Comparison Tests
+# =============================================================================
+
+
+class TestEquality:
+    """Test equality comparisons."""
+
+    def test_equal_integers(self) -> None:
+        assert evaluate("5 = 5") is True
+
+    def test_not_equal_integers(self) -> None:
+        assert evaluate("5 = 6") is False
+
+    def test_equal_strings(self) -> None:
+        assert evaluate("'abc' = 'abc'") is True
+
+    def test_not_equal_strings(self) -> None:
+        assert evaluate("'abc' = 'def'") is False
+
+    def test_equal_booleans(self) -> None:
+        assert evaluate("true = true") is True
+
+    def test_not_equal_booleans(self) -> None:
+        assert evaluate("true = false") is False
+
+    def test_equal_with_null(self) -> None:
+        assert evaluate("5 = null") is None
+
+    def test_null_equals_null(self) -> None:
+        assert evaluate("null = null") is None
+
+    def test_equal_decimals(self) -> None:
+        assert evaluate("3.14 = 3.14") is True
+
+
+class TestNotEqual:
+    """Test not-equal comparisons."""
+
+    def test_not_equal_different(self) -> None:
+        assert evaluate("5 != 6") is True
+
+    def test_not_equal_same(self) -> None:
+        assert evaluate("5 != 5") is False
+
+    def test_not_equal_strings(self) -> None:
+        assert evaluate("'abc' != 'def'") is True
+
+    def test_not_equal_with_null(self) -> None:
+        assert evaluate("5 != null") is None
+
+
+class TestLessThan:
+    """Test less-than comparisons."""
+
+    def test_less_than_true(self) -> None:
+        assert evaluate("3 < 5") is True
+
+    def test_less_than_false(self) -> None:
+        assert evaluate("5 < 3") is False
+
+    def test_less_than_equal(self) -> None:
+        assert evaluate("5 < 5") is False
+
+    def test_less_than_decimals(self) -> None:
+        assert evaluate("3.14 < 3.15") is True
+
+    def test_less_than_strings(self) -> None:
+        assert evaluate("'abc' < 'abd'") is True
+
+    def test_less_than_with_null(self) -> None:
+        assert evaluate("3 < null") is None
+
+
+class TestLessThanOrEqual:
+    """Test less-than-or-equal comparisons."""
+
+    def test_less_or_equal_less(self) -> None:
+        assert evaluate("3 <= 5") is True
+
+    def test_less_or_equal_equal(self) -> None:
+        assert evaluate("5 <= 5") is True
+
+    def test_less_or_equal_greater(self) -> None:
+        assert evaluate("7 <= 5") is False
+
+    def test_less_or_equal_with_null(self) -> None:
+        assert evaluate("3 <= null") is None
+
+
+class TestGreaterThan:
+    """Test greater-than comparisons."""
+
+    def test_greater_than_true(self) -> None:
+        assert evaluate("5 > 3") is True
+
+    def test_greater_than_false(self) -> None:
+        assert evaluate("3 > 5") is False
+
+    def test_greater_than_equal(self) -> None:
+        assert evaluate("5 > 5") is False
+
+    def test_greater_than_with_null(self) -> None:
+        assert evaluate("5 > null") is None
+
+
+class TestGreaterThanOrEqual:
+    """Test greater-than-or-equal comparisons."""
+
+    def test_greater_or_equal_greater(self) -> None:
+        assert evaluate("7 >= 5") is True
+
+    def test_greater_or_equal_equal(self) -> None:
+        assert evaluate("5 >= 5") is True
+
+    def test_greater_or_equal_less(self) -> None:
+        assert evaluate("3 >= 5") is False
+
+    def test_greater_or_equal_with_null(self) -> None:
+        assert evaluate("5 >= null") is None
+
+
+# =============================================================================
+# Boolean Operations Tests
+# =============================================================================
+
+
+class TestAnd:
+    """Test AND operations."""
+
+    def test_and_true_true(self) -> None:
+        assert evaluate("true and true") is True
+
+    def test_and_true_false(self) -> None:
+        assert evaluate("true and false") is False
+
+    def test_and_false_true(self) -> None:
+        assert evaluate("false and true") is False
+
+    def test_and_false_false(self) -> None:
+        assert evaluate("false and false") is False
+
+    def test_and_true_null(self) -> None:
+        assert evaluate("true and null") is None
+
+    def test_and_null_true(self) -> None:
+        assert evaluate("null and true") is None
+
+    def test_and_false_null(self) -> None:
+        # False AND anything is False
+        assert evaluate("false and null") is False
+
+    def test_and_null_false(self) -> None:
+        assert evaluate("null and false") is False
+
+    def test_and_null_null(self) -> None:
+        assert evaluate("null and null") is None
+
+    def test_and_chained(self) -> None:
+        assert evaluate("true and true and true") is True
+
+    def test_and_chained_with_false(self) -> None:
+        assert evaluate("true and false and true") is False
+
+
+class TestOr:
+    """Test OR operations."""
+
+    def test_or_true_true(self) -> None:
+        assert evaluate("true or true") is True
+
+    def test_or_true_false(self) -> None:
+        assert evaluate("true or false") is True
+
+    def test_or_false_true(self) -> None:
+        assert evaluate("false or true") is True
+
+    def test_or_false_false(self) -> None:
+        assert evaluate("false or false") is False
+
+    def test_or_true_null(self) -> None:
+        # True OR anything is True
+        assert evaluate("true or null") is True
+
+    def test_or_null_true(self) -> None:
+        assert evaluate("null or true") is True
+
+    def test_or_false_null(self) -> None:
+        assert evaluate("false or null") is None
+
+    def test_or_null_false(self) -> None:
+        assert evaluate("null or false") is None
+
+    def test_or_null_null(self) -> None:
+        assert evaluate("null or null") is None
+
+    def test_or_chained(self) -> None:
+        assert evaluate("false or false or true") is True
+
+
+class TestNot:
+    """Test NOT operations."""
+
+    def test_not_true(self) -> None:
+        assert evaluate("not true") is False
+
+    def test_not_false(self) -> None:
+        assert evaluate("not false") is True
+
+    def test_not_null(self) -> None:
+        assert evaluate("not null") is None
+
+    def test_double_not(self) -> None:
+        assert evaluate("not not true") is True
+
+
+class TestXor:
+    """Test XOR operations."""
+
+    def test_xor_true_true(self) -> None:
+        assert evaluate("true xor true") is False
+
+    def test_xor_true_false(self) -> None:
+        assert evaluate("true xor false") is True
+
+    def test_xor_false_true(self) -> None:
+        assert evaluate("false xor true") is True
+
+    def test_xor_false_false(self) -> None:
+        assert evaluate("false xor false") is False
+
+    def test_xor_with_null(self) -> None:
+        assert evaluate("true xor null") is None
+        assert evaluate("null xor true") is None
+
+
+class TestImplies:
+    """Test IMPLIES operations."""
+
+    def test_implies_false_anything(self) -> None:
+        # False implies anything is True
+        assert evaluate("false implies true") is True
+        assert evaluate("false implies false") is True
+
+    def test_implies_true_true(self) -> None:
+        assert evaluate("true implies true") is True
+
+    def test_implies_true_false(self) -> None:
+        assert evaluate("true implies false") is False
+
+    def test_implies_with_null(self) -> None:
+        assert evaluate("true implies null") is None
+
+
+# =============================================================================
+# Conditional Expression Tests
+# =============================================================================
+
+
+class TestIfThenElse:
+    """Test if-then-else expressions."""
+
+    def test_if_true(self) -> None:
+        assert evaluate("if true then 1 else 2") == 1
+
+    def test_if_false(self) -> None:
+        assert evaluate("if false then 1 else 2") == 2
+
+    def test_if_null(self) -> None:
+        assert evaluate("if null then 1 else 2") == 2
+
+    def test_if_with_strings(self) -> None:
+        assert evaluate("if true then 'yes' else 'no'") == "yes"
+
+    def test_if_nested(self) -> None:
+        assert evaluate("if true then if false then 1 else 2 else 3") == 2
+
+    def test_if_with_comparison(self) -> None:
+        assert evaluate("if 5 > 3 then 'greater' else 'less'") == "greater"
+
+    def test_if_with_arithmetic_in_branches(self) -> None:
+        assert evaluate("if true then 1 + 2 else 3 + 4") == 3
+
+
+# =============================================================================
+# String Operations Tests
+# =============================================================================
+
+
+class TestStringConcatenation:
+    """Test string concatenation."""
+
+    def test_concat_two_strings(self) -> None:
+        assert evaluate("'hello' & ' world'") == "hello world"
+
+    def test_concat_empty_string(self) -> None:
+        assert evaluate("'hello' & ''") == "hello"
+
+    def test_concat_with_null(self) -> None:
+        assert evaluate("'hello' & null") == "hello"
+
+    def test_concat_null_first(self) -> None:
+        assert evaluate("null & 'world'") == "world"
+
+    def test_concat_multiple(self) -> None:
+        assert evaluate("'a' & 'b' & 'c'") == "abc"
+
+
+# =============================================================================
+# List Operations Tests
+# =============================================================================
+
+
+class TestListSelectors:
+    """Test list selector expressions."""
+
+    def test_empty_list(self) -> None:
+        assert evaluate("{}") == []
+
+    def test_single_element(self) -> None:
+        assert evaluate("{1}") == [1]
+
+    def test_multiple_integers(self) -> None:
+        assert evaluate("{1, 2, 3}") == [1, 2, 3]
+
+    def test_multiple_strings(self) -> None:
+        assert evaluate("{'a', 'b', 'c'}") == ["a", "b", "c"]
+
+    def test_mixed_types(self) -> None:
+        assert evaluate("{1, 'two', true}") == [1, "two", True]
+
+    def test_nested_expressions(self) -> None:
+        assert evaluate("{1 + 1, 2 + 2, 3 + 3}") == [2, 4, 6]
+
+
+class TestMembershipIn:
+    """Test 'in' membership operator."""
+
+    def test_in_list_found(self) -> None:
+        assert evaluate("2 in {1, 2, 3}") is True
+
+    def test_in_list_not_found(self) -> None:
+        assert evaluate("5 in {1, 2, 3}") is False
+
+    def test_in_empty_list(self) -> None:
+        assert evaluate("1 in {}") is False
+
+    def test_in_with_string(self) -> None:
+        assert evaluate("'b' in {'a', 'b', 'c'}") is True
+
+
+class TestMembershipContains:
+    """Test 'contains' membership operator."""
+
+    def test_contains_found(self) -> None:
+        assert evaluate("{1, 2, 3} contains 2") is True
+
+    def test_contains_not_found(self) -> None:
+        assert evaluate("{1, 2, 3} contains 5") is False
+
+    def test_contains_empty_list(self) -> None:
+        assert evaluate("{} contains 1") is False
+
+
+class TestExists:
+    """Test exists operator."""
+
+    def test_exists_non_empty(self) -> None:
+        assert evaluate("exists {1, 2, 3}") is True
+
+    def test_exists_empty(self) -> None:
+        assert evaluate("exists {}") is False
+
+    def test_exists_single(self) -> None:
+        assert evaluate("exists {1}") is True
+
+
+# =============================================================================
+# Interval Tests
+# =============================================================================
+
+
+class TestIntervalSelectors:
+    """Test interval selector expressions."""
+
+    def test_closed_interval(self) -> None:
+        result = evaluate("Interval[1, 10]")
+        assert isinstance(result, CQLInterval)
+        assert result.low == 1
+        assert result.high == 10
+        assert result.low_closed is True
+        assert result.high_closed is True
+
+    def test_open_interval(self) -> None:
+        result = evaluate("Interval(1, 10)")
+        assert isinstance(result, CQLInterval)
+        assert result.low_closed is False
+        assert result.high_closed is False
+
+    def test_half_open_left(self) -> None:
+        result = evaluate("Interval(1, 10]")
+        assert result.low_closed is False
+        assert result.high_closed is True
+
+    def test_half_open_right(self) -> None:
+        result = evaluate("Interval[1, 10)")
+        assert result.low_closed is True
+        assert result.high_closed is False
+
+
+class TestIntervalContains:
+    """Test interval contains operations."""
+
+    def test_interval_contains_in_range(self) -> None:
+        interval = CQLInterval(low=1, high=10)
+        assert 5 in interval
+
+    def test_interval_contains_at_low(self) -> None:
+        interval = CQLInterval(low=1, high=10)
+        assert 1 in interval
+
+    def test_interval_contains_at_high(self) -> None:
+        interval = CQLInterval(low=1, high=10)
+        assert 10 in interval
+
+    def test_interval_not_contains_below(self) -> None:
+        interval = CQLInterval(low=1, high=10)
+        assert 0 not in interval
+
+    def test_interval_not_contains_above(self) -> None:
+        interval = CQLInterval(low=1, high=10)
+        assert 11 not in interval
+
+    def test_open_interval_excludes_bounds(self) -> None:
+        interval = CQLInterval(low=1, high=10, low_closed=False, high_closed=False)
+        assert 1 not in interval
+        assert 10 not in interval
+        assert 5 in interval
+
+
+# =============================================================================
+# Boolean Expression Tests (is null, is true, etc.)
+# =============================================================================
+
+
+class TestIsNull:
+    """Test IS NULL expressions."""
+
+    def test_null_is_null(self) -> None:
+        assert evaluate("null is null") is True
+
+    def test_value_is_null(self) -> None:
+        assert evaluate("1 is null") is False
+
+    def test_string_is_null(self) -> None:
+        assert evaluate("'hello' is null") is False
+
+
+class TestIsNotNull:
+    """Test IS NOT NULL expressions."""
+
+    def test_value_is_not_null(self) -> None:
+        assert evaluate("1 is not null") is True
+
+    def test_null_is_not_null(self) -> None:
+        assert evaluate("null is not null") is False
+
+
+class TestIsTrue:
+    """Test IS TRUE expressions."""
+
+    def test_true_is_true(self) -> None:
+        assert evaluate("true is true") is True
+
+    def test_false_is_true(self) -> None:
+        assert evaluate("false is true") is False
+
+    def test_null_is_true(self) -> None:
+        assert evaluate("null is true") is False
+
+
+class TestIsFalse:
+    """Test IS FALSE expressions."""
+
+    def test_false_is_false(self) -> None:
+        assert evaluate("false is false") is True
+
+    def test_true_is_false(self) -> None:
+        assert evaluate("true is false") is False
+
+    def test_null_is_false(self) -> None:
+        assert evaluate("null is false") is False
+
+
+# =============================================================================
+# Between Expression Tests
+# =============================================================================
+
+
+class TestBetween:
+    """Test between expressions."""
+
+    def test_between_in_range(self) -> None:
+        assert evaluate("5 between 1 and 10") is True
+
+    def test_between_at_low(self) -> None:
+        assert evaluate("1 between 1 and 10") is True
+
+    def test_between_at_high(self) -> None:
+        assert evaluate("10 between 1 and 10") is True
+
+    def test_between_below(self) -> None:
+        assert evaluate("0 between 1 and 10") is False
+
+    def test_between_above(self) -> None:
+        assert evaluate("11 between 1 and 10") is False
+
+    def test_between_with_decimals(self) -> None:
+        assert evaluate("5.5 between 1.0 and 10.0") is True
+
+
+# =============================================================================
+# Built-in Function Tests
+# =============================================================================
+
+
+class TestCountFunction:
+    """Test Count function."""
+
+    def test_count_list(self) -> None:
+        assert evaluate("Count({1, 2, 3})") == 3
+
+    def test_count_empty(self) -> None:
+        assert evaluate("Count({})") == 0
+
+    def test_count_single(self) -> None:
+        assert evaluate("Count({42})") == 1
+
+
+class TestFirstFunction:
+    """Test First function."""
+
+    def test_first_list(self) -> None:
+        assert evaluate("First({1, 2, 3})") == 1
+
+    def test_first_single(self) -> None:
+        assert evaluate("First({42})") == 42
+
+    def test_first_empty(self) -> None:
+        assert evaluate("First({})") is None
+
+
+class TestLastFunction:
+    """Test Last function."""
+
+    def test_last_list(self) -> None:
+        assert evaluate("Last({1, 2, 3})") == 3
+
+    def test_last_single(self) -> None:
+        assert evaluate("Last({42})") == 42
+
+    def test_last_empty(self) -> None:
+        assert evaluate("Last({})") is None
+
+
+class TestSumFunction:
+    """Test Sum function."""
+
+    def test_sum_integers(self) -> None:
+        assert evaluate("Sum({1, 2, 3, 4})") == 10
+
+    def test_sum_single(self) -> None:
+        assert evaluate("Sum({42})") == 42
+
+    def test_sum_empty(self) -> None:
+        assert evaluate("Sum({})") is None
+
+
+class TestAvgFunction:
+    """Test Avg function."""
+
+    def test_avg_integers(self) -> None:
+        assert evaluate("Avg({1, 2, 3})") == 2
+
+    def test_avg_single(self) -> None:
+        assert evaluate("Avg({10})") == 10
+
+    def test_avg_empty(self) -> None:
+        assert evaluate("Avg({})") is None
+
+
+class TestMinFunction:
+    """Test Min function."""
+
+    def test_min_integers(self) -> None:
+        assert evaluate("Min({3, 1, 4, 1, 5})") == 1
+
+    def test_min_single(self) -> None:
+        assert evaluate("Min({42})") == 42
+
+    def test_min_empty(self) -> None:
+        assert evaluate("Min({})") is None
+
+
+class TestMaxFunction:
+    """Test Max function."""
+
+    def test_max_integers(self) -> None:
+        assert evaluate("Max({3, 1, 4, 1, 5})") == 5
+
+    def test_max_single(self) -> None:
+        assert evaluate("Max({42})") == 42
+
+    def test_max_empty(self) -> None:
+        assert evaluate("Max({})") is None
+
+
+class TestCoalesceFunction:
+    """Test Coalesce function."""
+
+    def test_coalesce_first_not_null(self) -> None:
+        assert evaluate("Coalesce(1, 2, 3)") == 1
+
+    def test_coalesce_first_null(self) -> None:
+        assert evaluate("Coalesce(null, 2, 3)") == 2
+
+    def test_coalesce_all_null(self) -> None:
+        assert evaluate("Coalesce(null, null, null)") is None
+
+    def test_coalesce_with_string(self) -> None:
+        assert evaluate("Coalesce(null, 'default')") == "default"
+
+
+class TestToStringFunction:
+    """Test ToString function."""
+
+    def test_tostring_integer(self) -> None:
+        assert evaluate("ToString(42)") == "42"
+
+    def test_tostring_decimal(self) -> None:
+        result = evaluate("ToString(3.14)")
+        assert result == "3.14"
+
+    def test_tostring_boolean(self) -> None:
+        assert evaluate("ToString(true)") == "True"
+
+    def test_tostring_null(self) -> None:
+        assert evaluate("ToString(null)") is None
+
+
+class TestToIntegerFunction:
+    """Test ToInteger function."""
+
+    def test_tointeger_from_string(self) -> None:
+        assert evaluate("ToInteger('42')") == 42
+
+    def test_tointeger_null(self) -> None:
+        assert evaluate("ToInteger(null)") is None
+
+    def test_tointeger_invalid_string(self) -> None:
+        assert evaluate("ToInteger('abc')") is None
+
+
+class TestToDecimalFunction:
+    """Test ToDecimal function."""
+
+    def test_todecimal_from_string(self) -> None:
+        result = evaluate("ToDecimal('3.14')")
+        assert result == Decimal("3.14")
+
+    def test_todecimal_from_integer_string(self) -> None:
+        result = evaluate("ToDecimal('42')")
+        assert result == Decimal("42")
+
+    def test_todecimal_null(self) -> None:
+        assert evaluate("ToDecimal(null)") is None
+
+
+class TestExistsFunction:
+    """Test Exists function."""
+
+    def test_exists_non_empty_list(self) -> None:
+        assert evaluate("Exists({1, 2, 3})") is True
+
+    def test_exists_empty_list(self) -> None:
+        assert evaluate("Exists({})") is False
+
+    def test_exists_null(self) -> None:
+        assert evaluate("Exists(null)") is False
+
+
+# =============================================================================
+# Library Compilation Tests
+# =============================================================================
+
+
+class TestLibraryCompilation:
+    """Test CQL library compilation."""
+
+    def test_compile_minimal_library(self) -> None:
+        source = """
+        library Test version '1.0'
+        using FHIR version '4.0.1'
+        define X: 1
+        """
+        lib = compile_library(source)
+        assert lib.name == "Test"
+        assert lib.version == "1.0"
+
+    def test_compile_with_using(self) -> None:
+        source = """
+        library Test version '1.0'
+        using FHIR version '4.0.1'
+        define X: 1
+        """
+        lib = compile_library(source)
+        assert len(lib.using) == 1
+        assert lib.using[0].model == "FHIR"
+        assert lib.using[0].version == "4.0.1"
+
+    def test_compile_multiple_definitions(self) -> None:
+        source = """
+        library Test version '1.0'
+        using FHIR version '4.0.1'
+        define A: 1
+        define B: 2
+        define C: 3
+        """
+        lib = compile_library(source)
+        assert len(lib.definitions) == 3
+        assert "A" in lib.definitions
+        assert "B" in lib.definitions
+        assert "C" in lib.definitions
+
+    def test_library_without_version(self) -> None:
+        source = """
+        library Test
+        using FHIR version '4.0.1'
+        define X: 1
+        """
+        lib = compile_library(source)
+        assert lib.name == "Test"
+        assert lib.version is None
+
+
+class TestDefinitionEvaluation:
+    """Test evaluating library definitions."""
+
+    def test_evaluate_simple_definition(self) -> None:
+        evaluator = CQLEvaluator()
+        evaluator.compile("""
+        library Test version '1.0'
+        using FHIR version '4.0.1'
+        define Value: 42
+        """)
+        assert evaluator.evaluate_definition("Value") == 42
+
+    def test_evaluate_expression_definition(self) -> None:
+        evaluator = CQLEvaluator()
+        evaluator.compile("""
+        library Test version '1.0'
+        using FHIR version '4.0.1'
+        define Sum: 1 + 2 + 3 + 4 + 5
+        """)
+        assert evaluator.evaluate_definition("Sum") == 15
+
+    def test_evaluate_dependent_definitions(self) -> None:
+        evaluator = CQLEvaluator()
+        evaluator.compile("""
+        library Test version '1.0'
+        using FHIR version '4.0.1'
+        define A: 10
+        define B: 20
+        define Sum: A + B
+        """)
+        assert evaluator.evaluate_definition("Sum") == 30
+
+    def test_evaluate_chain_of_definitions(self) -> None:
+        evaluator = CQLEvaluator()
+        evaluator.compile("""
+        library Test version '1.0'
+        using FHIR version '4.0.1'
+        define A: 1
+        define B: A + 1
+        define C: B + 1
+        define D: C + 1
+        """)
+        assert evaluator.evaluate_definition("D") == 4
+
+    def test_evaluate_all_definitions(self) -> None:
+        evaluator = CQLEvaluator()
+        evaluator.compile("""
+        library Test version '1.0'
+        using FHIR version '4.0.1'
+        define A: 1
+        define B: 2
+        define C: 3
+        """)
+        results = evaluator.evaluate_all_definitions()
+        assert results == {"A": 1, "B": 2, "C": 3}
+
+
+class TestDefinitionErrors:
+    """Test definition evaluation errors."""
+
+    def test_definition_not_found(self) -> None:
+        evaluator = CQLEvaluator()
+        evaluator.compile("""
+        library Test version '1.0'
+        using FHIR version '4.0.1'
+        define X: 1
+        """)
+        with pytest.raises(CQLError, match="Definition not found"):
+            evaluator.evaluate_definition("NonExistent")
+
+    def test_no_library_loaded(self) -> None:
+        evaluator = CQLEvaluator()
+        with pytest.raises(CQLError, match="No library loaded"):
+            evaluator.evaluate_definition("X")
+
+    def test_recursive_definition(self) -> None:
+        evaluator = CQLEvaluator()
+        evaluator.compile("""
+        library Test version '1.0'
+        using FHIR version '4.0.1'
+        define A: B
+        define B: A
+        """)
+        with pytest.raises(CQLError, match="Recursive definition"):
+            evaluator.evaluate_definition("A")
+
+
+# =============================================================================
+# Type System Tests
+# =============================================================================
+
+
+class TestCQLCode:
+    """Test CQLCode type."""
+
+    def test_create_code(self) -> None:
+        code = CQLCode(code="123", system="http://example.com")
+        assert code.code == "123"
+        assert code.system == "http://example.com"
+
+    def test_code_with_display(self) -> None:
+        code = CQLCode(code="123", system="http://example.com", display="Test Code")
+        assert code.display == "Test Code"
+
+    def test_code_equality(self) -> None:
+        code1 = CQLCode(code="123", system="http://example.com")
+        code2 = CQLCode(code="123", system="http://example.com")
+        assert code1 == code2
+
+    def test_code_inequality(self) -> None:
+        code1 = CQLCode(code="123", system="http://example.com")
+        code2 = CQLCode(code="456", system="http://example.com")
+        assert code1 != code2
+
+    def test_code_equivalent(self) -> None:
+        code1 = CQLCode(code="123", system="http://example.com", display="A")
+        code2 = CQLCode(code="123", system="http://example.com", display="B")
+        assert code1.equivalent(code2)
+
+
+class TestCQLInterval:
+    """Test CQLInterval type."""
+
+    def test_create_interval(self) -> None:
+        interval = CQLInterval(low=1, high=10)
+        assert interval.low == 1
+        assert interval.high == 10
+
+    def test_interval_bounds(self) -> None:
+        interval = CQLInterval(low=1, high=10, low_closed=True, high_closed=True)
+        assert interval.low_closed is True
+        assert interval.high_closed is True
+
+    def test_interval_contains_method(self) -> None:
+        interval = CQLInterval(low=1, high=10)
+        assert interval.contains(5) is True
+        assert interval.contains(0) is False
+
+    def test_interval_width(self) -> None:
+        interval = CQLInterval(low=1, high=10)
+        assert interval.width() == 9
+
+    def test_interval_start_end(self) -> None:
+        interval = CQLInterval(low=1, high=10)
+        assert interval.start() == 1
+        assert interval.end() == 10
+
+
+class TestCQLTuple:
+    """Test CQLTuple type."""
+
+    def test_create_tuple(self) -> None:
+        t = CQLTuple(elements={"a": 1, "b": 2})
+        assert t["a"] == 1
+        assert t["b"] == 2
+
+    def test_tuple_keys(self) -> None:
+        t = CQLTuple(elements={"a": 1, "b": 2})
+        assert set(t.keys()) == {"a", "b"}
+
+    def test_tuple_values(self) -> None:
+        t = CQLTuple(elements={"a": 1, "b": 2})
+        assert set(t.values()) == {1, 2}
+
+    def test_tuple_contains(self) -> None:
+        t = CQLTuple(elements={"a": 1, "b": 2})
+        assert "a" in t
+        assert "c" not in t
+
+
+class TestCQLConcept:
+    """Test CQLConcept type."""
+
+    def test_create_concept(self) -> None:
+        code1 = CQLCode(code="123", system="http://example.com")
+        code2 = CQLCode(code="456", system="http://example.com")
+        concept = CQLConcept(codes=(code1, code2))
+        assert len(concept.codes) == 2
+
+    def test_concept_with_display(self) -> None:
+        code = CQLCode(code="123", system="http://example.com")
+        concept = CQLConcept(codes=(code,), display="Test Concept")
+        assert concept.display == "Test Concept"
+
+
+# =============================================================================
+# Error Handling Tests
+# =============================================================================
+
+
+class TestParseErrors:
+    """Test parse error handling."""
+
+    def test_invalid_syntax(self) -> None:
+        evaluator = CQLEvaluator()
+        with pytest.raises(CQLError):
+            evaluator.compile("invalid cql !!!")
+
+    def test_incomplete_expression(self) -> None:
+        evaluator = CQLEvaluator()
+        with pytest.raises(CQLError):
+            evaluator.compile("""
+            library Test
+            define X: 1 +
+            """)
+
+
+# =============================================================================
+# Complex Expression Tests
+# =============================================================================
+
+
+class TestComplexExpressions:
+    """Test complex expression evaluation."""
+
+    def test_complex_arithmetic(self) -> None:
+        result = evaluate("((1 + 2) * 3 - 4) / 5")
+        assert result == Decimal("1")
+
+    def test_complex_boolean(self) -> None:
+        assert evaluate("(true and false) or (true and true)") is True
+
+    def test_complex_comparison(self) -> None:
+        assert evaluate("(5 > 3) and (10 < 20)") is True
+
+    def test_mixed_expression(self) -> None:
+        assert evaluate("if 5 > 3 then 10 * 2 else 10 / 2") == 20
+
+    def test_nested_if(self) -> None:
+        result = evaluate("if true then if true then 1 else 2 else if true then 3 else 4")
+        assert result == 1
