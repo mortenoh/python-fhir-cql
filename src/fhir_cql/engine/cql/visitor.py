@@ -1085,7 +1085,6 @@ class CQLEvaluatorVisitor(cqlVisitor):
             resource_type = ctx.getText().split(":")[0].strip("[")
 
         # Get code filter if present
-        context_expr = ctx.contextIdentifier() if hasattr(ctx, "contextIdentifier") else None
         terminology = ctx.terminology() if hasattr(ctx, "terminology") else None
         code_path = ctx.codePath() if hasattr(ctx, "codePath") else None
 

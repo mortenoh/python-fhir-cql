@@ -1662,8 +1662,8 @@ class TestExceptOperation:
 # =============================================================================
 
 
-class TestIntervalContains:
-    """Test interval contains operation."""
+class TestIntervalContainsExpression:
+    """Test interval contains expression (CQL syntax)."""
 
     def test_interval_contains_point(self) -> None:
         assert evaluate("Interval[1, 10] contains 5") is True
