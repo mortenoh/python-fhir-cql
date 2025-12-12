@@ -29,19 +29,30 @@ def fn_is_distinct(ctx: EvaluationContext, collection: list[Any]) -> list[bool]:
     return [len(distinct) == len(collection)]
 
 
+def _ensure_list(val: Any) -> list[Any]:
+    """Ensure a value is a list."""
+    if val is None:
+        return []
+    if isinstance(val, list):
+        return val
+    return [val]
+
+
 @FunctionRegistry.register("union")
-def fn_union(ctx: EvaluationContext, left: list[Any], right: list[Any]) -> list[Any]:
+def fn_union(ctx: EvaluationContext, left: list[Any], right: Any) -> list[Any]:
     """Returns union of two collections (with duplicates removed)."""
-    combined = left + right
+    right_list = _ensure_list(right)
+    combined = left + right_list
     return fn_distinct(ctx, combined)
 
 
 @FunctionRegistry.register("intersect")
-def fn_intersect(ctx: EvaluationContext, left: list[Any], right: list[Any]) -> list[Any]:
+def fn_intersect(ctx: EvaluationContext, left: list[Any], right: Any) -> list[Any]:
     """Returns intersection of two collections."""
+    right_list = _ensure_list(right)
     result = []
     for item in left:
-        for r_item in right:
+        for r_item in right_list:
             if _deep_equals(item, r_item):
                 result.append(item)
                 break
@@ -49,12 +60,13 @@ def fn_intersect(ctx: EvaluationContext, left: list[Any], right: list[Any]) -> l
 
 
 @FunctionRegistry.register("exclude")
-def fn_exclude(ctx: EvaluationContext, left: list[Any], right: list[Any]) -> list[Any]:
+def fn_exclude(ctx: EvaluationContext, left: list[Any], right: Any) -> list[Any]:
     """Returns elements in left that are not in right."""
+    right_list = _ensure_list(right)
     result = []
     for item in left:
         found = False
-        for r_item in right:
+        for r_item in right_list:
             if _deep_equals(item, r_item):
                 found = True
                 break
@@ -64,9 +76,10 @@ def fn_exclude(ctx: EvaluationContext, left: list[Any], right: list[Any]) -> lis
 
 
 @FunctionRegistry.register("combine")
-def fn_combine(ctx: EvaluationContext, left: list[Any], right: list[Any]) -> list[Any]:
+def fn_combine(ctx: EvaluationContext, left: list[Any], right: Any) -> list[Any]:
     """Combines two collections (preserves duplicates)."""
-    return left + right
+    right_list = _ensure_list(right)
+    return left + right_list
 
 
 @FunctionRegistry.register("flatten")
@@ -82,11 +95,12 @@ def fn_flatten(ctx: EvaluationContext, collection: list[Any]) -> list[Any]:
 
 
 @FunctionRegistry.register("subsetOf")
-def fn_subset_of(ctx: EvaluationContext, left: list[Any], right: list[Any]) -> list[bool]:
+def fn_subset_of(ctx: EvaluationContext, left: list[Any], right: Any) -> list[bool]:
     """Returns true if left is a subset of right."""
+    right_list = _ensure_list(right)
     for item in left:
         found = False
-        for r_item in right:
+        for r_item in right_list:
             if _deep_equals(item, r_item):
                 found = True
                 break
@@ -96,9 +110,10 @@ def fn_subset_of(ctx: EvaluationContext, left: list[Any], right: list[Any]) -> l
 
 
 @FunctionRegistry.register("supersetOf")
-def fn_superset_of(ctx: EvaluationContext, left: list[Any], right: list[Any]) -> list[bool]:
+def fn_superset_of(ctx: EvaluationContext, left: list[Any], right: Any) -> list[bool]:
     """Returns true if left is a superset of right."""
-    return fn_subset_of(ctx, right, left)
+    right_list = _ensure_list(right)
+    return fn_subset_of(ctx, right_list, left)
 
 
 def _deep_equals(a: Any, b: Any) -> bool:

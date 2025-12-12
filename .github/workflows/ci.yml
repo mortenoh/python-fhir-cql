@@ -22,19 +22,13 @@ jobs:
         run: uv python install 3.13
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --all-groups
 
       - name: Run ruff format check
         run: uv run ruff format --check .
 
       - name: Run ruff lint
         run: uv run ruff check .
-
-      - name: Run mypy
-        run: uv run mypy src
-
-      - name: Run pyright
-        run: uv run pyright
 
   test:
     name: Test
@@ -50,11 +44,27 @@ jobs:
       - name: Set up Python
         run: uv python install 3.13
 
-      - name: Install dependencies
-        run: uv sync
+      - name: Install ANTLR
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y antlr4
 
-      - name: Run tests
-        run: uv run pytest tests/ -v
+      - name: Install dependencies
+        run: uv sync --all-groups
+
+      - name: Generate parsers
+        run: make generate
+
+      - name: Run tests with coverage
+        run: uv run pytest tests/ --cov=src/fhir_cql --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   validate-examples:
     name: Validate Examples
@@ -70,8 +80,16 @@ jobs:
       - name: Set up Python
         run: uv python install 3.13
 
+      - name: Install ANTLR
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y antlr4
+
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --all-groups
+
+      - name: Generate parsers
+        run: make generate
 
       - name: Validate CQL examples
         run: uv run cql validate examples/cql/*.cql

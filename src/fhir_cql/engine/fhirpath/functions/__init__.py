@@ -1,7 +1,19 @@
 """FHIRPath function implementations."""
 
 # Import all function modules to trigger registration
-from . import boolean, collections, comparison, existence, filtering, math, strings, subsetting
+from . import (
+    boolean,
+    collections,
+    comparison,
+    datetime,
+    existence,
+    fhir,
+    filtering,
+    math,
+    navigation,
+    strings,
+    subsetting,
+)
 
 __all__ = [
     "existence",
@@ -12,4 +24,7 @@ __all__ = [
     "math",
     "collections",
     "boolean",
+    "datetime",
+    "navigation",
+    "fhir",
 ]

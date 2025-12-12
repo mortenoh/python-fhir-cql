@@ -1,5 +1,6 @@
 """Evaluation context for FHIRPath and CQL."""
 
+from datetime import datetime
 from typing import Any, Callable, Protocol
 
 
@@ -28,6 +29,8 @@ class EvaluationContext:
         resource: dict[str, Any] | None = None,
         root_resource: dict[str, Any] | None = None,
         model: ModelProvider | None = None,
+        now: datetime | None = None,
+        reference_resolver: Callable[[str], dict[str, Any] | None] | None = None,
     ):
         """
         Initialize evaluation context.
@@ -36,10 +39,14 @@ class EvaluationContext:
             resource: Current resource (%resource)
             root_resource: Root resource for nested evaluations (%rootResource)
             model: FHIR model provider for type information
+            now: Fixed datetime for today()/now() functions (useful for testing)
+            reference_resolver: Callback to resolve FHIR references
         """
         self.resource = resource
         self.root_resource = root_resource or resource
         self.model = model
+        self.now = now
+        self.reference_resolver = reference_resolver
 
         # Variable stack for $this, $index, $total
         self._this_stack: list[Any] = []
@@ -123,6 +130,8 @@ class EvaluationContext:
             resource=resource or self.resource,
             root_resource=self.root_resource,
             model=self.model,
+            now=self.now,
+            reference_resolver=self.reference_resolver,
         )
         child_ctx._constants = self._constants.copy()
         child_ctx._function_overrides = self._function_overrides.copy()

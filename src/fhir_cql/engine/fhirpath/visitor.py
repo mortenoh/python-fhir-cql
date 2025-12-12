@@ -17,7 +17,7 @@ from fhirpathVisitor import fhirpathVisitor  # noqa: E402
 
 from ..context import EvaluationContext  # noqa: E402
 from ..functions import FunctionRegistry  # noqa: E402
-from ..types import Quantity  # noqa: E402
+from ..types import FHIRDate, FHIRDateTime, FHIRTime, Quantity  # noqa: E402
 
 
 class FHIRPathEvaluatorVisitor(fhirpathVisitor):
@@ -148,10 +148,15 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
         if isinstance(left_val, Quantity) and isinstance(right_val, Quantity):
             if left_val.unit == right_val.unit:
                 if op == "+":
-                    return [Quantity(left_val.value + right_val.value, left_val.unit)]
+                    return [Quantity(value=left_val.value + right_val.value, unit=left_val.unit)]
                 elif op == "-":
-                    return [Quantity(left_val.value - right_val.value, left_val.unit)]
+                    return [Quantity(value=left_val.value - right_val.value, unit=left_val.unit)]
             return []
+
+        # Handle date/datetime arithmetic with Quantity
+        if isinstance(left_val, (FHIRDate, FHIRDateTime)) and isinstance(right_val, Quantity):
+            result = self._date_add(left_val, right_val, op)
+            return [result] if result else []
 
         if not isinstance(left_val, (int, float, Decimal)) or not isinstance(right_val, (int, float, Decimal)):
             return []
@@ -162,6 +167,155 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
             return [left_val - right_val]
 
         return []
+
+    def _date_add(
+        self, date_val: FHIRDate | FHIRDateTime, quantity: Quantity, op: str
+    ) -> FHIRDate | FHIRDateTime | None:
+        """Add or subtract a duration from a date/datetime."""
+        unit = quantity.unit.lower().rstrip("s")  # Normalize: years -> year
+        amount = int(quantity.value)
+        if op == "-":
+            amount = -amount
+
+        # Map common duration units
+        unit_map = {
+            "year": "year",
+            "month": "month",
+            "day": "day",
+            "week": "week",
+            "hour": "hour",
+            "minute": "minute",
+            "second": "second",
+            "millisecond": "millisecond",
+            "a": "year",
+            "mo": "month",
+            "d": "day",
+            "wk": "week",
+            "h": "hour",
+            "min": "minute",
+            "s": "second",
+            "ms": "millisecond",
+        }
+
+        normalized_unit = unit_map.get(unit)
+        if not normalized_unit:
+            return None
+
+        if isinstance(date_val, FHIRDate):
+            return self._add_to_date(date_val, amount, normalized_unit)
+        else:
+            return self._add_to_datetime(date_val, amount, normalized_unit)
+
+    def _add_to_date(self, date_val: FHIRDate, amount: int, unit: str) -> FHIRDate | None:
+        """Add a duration to a FHIRDate."""
+        year = date_val.year
+        month = date_val.month
+        day = date_val.day
+
+        if unit == "year":
+            year += amount
+        elif unit == "month":
+            if month is not None:
+                month += amount
+                while month > 12:
+                    month -= 12
+                    year += 1
+                while month < 1:
+                    month += 12
+                    year -= 1
+            else:
+                return None
+        elif unit == "week":
+            if day is not None and month is not None:
+                from datetime import date as py_date
+                from datetime import timedelta
+
+                d = py_date(year, month, day)
+                d += timedelta(weeks=amount)
+                return FHIRDate(year=d.year, month=d.month, day=d.day)
+            return None
+        elif unit == "day":
+            if day is not None and month is not None:
+                from datetime import date as py_date
+                from datetime import timedelta
+
+                d = py_date(year, month, day)
+                d += timedelta(days=amount)
+                return FHIRDate(year=d.year, month=d.month, day=d.day)
+            return None
+        else:
+            return None  # Time units not applicable to Date
+
+        return FHIRDate(year=year, month=month, day=day)
+
+    def _add_to_datetime(self, dt_val: FHIRDateTime, amount: int, unit: str) -> FHIRDateTime | None:
+        """Add a duration to a FHIRDateTime."""
+        from datetime import timedelta
+
+        year = dt_val.year
+        month = dt_val.month
+        day = dt_val.day
+        hour = dt_val.hour
+        minute = dt_val.minute
+        second = dt_val.second
+        millisecond = dt_val.millisecond
+
+        if unit == "year":
+            year += amount
+        elif unit == "month":
+            if month is not None:
+                month += amount
+                while month > 12:
+                    month -= 12
+                    year += 1
+                while month < 1:
+                    month += 12
+                    year -= 1
+            else:
+                return None
+        elif unit in ("week", "day", "hour", "minute", "second", "millisecond"):
+            if month is None or day is None:
+                return None
+            py_dt = dt_val.to_datetime()
+            if py_dt is None:
+                return None
+
+            if unit == "week":
+                py_dt += timedelta(weeks=amount)
+            elif unit == "day":
+                py_dt += timedelta(days=amount)
+            elif unit == "hour":
+                py_dt += timedelta(hours=amount)
+            elif unit == "minute":
+                py_dt += timedelta(minutes=amount)
+            elif unit == "second":
+                py_dt += timedelta(seconds=amount)
+            elif unit == "millisecond":
+                py_dt += timedelta(milliseconds=amount)
+
+            return FHIRDateTime(
+                year=py_dt.year,
+                month=py_dt.month,
+                day=py_dt.day,
+                hour=py_dt.hour if dt_val.hour is not None else None,
+                minute=py_dt.minute if dt_val.minute is not None else None,
+                second=py_dt.second if dt_val.second is not None else None,
+                millisecond=py_dt.microsecond // 1000 if dt_val.millisecond is not None else None,
+                tz_offset=dt_val.tz_offset,
+            )
+        else:
+            return None
+
+        return FHIRDateTime(
+            year=year,
+            month=month,
+            day=day,
+            hour=hour,
+            minute=minute,
+            second=second,
+            millisecond=millisecond,
+            tz_offset=dt_val.tz_offset,
+        )
 
     def visitUnionExpression(self, ctx: fhirpathParser.UnionExpressionContext) -> list[Any]:
         """Visit union expression (expr | expr)."""
@@ -342,17 +496,20 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
     def visitDateLiteral(self, ctx: fhirpathParser.DateLiteralContext) -> list[Any]:
         """Visit date literal (@YYYY-MM-DD)."""
         text = ctx.getText()[1:]  # Remove @
-        return [text]  # Return as string for now
+        parsed = FHIRDate.parse(text)
+        return [parsed] if parsed else [text]
 
     def visitDateTimeLiteral(self, ctx: fhirpathParser.DateTimeLiteralContext) -> list[Any]:
         """Visit datetime literal (@YYYY-MM-DDThh:mm:ss)."""
         text = ctx.getText()[1:]  # Remove @
-        return [text]  # Return as string for now
+        parsed = FHIRDateTime.parse(text)
+        return [parsed] if parsed else [text]
 
     def visitTimeLiteral(self, ctx: fhirpathParser.TimeLiteralContext) -> list[Any]:
         """Visit time literal (@Thh:mm:ss)."""
         text = ctx.getText()[1:]  # Remove @
-        return [text]  # Return as string for now
+        parsed = FHIRTime.parse(text)
+        return [parsed] if parsed else [text]
 
     def visitQuantityLiteral(self, ctx: fhirpathParser.QuantityLiteralContext) -> list[Any]:
         """Visit quantity literal."""
@@ -459,6 +616,9 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
                         result.append(value)
         return result
 
+    # Functions that need full collection arguments (not just first element)
+    _COLLECTION_ARG_FUNCTIONS = frozenset(["union", "intersect", "exclude", "combine", "subsetOf", "supersetOf"])
+
     def _evaluate_function(
         self, input_collection: list[Any], function_ctx: fhirpathParser.FunctionContext
     ) -> list[Any]:
@@ -476,6 +636,9 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
         if func_name in ("where", "select", "repeat", "all", "exists"):
             return self._evaluate_special_function(func_name, input_collection, args)
 
+        # Check if function needs full collection arguments
+        needs_collection = func_name in self._COLLECTION_ARG_FUNCTIONS
+
         # For regular functions, evaluate arguments first
         evaluated_args = []
         for arg in args:
@@ -485,11 +648,16 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
                 result = []
             elif not isinstance(result, list):
                 result = [result]
-            # For most functions, we pass single values not lists
-            if result:
-                evaluated_args.append(result[0])
+
+            if needs_collection:
+                # Pass the full collection
+                evaluated_args.append(result)
             else:
-                evaluated_args.append(None)
+                # For most functions, we pass single values not lists
+                if result:
+                    evaluated_args.append(result[0])
+                else:
+                    evaluated_args.append(None)
 
         # Call the registered function
         return FunctionRegistry.call(func_name, self.ctx, input_collection, *evaluated_args)

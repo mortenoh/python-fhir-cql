@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from fhir_cql.engine.fhirpath import FHIRPathEvaluator
+from fhir_cql.engine.types import FHIRDate, FHIRDateTime, FHIRTime
 
 # Load example FHIR resources
 EXAMPLES_DIR = Path(__file__).parent.parent / "examples" / "fhir"
@@ -124,7 +125,23 @@ class TestLiterals:
 
     def test_date_literal(self, evaluator):
         result = evaluator.evaluate("@2024-01-15", None)
-        assert result == ["2024-01-15"]
+        assert result == [FHIRDate(year=2024, month=1, day=15)]
+
+    def test_datetime_literal(self, evaluator):
+        result = evaluator.evaluate("@2024-01-15T10:30:00", None)
+        assert result == [FHIRDateTime(year=2024, month=1, day=15, hour=10, minute=30, second=0)]
+
+    def test_time_literal(self, evaluator):
+        result = evaluator.evaluate("@T14:30:00", None)
+        assert result == [FHIRTime(hour=14, minute=30, second=0)]
+
+    def test_partial_date_literal(self, evaluator):
+        result = evaluator.evaluate("@2024", None)
+        assert result == [FHIRDate(year=2024)]
+
+    def test_partial_date_year_month(self, evaluator):
+        result = evaluator.evaluate("@2024-06", None)
+        assert result == [FHIRDate(year=2024, month=6)]
 
 
 # ==============================================================================
@@ -708,3 +725,377 @@ class TestCheckMethod:
     def test_check_false(self, evaluator, patient):
         result = evaluator.check("Patient.photo.exists()", patient)
         assert result is False
+
+
+# ==============================================================================
+# Date/Time Function Tests
+# ==============================================================================
+
+
+class TestDateTimeFunctions:
+    """Test date/time functions: today, now, timeOfDay."""
+
+    def test_today(self, evaluator):
+        """today() returns the current date."""
+        from datetime import datetime, timezone
+
+        from fhir_cql.engine.context import EvaluationContext
+
+        fixed_time = datetime(2024, 6, 15, 10, 30, 0, tzinfo=timezone.utc)
+        ctx = EvaluationContext(now=fixed_time)
+        result = evaluator.evaluate("today()", None, ctx)
+        assert result == [FHIRDate(year=2024, month=6, day=15)]
+
+    def test_now(self, evaluator):
+        """now() returns the current datetime with timezone."""
+        from datetime import datetime, timezone
+
+        from fhir_cql.engine.context import EvaluationContext
+
+        fixed_time = datetime(2024, 6, 15, 10, 30, 45, 123000, tzinfo=timezone.utc)
+        ctx = EvaluationContext(now=fixed_time)
+        result = evaluator.evaluate("now()", None, ctx)
+        assert result == [
+            FHIRDateTime(year=2024, month=6, day=15, hour=10, minute=30, second=45, millisecond=123, tz_offset="Z")
+        ]
+
+    def test_time_of_day(self, evaluator):
+        """timeOfDay() returns the current time."""
+        from datetime import datetime, timezone
+
+        from fhir_cql.engine.context import EvaluationContext
+
+        fixed_time = datetime(2024, 6, 15, 14, 45, 30, 500000, tzinfo=timezone.utc)
+        ctx = EvaluationContext(now=fixed_time)
+        result = evaluator.evaluate("timeOfDay()", None, ctx)
+        assert result == [FHIRTime(hour=14, minute=45, second=30, millisecond=500)]
+
+
+# ==============================================================================
+# Date Arithmetic Tests
+# ==============================================================================
+
+
+class TestDateArithmetic:
+    """Test date arithmetic operations."""
+
+    def test_date_add_years(self, evaluator):
+        result = evaluator.evaluate("@2024-06-15 + 2 years", None)
+        assert result == [FHIRDate(year=2026, month=6, day=15)]
+
+    def test_date_subtract_years(self, evaluator):
+        result = evaluator.evaluate("@2024-06-15 - 1 year", None)
+        assert result == [FHIRDate(year=2023, month=6, day=15)]
+
+    def test_date_add_months(self, evaluator):
+        result = evaluator.evaluate("@2024-06-15 + 3 months", None)
+        assert result == [FHIRDate(year=2024, month=9, day=15)]
+
+    def test_date_add_months_overflow(self, evaluator):
+        result = evaluator.evaluate("@2024-11-15 + 3 months", None)
+        assert result == [FHIRDate(year=2025, month=2, day=15)]
+
+    def test_date_subtract_months(self, evaluator):
+        result = evaluator.evaluate("@2024-06-15 - 2 months", None)
+        assert result == [FHIRDate(year=2024, month=4, day=15)]
+
+    def test_date_add_days(self, evaluator):
+        result = evaluator.evaluate("@2024-06-15 + 10 days", None)
+        assert result == [FHIRDate(year=2024, month=6, day=25)]
+
+    def test_date_add_days_overflow(self, evaluator):
+        result = evaluator.evaluate("@2024-06-28 + 5 days", None)
+        assert result == [FHIRDate(year=2024, month=7, day=3)]
+
+    def test_date_add_weeks(self, evaluator):
+        result = evaluator.evaluate("@2024-06-15 + 2 weeks", None)
+        assert result == [FHIRDate(year=2024, month=6, day=29)]
+
+    def test_datetime_add_hours(self, evaluator):
+        result = evaluator.evaluate("@2024-06-15T10:00:00 + 5 hours", None)
+        assert result == [FHIRDateTime(year=2024, month=6, day=15, hour=15, minute=0, second=0)]
+
+    def test_datetime_add_minutes(self, evaluator):
+        result = evaluator.evaluate("@2024-06-15T10:30:00 + 45 minutes", None)
+        assert result == [FHIRDateTime(year=2024, month=6, day=15, hour=11, minute=15, second=0)]
+
+    def test_datetime_add_hours_overflow(self, evaluator):
+        result = evaluator.evaluate("@2024-06-15T22:00:00 + 5 hours", None)
+        assert result == [FHIRDateTime(year=2024, month=6, day=16, hour=3, minute=0, second=0)]
+
+
+# ==============================================================================
+# Tree Navigation Tests
+# ==============================================================================
+
+
+class TestTreeNavigation:
+    """Test tree navigation functions: children, descendants."""
+
+    def test_children(self, evaluator, patient):
+        """children() returns immediate child elements."""
+        result = evaluator.evaluate("Patient.name.first().children()", patient)
+        # Should return values from name object (use, family, given, etc.)
+        assert "official" in result
+        assert "Smith" in result
+
+    def test_children_on_resource(self, evaluator, patient):
+        """children() on a resource returns all top-level properties."""
+        result = evaluator.evaluate("Patient.children()", patient)
+        assert "Patient" in result  # resourceType value
+        assert "example-patient-1" in result  # id value
+
+    def test_descendants(self, evaluator, patient):
+        """descendants() returns all nested elements recursively."""
+        result = evaluator.evaluate("Patient.name.first().descendants()", patient)
+        # Should include values from nested structures
+        assert "official" in result
+        assert "Smith" in result
+        assert "John" in result
+
+    def test_descendants_on_observation(self, evaluator, observation_bp):
+        """descendants() includes deeply nested values."""
+        result = evaluator.evaluate("Observation.code.descendants()", observation_bp)
+        # Should include all nested coding values
+        assert "85354-9" in result
+        assert "http://loinc.org" in result
+
+
+# ==============================================================================
+# FHIR-Specific Function Tests
+# ==============================================================================
+
+
+class TestFHIRFunctions:
+    """Test FHIR-specific functions: resolve, extension."""
+
+    def test_extension(self, evaluator):
+        """extension(url) filters extensions by URL."""
+        # Create a resource with an extension
+        resource = {
+            "resourceType": "Patient",
+            "extension": [
+                {"url": "http://example.org/ext1", "valueString": "test1"},
+                {"url": "http://example.org/ext2", "valueString": "test2"},
+            ],
+        }
+        result = evaluator.evaluate("Patient.extension('http://example.org/ext1')", resource)
+        assert len(result) == 1
+        assert result[0]["url"] == "http://example.org/ext1"
+
+    def test_extension_not_found(self, evaluator):
+        """extension(url) returns empty if no matching extension."""
+        resource = {
+            "resourceType": "Patient",
+            "extension": [{"url": "http://example.org/ext1", "valueString": "test"}],
+        }
+        result = evaluator.evaluate("Patient.extension('http://example.org/nonexistent')", resource)
+        assert result == []
+
+    def test_extension_no_extensions(self, evaluator, patient):
+        """extension(url) returns empty if resource has no extensions."""
+        result = evaluator.evaluate("Patient.extension('http://example.org/test')", patient)
+        assert result == []
+
+    def test_resolve_with_resolver(self, evaluator, patient, bundle):
+        """resolve() uses the reference_resolver callback."""
+        from fhir_cql.engine.context import EvaluationContext
+
+        # Create a resolver that looks up resources in the bundle
+        def resolve_reference(ref: str) -> dict | None:
+            for entry in bundle.get("entry", []):
+                resource = entry.get("resource", {})
+                resource_type = resource.get("resourceType", "")
+                resource_id = resource.get("id", "")
+                if ref == f"{resource_type}/{resource_id}":
+                    return resource
+            return None
+
+        ctx = EvaluationContext(resource=patient, reference_resolver=resolve_reference)
+        # Just verify it doesn't error - result depends on patient.json content
+        evaluator.evaluate("Patient.managingOrganization.resolve()", patient, ctx)
+
+    def test_resolve_without_resolver(self, evaluator, patient):
+        """resolve() returns empty when no resolver configured."""
+        result = evaluator.evaluate("Patient.managingOrganization.resolve()", patient)
+        assert result == []
+
+
+# ==============================================================================
+# Quantity Tests
+# ==============================================================================
+
+
+class TestQuantity:
+    """Test quantity handling."""
+
+    def test_quantity_literal(self, evaluator):
+        from decimal import Decimal
+
+        result = evaluator.evaluate("10 'kg'", None)
+        assert len(result) == 1
+        assert result[0].value == Decimal("10")
+        assert result[0].unit == "kg"
+
+    def test_quantity_addition(self, evaluator):
+        from decimal import Decimal
+
+        from fhir_cql.engine.types import Quantity
+
+        result = evaluator.evaluate("10 'kg' + 5 'kg'", None)
+        assert result == [Quantity(value=Decimal("15"), unit="kg")]
+
+    def test_quantity_subtraction(self, evaluator):
+        from decimal import Decimal
+
+        from fhir_cql.engine.types import Quantity
+
+        result = evaluator.evaluate("10 'kg' - 3 'kg'", None)
+        assert result == [Quantity(value=Decimal("7"), unit="kg")]
+
+    def test_quantity_different_units(self, evaluator):
+        """Quantity arithmetic with different units returns empty."""
+        result = evaluator.evaluate("10 'kg' + 5 'lb'", None)
+        assert result == []
+
+
+# ==============================================================================
+# Additional Comparison Tests
+# ==============================================================================
+
+
+class TestAdditionalComparisons:
+    """Additional comparison tests."""
+
+    def test_date_comparison_equal(self, evaluator):
+        result = evaluator.evaluate("@2024-06-15 = @2024-06-15", None)
+        assert result == [True]
+
+    def test_date_comparison_not_equal(self, evaluator):
+        result = evaluator.evaluate("@2024-06-15 = @2024-06-16", None)
+        assert result == [False]
+
+    def test_collection_empty_check(self, evaluator):
+        """empty() returns true if the collection has no elements."""
+        result = evaluator.evaluate("{}.empty()", None)
+        assert result == [True]
+
+    def test_collection_not_empty(self, evaluator):
+        """A collection with one element (even empty string) is not empty."""
+        result = evaluator.evaluate("'hello'.empty()", None)
+        assert result == [False]
+
+    def test_empty_string_is_not_empty_collection(self, evaluator):
+        """An empty string is still an element in the collection."""
+        result = evaluator.evaluate("''.empty()", None)
+        assert result == [False]  # Collection has 1 element (empty string)
+
+
+# ==============================================================================
+# Extended String Function Tests
+# ==============================================================================
+
+
+class TestExtendedStringFunctions:
+    """Extended tests for string functions."""
+
+    def test_split(self, evaluator):
+        result = evaluator.evaluate("'a,b,c'.split(',')", None)
+        assert result == ["a", "b", "c"]
+
+    def test_join(self, evaluator, patient):
+        result = evaluator.evaluate("Patient.name.given.join(' ')", patient)
+        assert len(result) == 1
+        # Given names joined with space
+
+    def test_matches(self, evaluator):
+        result = evaluator.evaluate("'test123'.matches('\\\\d+')", None)
+        assert result == [True]
+
+    def test_replace(self, evaluator):
+        result = evaluator.evaluate("'hello world'.replace('world', 'there')", None)
+        assert result == ["hello there"]
+
+    def test_to_chars(self, evaluator):
+        result = evaluator.evaluate("'abc'.toChars()", None)
+        assert result == ["a", "b", "c"]
+
+
+# ==============================================================================
+# Extended Math Function Tests
+# ==============================================================================
+
+
+class TestExtendedMathFunctions:
+    """Extended tests for math functions."""
+
+    def test_sqrt(self, evaluator):
+        result = evaluator.evaluate("(16).sqrt()", None)
+        assert result == [4.0]
+
+    def test_power(self, evaluator):
+        result = evaluator.evaluate("(2).power(3)", None)
+        assert result == [8.0]
+
+    def test_ln(self, evaluator):
+        result = evaluator.evaluate("(1).ln()", None)
+        assert result == [0.0]
+
+    def test_exp(self, evaluator):
+        result = evaluator.evaluate("(0).exp()", None)
+        assert result == [1.0]
+
+    def test_log(self, evaluator):
+        result = evaluator.evaluate("(100).log(10)", None)
+        assert result == [2.0]
+
+
+# ==============================================================================
+# Extended Collection Function Tests
+# ==============================================================================
+
+
+class TestExtendedCollectionFunctions:
+    """Extended tests for collection functions."""
+
+    def test_distinct(self, evaluator):
+        result = evaluator.evaluate("(1 | 2 | 2 | 3 | 3).distinct()", None)
+        assert sorted(result) == [1, 2, 3]
+
+    def test_is_distinct_true(self, evaluator):
+        result = evaluator.evaluate("(1 | 2 | 3).isDistinct()", None)
+        assert result == [True]
+
+    def test_is_distinct_with_union(self, evaluator):
+        """Union operator already removes duplicates, so result is distinct."""
+        result = evaluator.evaluate("(1 | 2 | 2).isDistinct()", None)
+        assert result == [True]  # Union removes duplicates
+
+    def test_is_distinct_false(self, evaluator, patient):
+        """Test isDistinct with actual duplicates from data."""
+        # Given names may have duplicates (e.g., from different name entries)
+        result = evaluator.evaluate("(1).combine(1).isDistinct()", None)
+        assert result == [False]
+
+    def test_flatten(self, evaluator, patient):
+        """flatten() flattens nested collections."""
+        result = evaluator.evaluate("Patient.name.given.flatten()", patient)
+        # Should return flat list of all given names
+        assert "John" in result
+        assert "William" in result
+
+    def test_subset_of(self, evaluator):
+        result = evaluator.evaluate("(1 | 2).subsetOf(1 | 2 | 3)", None)
+        assert result == [True]
+
+    def test_superset_of(self, evaluator):
+        result = evaluator.evaluate("(1 | 2 | 3).supersetOf(1 | 2)", None)
+        assert result == [True]
+
+    def test_intersect(self, evaluator):
+        result = evaluator.evaluate("(1 | 2 | 3).intersect(2 | 3 | 4)", None)
+        assert sorted(result) == [2, 3]
+
+    def test_exclude(self, evaluator):
+        result = evaluator.evaluate("(1 | 2 | 3).exclude(2)", None)
+        assert sorted(result) == [1, 3]

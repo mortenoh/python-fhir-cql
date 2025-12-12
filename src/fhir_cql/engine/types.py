@@ -1,9 +1,12 @@
 """Type system shared between FHIRPath and CQL."""
 
-from dataclasses import dataclass
+import re
+from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
 from typing import Any
+
+from pydantic import BaseModel, ConfigDict
 
 
 class FHIRPathType(Enum):
@@ -26,9 +29,10 @@ class FHIRPathType(Enum):
     NULL = "Null"
 
 
-@dataclass
-class Quantity:
+class Quantity(BaseModel):
     """FHIRPath Quantity type with value and unit."""
+
+    model_config = ConfigDict(frozen=True)
 
     value: Decimal
     unit: str
@@ -38,8 +42,239 @@ class Quantity:
             return self.value == other.value and self.unit == other.unit
         return False
 
+    def __hash__(self) -> int:
+        return hash((self.value, self.unit))
+
     def __str__(self) -> str:
         return f"{self.value} '{self.unit}'"
+
+
+class FHIRDate(BaseModel):
+    """FHIRPath Date type with partial precision support."""
+
+    model_config = ConfigDict(frozen=True)
+
+    year: int
+    month: int | None = None
+    day: int | None = None
+
+    @classmethod
+    def parse(cls, value: str) -> "FHIRDate | None":
+        """Parse a date string (YYYY, YYYY-MM, or YYYY-MM-DD)."""
+        match = re.match(r"^(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?$", value)
+        if match:
+            year = int(match.group(1))
+            month = int(match.group(2)) if match.group(2) else None
+            day = int(match.group(3)) if match.group(3) else None
+            return cls(year=year, month=month, day=day)
+        return None
+
+    def to_date(self) -> date | None:
+        """Convert to Python date (requires full precision)."""
+        if self.month is not None and self.day is not None:
+            return date(self.year, self.month, self.day)
+        return None
+
+    def __str__(self) -> str:
+        if self.month is None:
+            return f"{self.year:04d}"
+        if self.day is None:
+            return f"{self.year:04d}-{self.month:02d}"
+        return f"{self.year:04d}-{self.month:02d}-{self.day:02d}"
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, FHIRDate):
+            return self.year == other.year and self.month == other.month and self.day == other.day
+        return False
+
+    def __hash__(self) -> int:
+        return hash((self.year, self.month, self.day))
+
+    def __lt__(self, other: "FHIRDate") -> bool:
+        if self.year != other.year:
+            return self.year < other.year
+        if self.month is None or other.month is None:
+            return False  # Incomparable precision
+        if self.month != other.month:
+            return self.month < other.month
+        if self.day is None or other.day is None:
+            return False
+        return self.day < other.day
+
+
+class FHIRDateTime(BaseModel):
+    """FHIRPath DateTime type with timezone support."""
+
+    model_config = ConfigDict(frozen=True)
+
+    year: int
+    month: int | None = None
+    day: int | None = None
+    hour: int | None = None
+    minute: int | None = None
+    second: int | None = None
+    millisecond: int | None = None
+    tz_offset: str | None = None  # e.g., "Z", "+05:00", "-08:00"
+
+    @classmethod
+    def parse(cls, value: str) -> "FHIRDateTime | None":
+        """Parse a datetime string."""
+        # Remove @ prefix if present (from FHIRPath literals)
+        if value.startswith("@"):
+            value = value[1:]
+
+        # Pattern: YYYY[-MM[-DD[Thh[:mm[:ss[.fff]]][tz]]]]
+        pattern = (
+            r"^(\d{4})(?:-(\d{2})(?:-(\d{2})"
+            r"(?:T(\d{2})(?::(\d{2})(?::(\d{2})(?:\.(\d+))?)?)?(Z|[+-]\d{2}:\d{2})?)?)?)?$"
+        )
+        match = re.match(pattern, value)
+        if match:
+            groups = match.groups()
+            ms = None
+            if groups[6]:
+                # Convert fractional seconds to milliseconds
+                frac = groups[6][:3].ljust(3, "0")
+                ms = int(frac)
+            return cls(
+                year=int(groups[0]),
+                month=int(groups[1]) if groups[1] else None,
+                day=int(groups[2]) if groups[2] else None,
+                hour=int(groups[3]) if groups[3] else None,
+                minute=int(groups[4]) if groups[4] else None,
+                second=int(groups[5]) if groups[5] else None,
+                millisecond=ms,
+                tz_offset=groups[7],
+            )
+        return None
+
+    def to_datetime(self) -> datetime | None:
+        """Convert to Python datetime (requires at least date precision)."""
+        if self.month is None or self.day is None:
+            return None
+        tz = None
+        if self.tz_offset:
+            if self.tz_offset == "Z":
+                tz = timezone.utc
+            else:
+                sign = 1 if self.tz_offset[0] == "+" else -1
+                hours = int(self.tz_offset[1:3])
+                mins = int(self.tz_offset[4:6])
+                tz = timezone(timedelta(hours=sign * hours, minutes=sign * mins))
+
+        return datetime(
+            self.year,
+            self.month,
+            self.day,
+            self.hour or 0,
+            self.minute or 0,
+            self.second or 0,
+            (self.millisecond or 0) * 1000,
+            tz,
+        )
+
+    def __str__(self) -> str:
+        result = f"{self.year:04d}"
+        if self.month is not None:
+            result += f"-{self.month:02d}"
+        if self.day is not None:
+            result += f"-{self.day:02d}"
+        if self.hour is not None:
+            result += f"T{self.hour:02d}"
+            if self.minute is not None:
+                result += f":{self.minute:02d}"
+                if self.second is not None:
+                    result += f":{self.second:02d}"
+                    if self.millisecond is not None:
+                        result += f".{self.millisecond:03d}"
+        if self.tz_offset:
+            result += self.tz_offset
+        return result
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, FHIRDateTime):
+            return (
+                self.year == other.year
+                and self.month == other.month
+                and self.day == other.day
+                and self.hour == other.hour
+                and self.minute == other.minute
+                and self.second == other.second
+                and self.millisecond == other.millisecond
+                and self.tz_offset == other.tz_offset
+            )
+        return False
+
+    def __hash__(self) -> int:
+        return hash(
+            (self.year, self.month, self.day, self.hour, self.minute, self.second, self.millisecond, self.tz_offset)
+        )
+
+
+class FHIRTime(BaseModel):
+    """FHIRPath Time type."""
+
+    model_config = ConfigDict(frozen=True)
+
+    hour: int
+    minute: int | None = None
+    second: int | None = None
+    millisecond: int | None = None
+
+    @classmethod
+    def parse(cls, value: str) -> "FHIRTime | None":
+        """Parse a time string (hh:mm:ss.fff)."""
+        # Remove T prefix if present
+        if value.startswith("T"):
+            value = value[1:]
+
+        pattern = r"^(\d{2})(?::(\d{2})(?::(\d{2})(?:\.(\d+))?)?)?$"
+        match = re.match(pattern, value)
+        if match:
+            groups = match.groups()
+            ms = None
+            if groups[3]:
+                frac = groups[3][:3].ljust(3, "0")
+                ms = int(frac)
+            return cls(
+                hour=int(groups[0]),
+                minute=int(groups[1]) if groups[1] else None,
+                second=int(groups[2]) if groups[2] else None,
+                millisecond=ms,
+            )
+        return None
+
+    def to_time(self) -> time | None:
+        """Convert to Python time."""
+        return time(
+            self.hour,
+            self.minute or 0,
+            self.second or 0,
+            (self.millisecond or 0) * 1000,
+        )
+
+    def __str__(self) -> str:
+        result = f"{self.hour:02d}"
+        if self.minute is not None:
+            result += f":{self.minute:02d}"
+            if self.second is not None:
+                result += f":{self.second:02d}"
+                if self.millisecond is not None:
+                    result += f".{self.millisecond:03d}"
+        return result
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, FHIRTime):
+            return (
+                self.hour == other.hour
+                and self.minute == other.minute
+                and self.second == other.second
+                and self.millisecond == other.millisecond
+            )
+        return False
+
+    def __hash__(self) -> int:
+        return hash((self.hour, self.minute, self.second, self.millisecond))
 
 
 def get_fhirpath_type(value: Any) -> FHIRPathType:
