@@ -32,6 +32,7 @@ Basic Usage:
 """
 
 from .context import CQLContext, DataSource, EncounterContext, PatientContext, UnfilteredContext
+from .datasource import BundleDataSource, FHIRDataSource, InMemoryDataSource, PatientBundleDataSource
 from .evaluator import CQLEvaluator, compile_library, evaluate
 from .library import (
     CodeDefinition,
@@ -77,6 +78,11 @@ __all__ = [
     "UnfilteredContext",
     "EncounterContext",
     "DataSource",
+    # Data Sources
+    "FHIRDataSource",
+    "InMemoryDataSource",
+    "BundleDataSource",
+    "PatientBundleDataSource",
     # Library management
     "CQLLibrary",
     "LibraryManager",

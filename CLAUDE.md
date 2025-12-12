@@ -64,3 +64,22 @@ fhirpath repl
 - Use `uv` for dependency management
 - Generated code excluded from linting
 - Type hints throughout source code
+- **NO EMOJIS**: Never use emojis in code, documentation, or commit messages
+
+## Documentation Requirements
+
+**IMPORTANT**: For every new feature or fix:
+
+1. Update `docs/` - Add/update relevant documentation files:
+   - `docs/index.md` - Main overview and feature list
+   - `docs/cli.md` - CLI command reference
+   - `docs/cql-api.md` - CQL Python API
+   - `docs/fhirpath-api.md` - FHIRPath Python API
+   - `docs/fhirpath-cql-tutorial.md` - Tutorial examples
+
+2. Update `README.md` - Keep the main README in sync with features
+
+3. Add examples in `examples/` when appropriate:
+   - `examples/cql/` - CQL library examples
+   - `examples/fhir/` - FHIR resource examples
+   - `examples/fhirpath/` - FHIRPath expression examples

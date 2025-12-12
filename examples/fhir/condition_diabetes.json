@@ -1,0 +1,107 @@
+{
+  "resourceType": "Condition",
+  "id": "condition-diabetes-001",
+  "meta": {
+    "profile": ["http://hl7.org/fhir/us/core/StructureDefinition/us-core-condition"]
+  },
+  "clinicalStatus": {
+    "coding": [
+      {
+        "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+        "code": "active",
+        "display": "Active"
+      }
+    ],
+    "text": "Active"
+  },
+  "verificationStatus": {
+    "coding": [
+      {
+        "system": "http://terminology.hl7.org/CodeSystem/condition-ver-status",
+        "code": "confirmed",
+        "display": "Confirmed"
+      }
+    ]
+  },
+  "category": [
+    {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/condition-category",
+          "code": "problem-list-item",
+          "display": "Problem List Item"
+        }
+      ]
+    },
+    {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/condition-category",
+          "code": "encounter-diagnosis",
+          "display": "Encounter Diagnosis"
+        }
+      ]
+    }
+  ],
+  "severity": {
+    "coding": [
+      {
+        "system": "http://snomed.info/sct",
+        "code": "6736007",
+        "display": "Moderate"
+      }
+    ]
+  },
+  "code": {
+    "coding": [
+      {
+        "system": "http://snomed.info/sct",
+        "code": "44054006",
+        "display": "Type 2 diabetes mellitus"
+      },
+      {
+        "system": "http://hl7.org/fhir/sid/icd-10-cm",
+        "code": "E11.9",
+        "display": "Type 2 diabetes mellitus without complications"
+      }
+    ],
+    "text": "Type 2 Diabetes Mellitus"
+  },
+  "bodySite": [
+    {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "113331007",
+          "display": "Pancreatic structure"
+        }
+      ]
+    }
+  ],
+  "subject": {
+    "reference": "Patient/patient-diabetic-001",
+    "display": "Maria Johnson"
+  },
+  "encounter": {
+    "reference": "Encounter/encounter-001"
+  },
+  "onsetDateTime": "2018-06-15",
+  "recordedDate": "2018-06-15T10:30:00Z",
+  "recorder": {
+    "reference": "Practitioner/dr-jones",
+    "display": "Dr. Sarah Jones"
+  },
+  "asserter": {
+    "reference": "Practitioner/dr-jones",
+    "display": "Dr. Sarah Jones"
+  },
+  "note": [
+    {
+      "authorReference": {
+        "reference": "Practitioner/dr-jones"
+      },
+      "time": "2018-06-15T10:30:00Z",
+      "text": "Patient diagnosed with Type 2 DM after fasting glucose > 126 mg/dL on two occasions. Started on metformin."
+    }
+  ]
+}

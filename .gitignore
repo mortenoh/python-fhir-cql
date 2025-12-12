@@ -12,3 +12,6 @@ wheels/
 
 # MkDocs
 site/
+
+# Debug files
+debug_*.py

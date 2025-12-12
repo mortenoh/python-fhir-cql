@@ -1,0 +1,78 @@
+{
+  "resourceType": "Observation",
+  "id": "observation-glucose-001",
+  "meta": {
+    "profile": ["http://hl7.org/fhir/us/core/StructureDefinition/us-core-observation-lab"]
+  },
+  "status": "final",
+  "category": [
+    {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code": "laboratory",
+          "display": "Laboratory"
+        }
+      ]
+    }
+  ],
+  "code": {
+    "coding": [
+      {
+        "system": "http://loinc.org",
+        "code": "2339-0",
+        "display": "Glucose [Mass/volume] in Blood"
+      }
+    ],
+    "text": "Blood Glucose"
+  },
+  "subject": {
+    "reference": "Patient/patient-diabetic-001",
+    "display": "Maria Johnson"
+  },
+  "effectiveDateTime": "2024-06-15T07:00:00Z",
+  "issued": "2024-06-15T07:30:00Z",
+  "performer": [
+    {
+      "reference": "Organization/lab-corp"
+    }
+  ],
+  "valueQuantity": {
+    "value": 142,
+    "unit": "mg/dL",
+    "system": "http://unitsofmeasure.org",
+    "code": "mg/dL"
+  },
+  "interpretation": [
+    {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+          "code": "H",
+          "display": "High"
+        }
+      ],
+      "text": "Elevated fasting glucose"
+    }
+  ],
+  "referenceRange": [
+    {
+      "low": {
+        "value": 70,
+        "unit": "mg/dL"
+      },
+      "high": {
+        "value": 99,
+        "unit": "mg/dL"
+      },
+      "type": {
+        "text": "Normal fasting glucose"
+      }
+    }
+  ],
+  "note": [
+    {
+      "text": "Fasting specimen collected at 7:00 AM"
+    }
+  ]
+}

@@ -2464,3 +2464,438 @@ class TestEdgeCases:
     def test_large_duration(self) -> None:
         result = evaluate("days between @2000-01-01 and @2024-12-31")
         assert result > 9000  # About 25 years worth of days
+
+
+# =============================================================================
+# Phase 4: String Function Tests
+# =============================================================================
+
+
+class TestStringConcat:
+    """Test string concatenation functions."""
+
+    def test_concat_two_strings(self) -> None:
+        assert evaluate("Concat('Hello', ' World')") == "Hello World"
+
+    def test_concat_multiple(self) -> None:
+        assert evaluate("Concat('a', 'b', 'c')") == "abc"
+
+    def test_concat_with_null(self) -> None:
+        assert evaluate("Concat('Hello', null)") == "Hello"
+
+    def test_concat_empty(self) -> None:
+        assert evaluate("Concat('', 'test')") == "test"
+
+
+class TestStringCombine:
+    """Test combine function."""
+
+    def test_combine_list(self) -> None:
+        lib = compile_library("""
+            library CombineTest
+            define Items: {'a', 'b', 'c'}
+            define Result: Combine(Items, ', ')
+        """)
+        evaluator = CQLEvaluator()
+        evaluator._current_library = lib
+        result = evaluator.evaluate_definition("Result")
+        assert result == "a, b, c"
+
+    def test_combine_no_separator(self) -> None:
+        lib = compile_library("""
+            library CombineTest
+            define Items: {'x', 'y', 'z'}
+            define Result: Combine(Items)
+        """)
+        evaluator = CQLEvaluator()
+        evaluator._current_library = lib
+        result = evaluator.evaluate_definition("Result")
+        assert result == "xyz"
+
+    def test_combine_with_space(self) -> None:
+        lib = compile_library("""
+            library CombineTest
+            define Words: {'Hello', 'World'}
+            define Result: Combine(Words, ' ')
+        """)
+        evaluator = CQLEvaluator()
+        evaluator._current_library = lib
+        result = evaluator.evaluate_definition("Result")
+        assert result == "Hello World"
+
+
+class TestStringSplit:
+    """Test split function."""
+
+    def test_split_comma(self) -> None:
+        assert evaluate("Split('a,b,c', ',')") == ["a", "b", "c"]
+
+    def test_split_space(self) -> None:
+        assert evaluate("Split('Hello World', ' ')") == ["Hello", "World"]
+
+
+class TestStringCase:
+    """Test case conversion functions."""
+
+    def test_upper(self) -> None:
+        assert evaluate("Upper('hello')") == "HELLO"
+
+    def test_lower(self) -> None:
+        assert evaluate("Lower('HELLO')") == "hello"
+
+    def test_upper_mixed(self) -> None:
+        assert evaluate("Upper('HeLLo WoRLd')") == "HELLO WORLD"
+
+
+class TestStringSubstring:
+    """Test substring function."""
+
+    def test_substring_from_start(self) -> None:
+        assert evaluate("Substring('Hello World', 0, 5)") == "Hello"
+
+    def test_substring_from_middle(self) -> None:
+        assert evaluate("Substring('Hello World', 6, 5)") == "World"
+
+    def test_substring_to_end(self) -> None:
+        assert evaluate("Substring('Hello World', 6)") == "World"
+
+
+class TestStringStartsEndsWith:
+    """Test StartsWith and EndsWith functions."""
+
+    def test_startswith_true(self) -> None:
+        assert evaluate("StartsWith('Hello World', 'Hello')") is True
+
+    def test_startswith_false(self) -> None:
+        assert evaluate("StartsWith('Hello World', 'World')") is False
+
+    def test_endswith_true(self) -> None:
+        assert evaluate("EndsWith('Hello World', 'World')") is True
+
+    def test_endswith_false(self) -> None:
+        assert evaluate("EndsWith('Hello World', 'Hello')") is False
+
+
+class TestStringMatches:
+    """Test regex matching functions."""
+
+    def test_matches_simple(self) -> None:
+        assert evaluate("Matches('test123', '[0-9]+')") is True
+
+    def test_matches_no_match(self) -> None:
+        assert evaluate("Matches('test', '[0-9]+')") is False
+
+    def test_matches_email_pattern(self) -> None:
+        assert evaluate("Matches('user@example.com', '@.*\\\\.')") is True
+
+
+class TestStringReplace:
+    """Test replace functions."""
+
+    def test_replace_simple(self) -> None:
+        assert evaluate("Replace('Hello World', 'World', 'CQL')") == "Hello CQL"
+
+    def test_replace_multiple(self) -> None:
+        assert evaluate("Replace('aaa', 'a', 'b')") == "bbb"
+
+    def test_replacematches_regex(self) -> None:
+        assert evaluate("ReplaceMatches('test123', '[0-9]+', 'XXX')") == "testXXX"
+
+
+class TestStringPosition:
+    """Test position/index functions."""
+
+    def test_indexof_found(self) -> None:
+        assert evaluate("IndexOf('Hello World', 'World')") == 6
+
+    def test_indexof_not_found(self) -> None:
+        assert evaluate("IndexOf('Hello World', 'xyz')") == -1
+
+    def test_positionof_found(self) -> None:
+        assert evaluate("PositionOf('o', 'Hello')") == 4
+
+
+class TestStringTrim:
+    """Test trim function."""
+
+    def test_trim_spaces(self) -> None:
+        assert evaluate("Trim('  hello  ')") == "hello"
+
+    def test_trim_no_change(self) -> None:
+        assert evaluate("Trim('hello')") == "hello"
+
+
+class TestStringLength:
+    """Test length function."""
+
+    def test_length_string(self) -> None:
+        assert evaluate("Length('Hello')") == 5
+
+    def test_length_empty(self) -> None:
+        assert evaluate("Length('')") == 0
+
+
+# =============================================================================
+# Phase 4: Type Conversion Tests
+# =============================================================================
+
+
+class TestTypeConversion:
+    """Test type conversion functions."""
+
+    def test_tostring_integer(self) -> None:
+        assert evaluate("ToString(42)") == "42"
+
+    def test_tostring_boolean(self) -> None:
+        assert evaluate("ToString(true)") == "True"
+
+    def test_tointeger_string(self) -> None:
+        assert evaluate("ToInteger('42')") == 42
+
+    def test_tointeger_decimal(self) -> None:
+        assert evaluate("ToInteger(3.14)") == 3
+
+    def test_todecimal_string(self) -> None:
+        from decimal import Decimal
+
+        result = evaluate("ToDecimal('3.14')")
+        assert result == Decimal("3.14")
+
+    def test_toboolean_true_string(self) -> None:
+        assert evaluate("ToBoolean('true')") is True
+
+    def test_toboolean_false_string(self) -> None:
+        assert evaluate("ToBoolean('false')") is False
+
+    def test_toboolean_yes(self) -> None:
+        assert evaluate("ToBoolean('yes')") is True
+
+
+class TestDateConversion:
+    """Test date conversion functions."""
+
+    def test_todate_string(self) -> None:
+        from fhir_cql.engine.types import FHIRDate
+
+        result = evaluate("ToDate('2024-03-15')")
+        assert isinstance(result, FHIRDate)
+        assert result.year == 2024
+        assert result.month == 3
+        assert result.day == 15
+
+    def test_todatetime_string(self) -> None:
+        from fhir_cql.engine.types import FHIRDateTime
+
+        result = evaluate("ToDateTime('2024-03-15T10:30:00')")
+        assert isinstance(result, FHIRDateTime)
+        assert result.hour == 10
+
+
+# =============================================================================
+# Phase 4: Utility Function Tests
+# =============================================================================
+
+
+class TestCoalesce:
+    """Test coalesce function."""
+
+    def test_coalesce_first_not_null(self) -> None:
+        assert evaluate("Coalesce('a', 'b', 'c')") == "a"
+
+    def test_coalesce_first_null(self) -> None:
+        assert evaluate("Coalesce(null, 'b', 'c')") == "b"
+
+    def test_coalesce_all_null(self) -> None:
+        assert evaluate("Coalesce(null, null)") is None
+
+    def test_coalesce_number(self) -> None:
+        assert evaluate("Coalesce(null, 42)") == 42
+
+
+class TestNullChecks:
+    """Test null check functions."""
+
+    def test_isnull_true(self) -> None:
+        assert evaluate("IsNull(null)") is True
+
+    def test_isnull_false(self) -> None:
+        assert evaluate("IsNull('test')") is False
+
+    def test_isnotnull_true(self) -> None:
+        assert evaluate("IsNotNull('test')") is True
+
+    def test_isnotnull_false(self) -> None:
+        assert evaluate("IsNotNull(null)") is False
+
+
+class TestBooleanChecks:
+    """Test boolean check functions."""
+
+    def test_istrue_true(self) -> None:
+        assert evaluate("IsTrue(true)") is True
+
+    def test_istrue_false(self) -> None:
+        assert evaluate("IsTrue(false)") is False
+
+    def test_isfalse_true(self) -> None:
+        assert evaluate("IsFalse(false)") is True
+
+    def test_isfalse_false(self) -> None:
+        assert evaluate("IsFalse(true)") is False
+
+
+# =============================================================================
+# Phase 4: Math Function Tests
+# =============================================================================
+
+
+class TestMathFunctions:
+    """Test mathematical functions."""
+
+    def test_abs_positive(self) -> None:
+        assert evaluate("Abs(5)") == 5
+
+    def test_abs_negative(self) -> None:
+        assert evaluate("Abs(-5)") == 5
+
+    def test_ceiling(self) -> None:
+        assert evaluate("Ceiling(3.2)") == 4
+
+    def test_floor(self) -> None:
+        assert evaluate("Floor(3.8)") == 3
+
+    def test_truncate(self) -> None:
+        assert evaluate("Truncate(3.9)") == 3
+
+    def test_round_default(self) -> None:
+        assert evaluate("Round(3.5)") == 4
+
+    def test_round_precision(self) -> None:
+        assert evaluate("Round(3.14159, 2)") == 3.14
+
+    def test_sqrt(self) -> None:
+        assert evaluate("Sqrt(16)") == 4.0
+
+    def test_power(self) -> None:
+        assert evaluate("Power(2, 3)") == 8.0
+
+    def test_ln(self) -> None:
+        result = evaluate("Ln(2.718281828)")
+        assert abs(result - 1.0) < 0.001
+
+    def test_exp(self) -> None:
+        import math
+
+        result = evaluate("Exp(1)")
+        assert abs(result - math.e) < 0.001
+
+
+# =============================================================================
+# Phase 4: User-Defined Function Tests
+# =============================================================================
+
+
+class TestUserDefinedFunctions:
+    """Test user-defined function support."""
+
+    def test_simple_function(self) -> None:
+        lib = compile_library("""
+            library FunctionTest
+            define function Double(x Integer): x * 2
+            define Result: Double(5)
+        """)
+        evaluator = CQLEvaluator()
+        evaluator._current_library = lib
+        result = evaluator.evaluate_definition("Result")
+        assert result == 10
+
+    def test_function_two_params(self) -> None:
+        lib = compile_library("""
+            library FunctionTest
+            define function Add(a Integer, b Integer): a + b
+            define Result: Add(3, 4)
+        """)
+        evaluator = CQLEvaluator()
+        evaluator._current_library = lib
+        result = evaluator.evaluate_definition("Result")
+        assert result == 7
+
+    def test_function_string_param(self) -> None:
+        lib = compile_library("""
+            library FunctionTest
+            define function Greet(name String): Concat('Hello, ', name)
+            define Result: Greet('World')
+        """)
+        evaluator = CQLEvaluator()
+        evaluator._current_library = lib
+        result = evaluator.evaluate_definition("Result")
+        assert result == "Hello, World"
+
+    def test_function_with_expression(self) -> None:
+        lib = compile_library("""
+            library FunctionTest
+            define function IsAdult(age Integer): age >= 18
+            define Result: IsAdult(21)
+        """)
+        evaluator = CQLEvaluator()
+        evaluator._current_library = lib
+        result = evaluator.evaluate_definition("Result")
+        assert result is True
+
+    def test_recursive_function(self) -> None:
+        lib = compile_library("""
+            library FunctionTest
+            define function Factorial(n Integer):
+                if n <= 1 then 1 else n * Factorial(n - 1)
+            define Result: Factorial(5)
+        """)
+        evaluator = CQLEvaluator()
+        evaluator._current_library = lib
+        result = evaluator.evaluate_definition("Result")
+        assert result == 120
+
+
+# =============================================================================
+# Phase 4: Library Integration Tests
+# =============================================================================
+
+
+class TestLibraryWithPhase4Functions:
+    """Test Phase 4 functions in library context."""
+
+    def test_library_with_string_functions(self) -> None:
+        lib = compile_library("""
+            library StringTest
+            define Name: 'john doe'
+            define Formatted: Concat(Upper(Substring(Name, 0, 1)), Substring(Name, 1))
+        """)
+        evaluator = CQLEvaluator()
+        evaluator._current_library = lib
+        result = evaluator.evaluate_definition("Formatted")
+        assert result == "John doe"
+
+    def test_library_with_math_functions(self) -> None:
+        lib = compile_library("""
+            library MathTest
+            define Value: 3.7
+            define Rounded: Round(Value)
+            define Floored: Floor(Value)
+            define Ceiled: Ceiling(Value)
+        """)
+        evaluator = CQLEvaluator()
+        evaluator._current_library = lib
+        assert evaluator.evaluate_definition("Rounded") == 4
+        assert evaluator.evaluate_definition("Floored") == 3
+        assert evaluator.evaluate_definition("Ceiled") == 4
+
+    def test_library_with_coalesce(self) -> None:
+        lib = compile_library("""
+            library CoalesceTest
+            define MaybeNull: null
+            define Default: 'default value'
+            define Result: Coalesce(MaybeNull, Default)
+        """)
+        evaluator = CQLEvaluator()
+        evaluator._current_library = lib
+        result = evaluator.evaluate_definition("Result")
+        assert result == "default value"

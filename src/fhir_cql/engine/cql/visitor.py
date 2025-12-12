@@ -1076,21 +1076,48 @@ class CQLEvaluatorVisitor(cqlVisitor):
         return results
 
     def visitRetrieve(self, ctx: cqlParser.RetrieveContext) -> list[Any]:
-        """Visit retrieve expression [ResourceType: property in ValueSet]."""
+        """Visit retrieve expression [ResourceType: property in ValueSet].
+
+        CQL retrieve syntax:
+            [ResourceType]
+            [ResourceType: codePath in valueset]
+            [ResourceType: codePath ~ code]
+        """
         # Get resource type
         named_type = ctx.namedTypeSpecifier()
         if named_type:
             resource_type = self._get_identifier_text(named_type)
         else:
-            resource_type = ctx.getText().split(":")[0].strip("[")
+            # Parse from text: [Condition] -> "Condition"
+            text = ctx.getText()
+            resource_type = text.strip("[]").split(":")[0].strip()
 
-        # Get code filter if present
+        # Initialize retrieve parameters
+        code_path: str | None = None
+        codes: list[Any] | None = None
+        valueset: str | None = None
+
+        # Get code path if present
+        code_path_ctx = ctx.codePath() if hasattr(ctx, "codePath") else None
+        if code_path_ctx:
+            code_path = self._get_identifier_text(code_path_ctx)
+        else:
+            # Use default code paths for common resource types
+            default_code_paths = {
+                "Condition": "code",
+                "Observation": "code",
+                "Procedure": "code",
+                "MedicationRequest": "medication.concept",
+                "MedicationStatement": "medication.concept",
+                "AllergyIntolerance": "code",
+                "DiagnosticReport": "code",
+                "Immunization": "vaccineCode",
+                "CarePlan": "category",
+            }
+            code_path = default_code_paths.get(resource_type)
+
+        # Get terminology filter if present
         terminology = ctx.terminology() if hasattr(ctx, "terminology") else None
-        code_path = ctx.codePath() if hasattr(ctx, "codePath") else None
-
-        # Build filter parameters
-        filters: dict[str, Any] = {"resourceType": resource_type}
-
         if terminology:
             # Parse terminology reference (valueset or code)
             term_expr = terminology.qualifiedIdentifierExpression()
@@ -1098,18 +1125,34 @@ class CQLEvaluatorVisitor(cqlVisitor):
                 term_name = self._get_identifier_text(term_expr)
                 if self._library:
                     if term_name in self._library.valuesets:
-                        filters["valueset"] = self._library.valuesets[term_name].id
+                        valueset = self._library.valuesets[term_name].id
                     elif term_name in self._library.codes:
                         code = self._library.resolve_code(term_name)
                         if code:
-                            filters["code"] = code
-
-        if code_path:
-            filters["codePath"] = self._get_identifier_text(code_path)
+                            codes = [code]
+                    elif term_name in self._library.concepts:
+                        concept = self._library.concepts[term_name]
+                        codes = list(concept.codes)
+            else:
+                # Direct code expression
+                code_expr = terminology.expression() if hasattr(terminology, "expression") else None
+                if code_expr:
+                    code_value = self.visit(code_expr)
+                    if code_value:
+                        if isinstance(code_value, list):
+                            codes = code_value
+                        else:
+                            codes = [code_value]
 
         # Use data source if available
         if self.context.data_source:
-            return self.context.data_source.retrieve(**filters)
+            return self.context.data_source.retrieve(
+                resource_type=resource_type,
+                context=self.context,
+                code_path=code_path,
+                codes=codes,
+                valueset=valueset,
+            )
 
         return []
 
@@ -1620,11 +1663,16 @@ class CQLEvaluatorVisitor(cqlVisitor):
             return []
 
         if name_lower == "indexof":
-            if len(args) >= 2 and isinstance(args[0], list):
-                try:
-                    return args[0].index(args[1])
-                except ValueError:
-                    return -1
+            if len(args) >= 2:
+                # List IndexOf - find element in list
+                if isinstance(args[0], list):
+                    try:
+                        return args[0].index(args[1])
+                    except ValueError:
+                        return -1
+                # String IndexOf - find substring in string
+                if isinstance(args[0], str) and isinstance(args[1], str):
+                    return args[0].find(args[1])
             return -1
 
         if name_lower == "singleton":
@@ -1686,7 +1734,14 @@ class CQLEvaluatorVisitor(cqlVisitor):
 
         if name_lower == "combine":
             if len(args) >= 2 and isinstance(args[0], list) and isinstance(args[1], list):
+                # Combine two lists (list concatenation)
                 return args[0] + args[1]
+            elif len(args) >= 1 and isinstance(args[0], list):
+                # Combine list of strings with optional separator (string join)
+                strings = args[0]
+                separator = args[1] if len(args) > 1 and args[1] is not None else ""
+                if isinstance(separator, str):
+                    return separator.join(str(s) for s in strings if s is not None)
             return []
 
         if name_lower == "union":
@@ -2050,7 +2105,373 @@ class CQLEvaluatorVisitor(cqlVisitor):
                 return self._calculate_age_in_days(args[0], args[1])
             return None
 
-        # Function not found
+        # =====================================================================
+        # Phase 4: String Functions
+        # =====================================================================
+
+        if name_lower == "concat":
+            # Concatenate all string arguments
+            result = ""
+            for arg in args:
+                if arg is not None:
+                    result += str(arg)
+            return result
+
+        if name_lower == "split":
+            # Split string by separator
+            if len(args) >= 2 and args[0] is not None and args[1] is not None:
+                return str(args[0]).split(str(args[1]))
+            return None
+
+        if name_lower == "upper":
+            if args and args[0] is not None:
+                return str(args[0]).upper()
+            return None
+
+        if name_lower == "lower":
+            if args and args[0] is not None:
+                return str(args[0]).lower()
+            return None
+
+        if name_lower == "substring":
+            # Substring(string, startIndex[, length])
+            if args and args[0] is not None:
+                s = str(args[0])
+                start = int(args[1]) if len(args) > 1 and args[1] is not None else 0
+                if len(args) > 2 and args[2] is not None:
+                    length = int(args[2])
+                    return s[start : start + length]
+                return s[start:]
+            return None
+
+        if name_lower == "startswith":
+            if len(args) >= 2 and args[0] is not None and args[1] is not None:
+                return str(args[0]).startswith(str(args[1]))
+            return None
+
+        if name_lower == "endswith":
+            if len(args) >= 2 and args[0] is not None and args[1] is not None:
+                return str(args[0]).endswith(str(args[1]))
+            return None
+
+        if name_lower == "matches":
+            # Regex match
+            import re
+
+            if len(args) >= 2 and args[0] is not None and args[1] is not None:
+                try:
+                    return bool(re.search(str(args[1]), str(args[0])))
+                except re.error:
+                    return None
+            return None
+
+        if name_lower == "replacematches":
+            # Regex replace
+            import re
+
+            if len(args) >= 3 and args[0] is not None:
+                try:
+                    return re.sub(str(args[1]), str(args[2]), str(args[0]))
+                except re.error:
+                    return None
+            return None
+
+        if name_lower == "replace":
+            # Simple string replace
+            if len(args) >= 3 and args[0] is not None:
+                return str(args[0]).replace(str(args[1] or ""), str(args[2] or ""))
+            return None
+
+        if name_lower == "indexof":
+            # IndexOf(string, substring) - find substring in string
+            if len(args) >= 2 and args[0] is not None and args[1] is not None:
+                try:
+                    return str(args[0]).find(str(args[1]))
+                except ValueError:
+                    return -1
+            return None
+
+        if name_lower == "lastpositionof":
+            if len(args) >= 2 and args[0] is not None and args[1] is not None:
+                try:
+                    return str(args[1]).rindex(str(args[0]))
+                except ValueError:
+                    return -1
+            return None
+
+        if name_lower == "positionof":
+            if len(args) >= 2 and args[0] is not None and args[1] is not None:
+                try:
+                    return str(args[1]).index(str(args[0]))
+                except ValueError:
+                    return -1
+            return None
+
+        if name_lower == "trim":
+            if args and args[0] is not None:
+                return str(args[0]).strip()
+            return None
+
+        if name_lower == "length":
+            if args and args[0] is not None:
+                if isinstance(args[0], str):
+                    return len(args[0])
+                if isinstance(args[0], list):
+                    return len(args[0])
+            return None
+
+        # =====================================================================
+        # Phase 4: Type Conversion Functions
+        # =====================================================================
+
+        if name_lower in ("tostring", "convert"):
+            if args and args[0] is not None:
+                return str(args[0])
+            return None
+
+        if name_lower == "tointeger":
+            if args and args[0] is not None:
+                try:
+                    return int(args[0])
+                except (ValueError, TypeError):
+                    return None
+            return None
+
+        if name_lower == "todecimal":
+            if args and args[0] is not None:
+                try:
+                    return Decimal(str(args[0]))
+                except Exception:
+                    return None
+            return None
+
+        if name_lower == "toboolean":
+            if args and args[0] is not None:
+                val = args[0]
+                if isinstance(val, bool):
+                    return val
+                if isinstance(val, str):
+                    lower = val.lower()
+                    if lower in ("true", "t", "yes", "y", "1"):
+                        return True
+                    if lower in ("false", "f", "no", "n", "0"):
+                        return False
+                return None
+            return None
+
+        if name_lower == "todate":
+            if args and args[0] is not None:
+                val = args[0]
+                if isinstance(val, FHIRDate):
+                    return val
+                if isinstance(val, FHIRDateTime):
+                    return FHIRDate(year=val.year, month=val.month, day=val.day)
+                if isinstance(val, str):
+                    return FHIRDate.parse(val)
+            return None
+
+        if name_lower == "todatetime":
+            if args and args[0] is not None:
+                val = args[0]
+                if isinstance(val, FHIRDateTime):
+                    return val
+                if isinstance(val, FHIRDate):
+                    return FHIRDateTime(year=val.year, month=val.month, day=val.day)
+                if isinstance(val, str):
+                    return FHIRDateTime.parse(val)
+            return None
+
+        if name_lower == "totime":
+            if args and args[0] is not None:
+                val = args[0]
+                if isinstance(val, FHIRTime):
+                    return val
+                if isinstance(val, str):
+                    return FHIRTime.parse(val)
+            return None
+
+        if name_lower == "toquantity":
+            if args:
+                if len(args) >= 2:
+                    return Quantity(value=Decimal(str(args[0])), unit=str(args[1]))
+                if isinstance(args[0], Quantity):
+                    return args[0]
+            return None
+
+        # =====================================================================
+        # Phase 4: Utility Functions
+        # =====================================================================
+
+        if name_lower == "coalesce":
+            # Return first non-null argument
+            for arg in args:
+                if arg is not None:
+                    return arg
+            return None
+
+        if name_lower == "isnull":
+            return args[0] is None if args else True
+
+        if name_lower == "isnotnull":
+            return args[0] is not None if args else False
+
+        if name_lower == "istrue":
+            return args[0] is True if args else False
+
+        if name_lower == "isfalse":
+            return args[0] is False if args else False
+
+        if name_lower == "abs":
+            if args and args[0] is not None:
+                val = args[0]
+                if isinstance(val, Quantity):
+                    return Quantity(value=abs(val.value), unit=val.unit)
+                return abs(val)
+            return None
+
+        if name_lower == "ceiling":
+            import math
+
+            if args and args[0] is not None:
+                return math.ceil(float(args[0]))
+            return None
+
+        if name_lower == "floor":
+            import math
+
+            if args and args[0] is not None:
+                return math.floor(float(args[0]))
+            return None
+
+        if name_lower == "truncate":
+            if args and args[0] is not None:
+                return int(float(args[0]))
+            return None
+
+        if name_lower == "round":
+            if args and args[0] is not None:
+                precision = int(args[1]) if len(args) > 1 and args[1] is not None else 0
+                return round(float(args[0]), precision)
+            return None
+
+        if name_lower == "ln":
+            import math
+
+            if args and args[0] is not None:
+                try:
+                    return math.log(float(args[0]))
+                except (ValueError, TypeError):
+                    return None
+            return None
+
+        if name_lower == "log":
+            import math
+
+            if args and args[0] is not None:
+                base = float(args[1]) if len(args) > 1 and args[1] is not None else 10
+                try:
+                    return math.log(float(args[0]), base)
+                except (ValueError, TypeError):
+                    return None
+            return None
+
+        if name_lower == "exp":
+            import math
+
+            if args and args[0] is not None:
+                try:
+                    return math.exp(float(args[0]))
+                except (ValueError, TypeError):
+                    return None
+            return None
+
+        if name_lower == "power":
+            if len(args) >= 2 and args[0] is not None and args[1] is not None:
+                return float(args[0]) ** float(args[1])
+            return None
+
+        if name_lower == "sqrt":
+            import math
+
+            if args and args[0] is not None:
+                try:
+                    return math.sqrt(float(args[0]))
+                except (ValueError, TypeError):
+                    return None
+            return None
+
+        # =====================================================================
+        # Phase 4: Code/Terminology Functions
+        # =====================================================================
+
+        if name_lower == "tocode":
+            # Convert string to Code
+            if args and args[0] is not None:
+                if isinstance(args[0], CQLCode):
+                    return args[0]
+                if isinstance(args[0], str):
+                    # Simple string to code (no system)
+                    return CQLCode(code=args[0], system="")
+            return None
+
+        if name_lower == "toconcept":
+            # Convert code(s) to Concept
+            if args:
+                if isinstance(args[0], CQLConcept):
+                    return args[0]
+                if isinstance(args[0], CQLCode):
+                    return CQLConcept(codes=[args[0]])
+                if isinstance(args[0], list):
+                    codes = [c for c in args[0] if isinstance(c, CQLCode)]
+                    if codes:
+                        return CQLConcept(codes=codes)
+            return None
+
+        if name_lower == "code":
+            # Create a Code from system and code
+            if len(args) >= 2:
+                return CQLCode(
+                    code=str(args[0]),
+                    system=str(args[1]),
+                    display=str(args[2]) if len(args) > 2 and args[2] else None,
+                )
+            return None
+
+        # Function not found - try user-defined function
+        return self._call_user_defined_function(name, args)
+
+    def _call_user_defined_function(self, name: str, args: list[Any]) -> Any:
+        """Call a user-defined function from the current library."""
+        if not self._library:
+            return None
+
+        # Look up function in library
+        func_def = self._library.get_function(name)
+        if not func_def:
+            return None
+
+        # Check argument count
+        if len(args) < len([p for p in func_def.parameters if p.default_value is None]):
+            return None
+
+        # Create child context for function execution
+        func_context = self.context.child()
+
+        # Bind parameters
+        for i, param in enumerate(func_def.parameters):
+            if i < len(args):
+                func_context.set_alias(param.name, args[i])
+            elif param.default_value is not None:
+                func_context.set_alias(param.name, param.default_value)
+
+        # Create a new visitor with the function context
+        func_visitor = CQLEvaluatorVisitor(func_context)
+        func_visitor._library = self._library
+
+        # Evaluate function body
+        if func_def.expression_tree:
+            return func_visitor.visit(func_def.expression_tree)
+
         return None
 
     # Arithmetic helpers

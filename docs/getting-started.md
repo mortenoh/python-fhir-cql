@@ -22,6 +22,9 @@ fhirpath --help
 
 # Check CQL CLI
 cql --help
+
+# Run tests
+make test
 ```
 
 ## Your First FHIRPath Expression
@@ -32,7 +35,8 @@ Create a simple FHIR Patient resource:
 {
   "resourceType": "Patient",
   "name": [{"family": "Smith", "given": ["John"]}],
-  "gender": "male"
+  "gender": "male",
+  "birthDate": "1990-05-15"
 }
 ```
 
@@ -41,9 +45,40 @@ Save it as `patient.json`, then evaluate:
 ```bash
 # Get the family name
 fhirpath eval "Patient.name.family" -r patient.json
+# Output: 'Smith'
+
+# Get given names
+fhirpath eval "Patient.name.given" -r patient.json
+# Output: ['John']
 
 # Check gender
 fhirpath eval "Patient.gender = 'male'" -r patient.json
+# Output: true
+
+# Calculate something with dates
+fhirpath eval "Patient.birthDate" -r patient.json
+```
+
+## Your First CQL Expression
+
+CQL can be evaluated directly without a library:
+
+```bash
+# Simple arithmetic
+cql eval "1 + 2 * 3"
+# Output: 7
+
+# String operations
+cql eval "Upper('hello world')"
+# Output: 'HELLO WORLD'
+
+# Date operations
+cql eval "Today()"
+# Output: @2024-12-13
+
+# List operations
+cql eval "Sum({1, 2, 3, 4, 5})"
+# Output: 15
 ```
 
 ## Your First CQL Library
@@ -55,31 +90,176 @@ library HelloWorld version '1.0.0'
 
 using FHIR version '4.0.1'
 
+// Simple values
 define Greeting: 'Hello, CQL!'
+define Sum: 1 + 2 + 3
+define IsTrue: true and not false
+
+// Date operations
+define CurrentDate: Today()
+define NextWeek: Today() + 7 days
+
+// List operations
+define Numbers: {1, 2, 3, 4, 5}
+define Total: Sum(Numbers)
+define Average: Avg(Numbers)
 ```
 
-Save it as `hello.cql`, then parse:
+Save it as `hello.cql`, then run:
 
 ```bash
+# Parse and validate
 cql parse hello.cql
+
+# List definitions
 cql definitions hello.cql
+
+# Run and evaluate all definitions
+cql run hello.cql
+
+# Evaluate specific definition
+cql run hello.cql --definition Sum
+```
+
+## Using CQL with Patient Data
+
+Create a CQL library that uses patient data:
+
+```cql
+library PatientInfo version '1.0'
+
+using FHIR version '4.0.1'
+
+context Patient
+
+define PatientAge:
+    years between Patient.birthDate and Today()
+
+define IsAdult:
+    PatientAge >= 18
+
+define PatientName:
+    Patient.name.first().family
+```
+
+Run with patient data:
+
+```bash
+cql run patient_info.cql --data patient.json
+```
+
+## Using the Python API
+
+### FHIRPath
+
+```python
+from fhir_cql.engine.fhirpath import FHIRPathEvaluator
+
+# Create evaluator
+evaluator = FHIRPathEvaluator()
+
+# Patient resource
+patient = {
+    "resourceType": "Patient",
+    "name": [{"family": "Smith", "given": ["John"]}],
+    "gender": "male"
+}
+
+# Evaluate expressions
+family = evaluator.evaluate("Patient.name.family", patient)
+print(family)  # ['Smith']
+
+is_male = evaluator.evaluate("Patient.gender = 'male'", patient)
+print(is_male)  # True
+```
+
+### CQL
+
+```python
+from fhir_cql.engine.cql import CQLEvaluator
+
+# Create evaluator
+evaluator = CQLEvaluator()
+
+# Evaluate expression directly
+result = evaluator.evaluate_expression("1 + 2 * 3")
+print(result)  # 7
+
+# Compile a library
+lib = evaluator.compile("""
+    library Example version '1.0'
+
+    define Sum: 1 + 2 + 3
+    define Greeting: 'Hello!'
+
+    define function Double(x Integer):
+        x * 2
+""")
+
+# Evaluate definitions
+sum_result = evaluator.evaluate_definition("Sum")
+print(sum_result)  # 6
+
+greeting = evaluator.evaluate_definition("Greeting")
+print(greeting)  # 'Hello!'
+
+# Evaluate all definitions
+all_results = evaluator.evaluate_all_definitions()
+print(all_results)  # {'Sum': 6, 'Greeting': 'Hello!'}
+
+# With patient data
+patient = {"resourceType": "Patient", "birthDate": "1990-05-15"}
+age = evaluator.evaluate_expression(
+    "years between @1990-05-15 and Today()",
+    resource=patient
+)
 ```
 
 ## Project Structure
 
 ```
 python-fhir-cql/
-├── grammars/           # ANTLR grammar files
-├── generated/          # Generated Python parsers
-├── examples/           # Example files
-│   ├── cql/           # CQL examples
-│   ├── fhir/          # FHIR JSON resources
-│   └── fhirpath/      # FHIRPath expressions
-├── src/fhir_cql/      # Python source
-└── tests/             # Test suite
+├── grammars/              # ANTLR grammar files
+│   ├── cql.g4
+│   └── fhirpath.g4
+├── generated/             # Generated Python parsers
+│   ├── cql/
+│   └── fhirpath/
+├── examples/              # Example files
+│   ├── cql/              # 17 CQL example files
+│   ├── fhir/             # 14 FHIR JSON resources
+│   └── fhirpath/         # FHIRPath expressions
+├── src/fhir_cql/         # Python source
+│   ├── engine/
+│   │   ├── cql/          # CQL evaluator
+│   │   └── fhirpath/     # FHIRPath evaluator
+│   ├── cql_cli.py        # CQL CLI
+│   └── fhirpath_cli.py   # FHIRPath CLI
+├── tests/                 # Test suite (555+ tests)
+└── docs/                  # Documentation
+```
+
+## Example Files
+
+Explore the examples:
+
+```bash
+# List CQL examples
+ls examples/cql/
+
+# Run a specific example
+cql run examples/cql/01_hello_world.cql
+cql run examples/cql/10_math_functions.cql
+cql run examples/cql/16_clinical_calculations.cql
+
+# View an example
+cql show examples/cql/08_quality_measure.cql
 ```
 
 ## Next Steps
 
 - Explore the [CLI Reference](cli.md) for all commands
-- Check out the `examples/` folder for more examples
+- Read the [FHIRPath Guide](fhirpath-guide.md) for comprehensive FHIRPath documentation
+- Check the [CQL API](cql-api.md) for Python integration
+- Work through the [Tutorial](fhirpath-cql-tutorial.md) for in-depth examples
+- Browse the `examples/` folder for real-world patterns
