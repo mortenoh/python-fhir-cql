@@ -21,7 +21,7 @@ make clean      # Remove generated files
 
 - `grammars/*.g4` - ANTLR grammar files (HL7 official)
 - `generated/` - Auto-generated parser code (do not edit manually)
-- `src/fhir_cql/cli.py` - CQL CLI using typer
+- `src/fhir_cql/cql_cli.py` - CQL CLI using typer
 - `src/fhir_cql/fhirpath_cli.py` - FHIRPath CLI using typer
 - `examples/fhir/` - Sample FHIR JSON resources
 - `examples/cql/` - CQL example files
@@ -42,6 +42,7 @@ fhirpath parse <expr>
 fhirpath ast <expr>
 fhirpath tokens <expr>
 fhirpath parse-file <file>
+fhirpath eval <expr> [-r resource.json]
 fhirpath repl
 ```
 
