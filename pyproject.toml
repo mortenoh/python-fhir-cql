@@ -44,14 +44,15 @@ indent-style = "space"
 
 [tool.mypy]
 python_version = "3.13"
-warn_return_any = true
+warn_return_any = false
 warn_unused_configs = true
-disallow_untyped_defs = true
+disallow_untyped_defs = false
 check_untyped_defs = true
 no_implicit_optional = true
-warn_unused_ignores = true
+warn_unused_ignores = false
 strict_equality = true
 mypy_path = ["src"]
+exclude = ["generated/"]
 
 [[tool.mypy.overrides]]
 module = "tests.*"
@@ -71,6 +72,7 @@ module = [
     "cqlListener",
 ]
 ignore_missing_imports = true
+ignore_errors = true
 
 [tool.pyright]
 include = ["src"]

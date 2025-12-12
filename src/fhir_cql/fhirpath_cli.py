@@ -1,5 +1,6 @@
 """FHIRPath CLI - Command line interface for FHIRPath parsing and analysis."""
 
+import json
 import sys
 from pathlib import Path
 from typing import Annotated
@@ -13,6 +14,7 @@ from rich.tree import Tree
 
 # Add generated directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "generated" / "fhirpath"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "generated"))
 
 from antlr4 import CommonTokenStream, InputStream
 from antlr4.error.ErrorListener import ErrorListener
@@ -255,6 +257,110 @@ def show(
     text = file.read_text()
     syntax = Syntax(text, "javascript", theme="monokai", line_numbers=True)
     console.print(Panel(syntax, title=str(file), border_style="blue"))
+
+
+@app.command()
+def eval(
+    expression: Annotated[str, typer.Argument(help="FHIRPath expression to evaluate")],
+    resource: Annotated[Path | None, typer.Option("--resource", "-r", help="Path to FHIR JSON resource file")] = None,
+    json_input: Annotated[str | None, typer.Option("--json", "-j", help="Inline JSON resource")] = None,
+    output_json: Annotated[bool, typer.Option("--json-output", help="Output result as JSON")] = False,
+) -> None:
+    """Evaluate a FHIRPath expression against a FHIR resource."""
+    from fhir_cql.engine.exceptions import FHIRPathError
+    from fhir_cql.engine.fhirpath import FHIRPathEvaluator
+
+    # Load resource
+    fhir_resource = None
+    if resource:
+        if not resource.exists():
+            rprint(f"[red]Error:[/red] Resource file not found: {resource}")
+            raise typer.Exit(1)
+        try:
+            fhir_resource = json.loads(resource.read_text())
+        except json.JSONDecodeError as e:
+            rprint(f"[red]Error:[/red] Invalid JSON in resource file: {e}")
+            raise typer.Exit(1)
+    elif json_input:
+        try:
+            fhir_resource = json.loads(json_input)
+        except json.JSONDecodeError as e:
+            rprint(f"[red]Error:[/red] Invalid JSON input: {e}")
+            raise typer.Exit(1)
+
+    # Evaluate expression
+    try:
+        evaluator = FHIRPathEvaluator()
+        result = evaluator.evaluate(expression, fhir_resource)
+
+        if output_json:
+            print(json.dumps(result, indent=2, default=str))
+        else:
+            if not result:
+                rprint("[dim]Empty result ([])[/dim]")
+            elif len(result) == 1:
+                rprint(f"[green]{result[0]!r}[/green]")
+            else:
+                rprint("[bold]Results:[/bold]")
+                for i, item in enumerate(result):
+                    rprint(f"  [{i}] [green]{item!r}[/green]")
+
+    except FHIRPathError as e:
+        rprint(f"[red]FHIRPath Error:[/red] {e}")
+        raise typer.Exit(1)
+
+
+@app.command("eval-file")
+def eval_file(
+    expressions_file: Annotated[Path, typer.Argument(help="File containing FHIRPath expressions")],
+    resource: Annotated[Path | None, typer.Option("--resource", "-r", help="Path to FHIR JSON resource file")] = None,
+    quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Only show errors")] = False,
+) -> None:
+    """Evaluate FHIRPath expressions from a file against a FHIR resource."""
+    from fhir_cql.engine.exceptions import FHIRPathError
+    from fhir_cql.engine.fhirpath import FHIRPathEvaluator
+
+    if not expressions_file.exists():
+        rprint(f"[red]Error:[/red] File not found: {expressions_file}")
+        raise typer.Exit(1)
+
+    # Load resource
+    fhir_resource = None
+    if resource:
+        if not resource.exists():
+            rprint(f"[red]Error:[/red] Resource file not found: {resource}")
+            raise typer.Exit(1)
+        fhir_resource = json.loads(resource.read_text())
+
+    evaluator = FHIRPathEvaluator()
+    lines = expressions_file.read_text().strip().split("\n")
+    total = 0
+    passed = 0
+    failed = 0
+
+    for i, line in enumerate(lines, 1):
+        line = line.strip()
+        if not line or line.startswith("//") or line.startswith("#"):
+            continue
+
+        total += 1
+        try:
+            result = evaluator.evaluate(line, fhir_resource)
+            if not quiet:
+                result_str = repr(result[0]) if len(result) == 1 else repr(result)
+                if len(result_str) > 50:
+                    result_str = result_str[:47] + "..."
+                rprint(f"[green]✓[/green] {line[:40]:40} => [cyan]{result_str}[/cyan]")
+            passed += 1
+        except FHIRPathError as e:
+            rprint(f"[red]✗[/red] Line {i}: {line}")
+            rprint(f"    [red]•[/red] {e}")
+            failed += 1
+
+    rprint(f"\n[bold]Results:[/bold] {passed}/{total} passed, {failed}/{total} failed")
+
+    if failed > 0:
+        raise typer.Exit(1)
 
 
 if __name__ == "__main__":

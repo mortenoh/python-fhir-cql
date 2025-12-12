@@ -31,51 +31,320 @@ make install
 make generate
 ```
 
-## CLI Usage
+## CLI Tutorial
+
+This tutorial walks through all CLI commands with practical examples.
+
+### FHIRPath CLI
+
+The `fhirpath` CLI provides commands for parsing, analyzing, and evaluating FHIRPath expressions.
+
+#### Evaluating Expressions (eval)
+
+The `eval` command evaluates FHIRPath expressions against FHIR resources:
+
+```bash
+# Basic navigation - get patient family name
+fhirpath eval "Patient.name.family" -r examples/fhir/patient.json
+# Output: 'Smith'
+
+# Get all given names
+fhirpath eval "Patient.name.given" -r examples/fhir/patient.json
+# Output:
+#   [0] 'John'
+#   [1] 'William'
+#   [2] 'Johnny'
+
+# Count telecom entries
+fhirpath eval "Patient.telecom.count()" -r examples/fhir/patient.json
+# Output: 3
+
+# Boolean comparison
+fhirpath eval "Patient.gender = 'male'" -r examples/fhir/patient.json
+# Output: True
+
+# Filter with where()
+fhirpath eval "Patient.name.where(use = 'official').given.first()" -r examples/fhir/patient.json
+# Output: 'John'
+
+# Get blood pressure values from observation
+fhirpath eval "Observation.component.valueQuantity.value" -r examples/fhir/observation_bp.json
+# Output:
+#   [0] 142
+#   [1] 88
+
+# String functions
+fhirpath eval "Patient.name.family.upper()" -r examples/fhir/patient.json
+# Output: 'SMITH'
+
+# Existence checks
+fhirpath eval "Patient.address.exists()" -r examples/fhir/patient.json
+# Output: True
+
+# Output as JSON
+fhirpath eval "Patient.name.given" -r examples/fhir/patient.json --json-output
+# Output: ["John", "William", "Johnny"]
+
+# Inline JSON resource
+fhirpath eval "Patient.gender" --json '{"resourceType":"Patient","gender":"female"}'
+# Output: 'female'
+```
+
+#### Evaluating Files (eval-file)
+
+Evaluate multiple FHIRPath expressions from a file:
+
+```bash
+# Evaluate all expressions in a file
+fhirpath eval-file examples/fhirpath/01_basic_navigation.fhirpath -r examples/fhir/patient.json
+
+# Quiet mode (only show errors)
+fhirpath eval-file examples/fhirpath/03_existence_checks.fhirpath -r examples/fhir/patient.json -q
+```
+
+#### Parsing Expressions (parse)
+
+Validate FHIRPath syntax without evaluation:
+
+```bash
+# Parse and validate an expression
+fhirpath parse "Patient.name.given.first()"
+# Output: ✓ Valid FHIRPath expression
+
+# Parse invalid expression
+fhirpath parse "Patient.name.("
+# Output: Parse errors: Line 1:14 - ...
+
+# Quiet mode
+fhirpath parse "Patient.name.family" -q
+```
+
+#### AST Visualization (ast)
+
+Display the Abstract Syntax Tree for understanding expression structure:
+
+```bash
+# Show AST tree
+fhirpath ast "Patient.name.given.first()"
+# Output:
+# expression
+# ├── expression
+# │   ├── expression
+# │   │   ├── expression
+# │   │   │   └── term
+# │   │   │       └── invocation
+# │   │   │           └── identifier
+# │   │   │               └── 'Patient'
+# │   │   ├── '.'
+# │   │   └── invocation
+# │   │       └── identifier
+# │   │           └── 'name'
+# │   ├── '.'
+# │   └── invocation
+# │       └── identifier
+# │           └── 'given'
+# ├── '.'
+# └── invocation
+#     └── function
+#         ├── identifier
+#         │   └── 'first'
+#         ├── '('
+#         └── ')'
+
+# Limit tree depth
+fhirpath ast "Patient.name.where(use='official').given" --depth 3
+```
+
+#### Token Stream (tokens)
+
+View how the lexer tokenizes an expression:
+
+```bash
+fhirpath tokens "Patient.name.family"
+# Output:
+# IDENTIFIER          'Patient' (col 0)
+# .                   '.'       (col 7)
+# IDENTIFIER          'name'    (col 8)
+# .                   '.'       (col 12)
+# IDENTIFIER          'family'  (col 13)
+```
+
+#### Parsing Files (parse-file)
+
+Validate multiple expressions from a file:
+
+```bash
+# Parse all expressions in a file
+fhirpath parse-file examples/fhirpath/01_basic_navigation.fhirpath
+# Output:
+# ✓ Line 1: Patient.name...
+# ✓ Line 2: Patient.name.family...
+# ...
+# Results: 14/14 passed, 0/14 failed
+
+# Quiet mode
+fhirpath parse-file examples/fhirpath/01_basic_navigation.fhirpath -q
+```
+
+#### Interactive REPL (repl)
+
+Start an interactive session for experimentation:
+
+```bash
+fhirpath repl
+# FHIRPath REPL
+# Enter FHIRPath expressions to parse. Type 'quit' or 'exit' to quit.
+#
+# fhirpath> Patient.name.family
+# ✓ Valid
+#
+# fhirpath> ast Patient.name
+# (displays AST)
+#
+# fhirpath> tokens 1 + 2
+# (displays tokens)
+#
+# fhirpath> quit
+```
+
+#### Display Files (show)
+
+View FHIRPath files with syntax highlighting:
+
+```bash
+fhirpath show examples/fhirpath/01_basic_navigation.fhirpath
+```
 
 ### CQL CLI
+
+The `cql` CLI provides commands for parsing and analyzing CQL libraries.
+
+#### Parsing CQL Files (parse)
 
 ```bash
 # Parse a CQL file
 cql parse examples/cql/01_hello_world.cql
+# Output: ✓ Valid CQL library
 
+# Parse invalid CQL
+cql parse invalid.cql
+# Output: Parse errors: ...
+```
+
+#### AST Visualization (ast)
+
+```bash
 # Display AST tree
 cql ast examples/cql/01_hello_world.cql
 
-# Show token stream
+# Limit depth
+cql ast examples/cql/08_quality_measure.cql --depth 5
+```
+
+#### Token Stream (tokens)
+
+```bash
+# Show tokens (limited)
 cql tokens examples/cql/01_hello_world.cql --limit 20
 
-# Validate multiple files
+# Show all tokens
+cql tokens examples/cql/01_hello_world.cql
+```
+
+#### Validate Multiple Files (validate)
+
+```bash
+# Validate all CQL files
 cql validate examples/cql/*.cql
+# Output:
+# ✓ examples/cql/01_hello_world.cql
+# ✓ examples/cql/02_patient_queries.cql
+# ...
+# Results: 8/8 passed
+```
 
-# List definitions in a library
+#### List Definitions (definitions)
+
+```bash
+# Show library definitions
 cql definitions examples/cql/08_quality_measure.cql
+# Output:
+# Library: DiabetesQualityMeasure v1.0.0
+# Using: FHIR v4.0.1
+#
+# Parameters:
+#   • MeasurementPeriod (Interval<DateTime>)
+#
+# Definitions:
+#   • InDemographic
+#   • HasDiabetes
+#   • HasHbA1cTest
+#   ...
+```
 
-# Display with syntax highlighting
+#### Display Files (show)
+
+```bash
 cql show examples/cql/01_hello_world.cql
 ```
 
-### FHIRPath CLI
+### Common Use Cases
+
+#### Validate FHIR Constraint Expressions
 
 ```bash
-# Parse an expression
-fhirpath parse "Patient.name.given.first()"
+# Check if patient is active
+fhirpath eval "Patient.active = true" -r examples/fhir/patient.json
 
-# Display AST tree
-fhirpath ast "Patient.name.where(use = 'official').given.first()"
-
-# Show token stream
-fhirpath tokens "Patient.name.family"
-
-# Parse a file with multiple expressions
-fhirpath parse-file examples/fhirpath/01_basic_navigation.fhirpath
-
-# Interactive REPL
-fhirpath repl
-
-# Display file with syntax highlighting
-fhirpath show examples/fhirpath/01_basic_navigation.fhirpath
+# Check required elements
+fhirpath eval "Patient.name.exists() and Patient.birthDate.exists()" -r examples/fhir/patient.json
 ```
+
+#### Extract Data from Resources
+
+```bash
+# Get all phone numbers
+fhirpath eval "Patient.telecom.where(system = 'phone').value" -r examples/fhir/patient.json
+
+# Get LOINC codes from observations
+fhirpath eval "Observation.code.coding.where(system = 'http://loinc.org').code" -r examples/fhir/observation_bp.json
+```
+
+#### Analyze Bundle Resources
+
+```bash
+# Count resources in bundle
+fhirpath eval "Bundle.entry.count()" -r examples/fhir/bundle.json
+
+# Get all patient resources from bundle
+fhirpath eval "Bundle.entry.resource.where(resourceType = 'Patient')" -r examples/fhir/bundle.json
+```
+
+## Quick Reference
+
+### FHIRPath CLI Commands
+
+| Command | Description |
+|---------|-------------|
+| `fhirpath eval <expr> -r <file>` | Evaluate expression against resource |
+| `fhirpath eval-file <file> -r <resource>` | Evaluate expressions from file |
+| `fhirpath parse <expr>` | Validate expression syntax |
+| `fhirpath ast <expr>` | Display AST tree |
+| `fhirpath tokens <expr>` | Show token stream |
+| `fhirpath parse-file <file>` | Parse expressions from file |
+| `fhirpath repl` | Interactive REPL |
+| `fhirpath show <file>` | Display file with highlighting |
+
+### CQL CLI Commands
+
+| Command | Description |
+|---------|-------------|
+| `cql parse <file>` | Parse CQL file |
+| `cql ast <file>` | Display AST tree |
+| `cql tokens <file>` | Show token stream |
+| `cql validate <files...>` | Validate multiple files |
+| `cql definitions <file>` | List library definitions |
+| `cql show <file>` | Display file with highlighting |
 
 ### Example Output
 
