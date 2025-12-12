@@ -29,8 +29,6 @@ from fhir_cql.engine.cql import (
     evaluate,
 )
 from fhir_cql.engine.exceptions import CQLError
-from fhir_cql.engine.types import FHIRDate, FHIRDateTime, Quantity
-
 
 # =============================================================================
 # Literal Tests
@@ -45,7 +43,6 @@ class TestBooleanLiterals:
 
     def test_false_literal(self) -> None:
         assert evaluate("false") is False
-
 
 
 class TestNullLiteral:
@@ -1271,3 +1268,677 @@ class TestComplexExpressions:
     def test_nested_if(self) -> None:
         result = evaluate("if true then if true then 1 else 2 else if true then 3 else 4")
         assert result == 1
+
+
+# =============================================================================
+# Phase 2: List Functions Tests
+# =============================================================================
+
+
+class TestTailFunction:
+    """Test Tail function - returns all except first element."""
+
+    def test_tail_of_list(self) -> None:
+        assert evaluate("Tail({1, 2, 3, 4})") == [2, 3, 4]
+
+    def test_tail_of_single_element(self) -> None:
+        assert evaluate("Tail({1})") == []
+
+    def test_tail_of_empty_list(self) -> None:
+        assert evaluate("Tail({})") == []
+
+    def test_tail_of_strings(self) -> None:
+        assert evaluate("Tail({'a', 'b', 'c'})") == ["b", "c"]
+
+
+class TestTakeFunction:
+    """Test Take function - returns first n elements."""
+
+    def test_take_two(self) -> None:
+        assert evaluate("Take({1, 2, 3, 4}, 2)") == [1, 2]
+
+    def test_take_zero(self) -> None:
+        assert evaluate("Take({1, 2, 3}, 0)") == []
+
+    def test_take_more_than_length(self) -> None:
+        assert evaluate("Take({1, 2}, 5)") == [1, 2]
+
+    def test_take_from_empty(self) -> None:
+        assert evaluate("Take({}, 2)") == []
+
+    def test_take_all(self) -> None:
+        assert evaluate("Take({1, 2, 3}, 3)") == [1, 2, 3]
+
+
+class TestSkipFunction:
+    """Test Skip function - skips first n elements."""
+
+    def test_skip_two(self) -> None:
+        assert evaluate("Skip({1, 2, 3, 4}, 2)") == [3, 4]
+
+    def test_skip_zero(self) -> None:
+        assert evaluate("Skip({1, 2, 3}, 0)") == [1, 2, 3]
+
+    def test_skip_all(self) -> None:
+        assert evaluate("Skip({1, 2, 3}, 3)") == []
+
+    def test_skip_more_than_length(self) -> None:
+        assert evaluate("Skip({1, 2}, 5)") == []
+
+    def test_skip_from_empty(self) -> None:
+        assert evaluate("Skip({}, 2)") == []
+
+
+class TestFlattenFunction:
+    """Test Flatten function - flattens nested lists."""
+
+    def test_flatten_nested(self) -> None:
+        result = evaluate("Flatten({{1, 2}, {3, 4}})")
+        assert result == [1, 2, 3, 4]
+
+    def test_flatten_mixed(self) -> None:
+        result = evaluate("Flatten({1, {2, 3}, 4})")
+        assert result == [1, 2, 3, 4]
+
+    def test_flatten_already_flat(self) -> None:
+        assert evaluate("Flatten({1, 2, 3})") == [1, 2, 3]
+
+    def test_flatten_empty(self) -> None:
+        assert evaluate("Flatten({})") == []
+
+
+class TestDistinctFunction:
+    """Test Distinct function - removes duplicates."""
+
+    def test_distinct_with_duplicates(self) -> None:
+        assert evaluate("Distinct({1, 2, 1, 3, 2})") == [1, 2, 3]
+
+    def test_distinct_no_duplicates(self) -> None:
+        assert evaluate("Distinct({1, 2, 3})") == [1, 2, 3]
+
+    def test_distinct_all_same(self) -> None:
+        assert evaluate("Distinct({1, 1, 1})") == [1]
+
+    def test_distinct_empty(self) -> None:
+        assert evaluate("Distinct({})") == []
+
+    def test_distinct_strings(self) -> None:
+        assert evaluate("Distinct({'a', 'b', 'a'})") == ["a", "b"]
+
+
+class TestSortFunction:
+    """Test Sort function - sorts list ascending."""
+
+    def test_sort_integers(self) -> None:
+        assert evaluate("Sort({3, 1, 4, 1, 5, 9})") == [1, 1, 3, 4, 5, 9]
+
+    def test_sort_already_sorted(self) -> None:
+        assert evaluate("Sort({1, 2, 3})") == [1, 2, 3]
+
+    def test_sort_reverse_order(self) -> None:
+        assert evaluate("Sort({3, 2, 1})") == [1, 2, 3]
+
+    def test_sort_empty(self) -> None:
+        assert evaluate("Sort({})") == []
+
+    def test_sort_single(self) -> None:
+        assert evaluate("Sort({42})") == [42]
+
+    def test_sort_strings(self) -> None:
+        assert evaluate("Sort({'c', 'a', 'b'})") == ["a", "b", "c"]
+
+
+class TestIndexOfFunction:
+    """Test IndexOf function - finds element index."""
+
+    def test_indexof_found(self) -> None:
+        assert evaluate("IndexOf({10, 20, 30}, 20)") == 1
+
+    def test_indexof_first(self) -> None:
+        assert evaluate("IndexOf({10, 20, 30}, 10)") == 0
+
+    def test_indexof_last(self) -> None:
+        assert evaluate("IndexOf({10, 20, 30}, 30)") == 2
+
+    def test_indexof_not_found(self) -> None:
+        assert evaluate("IndexOf({1, 2, 3}, 5)") == -1
+
+    def test_indexof_empty(self) -> None:
+        assert evaluate("IndexOf({}, 1)") == -1
+
+
+class TestReverseFunction:
+    """Test Reverse function - reverses list order."""
+
+    def test_reverse_list(self) -> None:
+        assert evaluate("Reverse({1, 2, 3})") == [3, 2, 1]
+
+    def test_reverse_single(self) -> None:
+        assert evaluate("Reverse({1})") == [1]
+
+    def test_reverse_empty(self) -> None:
+        assert evaluate("Reverse({})") == []
+
+    def test_reverse_strings(self) -> None:
+        assert evaluate("Reverse({'a', 'b', 'c'})") == ["c", "b", "a"]
+
+
+class TestSliceFunction:
+    """Test Slice function - extracts portion of list."""
+
+    def test_slice_middle(self) -> None:
+        assert evaluate("Slice({1, 2, 3, 4, 5}, 1, 3)") == [2, 3, 4]
+
+    def test_slice_from_start(self) -> None:
+        assert evaluate("Slice({1, 2, 3, 4, 5}, 0, 2)") == [1, 2]
+
+    def test_slice_to_end(self) -> None:
+        result = evaluate("Slice({1, 2, 3, 4, 5}, 3, 10)")
+        assert result == [4, 5]
+
+
+class TestCombineFunction:
+    """Test Combine function - concatenates lists."""
+
+    def test_combine_two_lists(self) -> None:
+        assert evaluate("Combine({1, 2}, {3, 4})") == [1, 2, 3, 4]
+
+    def test_combine_with_empty(self) -> None:
+        assert evaluate("Combine({1, 2}, {})") == [1, 2]
+
+    def test_combine_preserves_duplicates(self) -> None:
+        assert evaluate("Combine({1, 2}, {2, 3})") == [1, 2, 2, 3]
+
+
+# =============================================================================
+# Phase 2: Aggregate Functions Tests
+# =============================================================================
+
+
+class TestAllTrueFunction:
+    """Test AllTrue function - all elements true."""
+
+    def test_alltrue_all_true(self) -> None:
+        assert evaluate("AllTrue({true, true, true})") is True
+
+    def test_alltrue_one_false(self) -> None:
+        assert evaluate("AllTrue({true, false, true})") is False
+
+    def test_alltrue_empty(self) -> None:
+        assert evaluate("AllTrue({})") is True
+
+    def test_alltrue_single_true(self) -> None:
+        assert evaluate("AllTrue({true})") is True
+
+
+class TestAnyTrueFunction:
+    """Test AnyTrue function - any element true."""
+
+    def test_anytrue_all_true(self) -> None:
+        assert evaluate("AnyTrue({true, true, true})") is True
+
+    def test_anytrue_one_true(self) -> None:
+        assert evaluate("AnyTrue({false, true, false})") is True
+
+    def test_anytrue_all_false(self) -> None:
+        assert evaluate("AnyTrue({false, false, false})") is False
+
+    def test_anytrue_empty(self) -> None:
+        assert evaluate("AnyTrue({})") is False
+
+
+class TestAllFalseFunction:
+    """Test AllFalse function - all elements false."""
+
+    def test_allfalse_all_false(self) -> None:
+        assert evaluate("AllFalse({false, false, false})") is True
+
+    def test_allfalse_one_true(self) -> None:
+        assert evaluate("AllFalse({false, true, false})") is False
+
+    def test_allfalse_empty(self) -> None:
+        assert evaluate("AllFalse({})") is True
+
+
+class TestAnyFalseFunction:
+    """Test AnyFalse function - any element false."""
+
+    def test_anyfalse_all_false(self) -> None:
+        assert evaluate("AnyFalse({false, false, false})") is True
+
+    def test_anyfalse_one_false(self) -> None:
+        assert evaluate("AnyFalse({true, false, true})") is True
+
+    def test_anyfalse_all_true(self) -> None:
+        assert evaluate("AnyFalse({true, true, true})") is False
+
+    def test_anyfalse_empty(self) -> None:
+        assert evaluate("AnyFalse({})") is False
+
+
+class TestMedianFunction:
+    """Test Median function."""
+
+    def test_median_odd_count(self) -> None:
+        assert evaluate("Median({1, 3, 5, 7, 9})") == 5
+
+    def test_median_even_count(self) -> None:
+        result = evaluate("Median({1, 2, 3, 4})")
+        assert result == Decimal("2.5")
+
+    def test_median_single(self) -> None:
+        assert evaluate("Median({5})") == 5
+
+    def test_median_empty(self) -> None:
+        assert evaluate("Median({})") is None
+
+    def test_median_unsorted(self) -> None:
+        assert evaluate("Median({9, 1, 5, 3, 7})") == 5
+
+
+class TestModeFunction:
+    """Test Mode function - most frequent value."""
+
+    def test_mode_single_mode(self) -> None:
+        assert evaluate("Mode({1, 2, 2, 3})") == 2
+
+    def test_mode_all_same(self) -> None:
+        assert evaluate("Mode({5, 5, 5})") == 5
+
+    def test_mode_single_element(self) -> None:
+        assert evaluate("Mode({42})") == 42
+
+    def test_mode_empty(self) -> None:
+        assert evaluate("Mode({})") is None
+
+
+class TestProductFunction:
+    """Test Product function - multiplies all elements."""
+
+    def test_product_integers(self) -> None:
+        result = evaluate("Product({2, 3, 4})")
+        assert result == Decimal("24")
+
+    def test_product_single(self) -> None:
+        result = evaluate("Product({5})")
+        assert result == Decimal("5")
+
+    def test_product_with_one(self) -> None:
+        result = evaluate("Product({1, 2, 3})")
+        assert result == Decimal("6")
+
+    def test_product_empty(self) -> None:
+        assert evaluate("Product({})") is None
+
+
+class TestVarianceFunction:
+    """Test Variance function - sample variance."""
+
+    def test_variance_basic(self) -> None:
+        # Variance of {2, 4, 6} = ((2-4)^2 + (4-4)^2 + (6-4)^2) / 2 = 4
+        result = evaluate("Variance({2, 4, 6})")
+        assert result == 4.0
+
+    def test_variance_single(self) -> None:
+        # Need at least 2 elements for sample variance
+        assert evaluate("Variance({5})") is None
+
+
+class TestPopulationVarianceFunction:
+    """Test PopulationVariance function."""
+
+    def test_popvariance_basic(self) -> None:
+        # Pop variance of {2, 4, 6} = ((2-4)^2 + (4-4)^2 + (6-4)^2) / 3 = 8/3
+        result = evaluate("PopulationVariance({2, 4, 6})")
+        assert abs(result - (8 / 3)) < 0.0001
+
+
+# =============================================================================
+# Phase 2: Set Operations Tests
+# =============================================================================
+
+
+class TestUnionOperation:
+    """Test union set operation."""
+
+    def test_union_distinct_lists(self) -> None:
+        assert evaluate("{1, 2} union {3, 4}") == [1, 2, 3, 4]
+
+    def test_union_overlapping(self) -> None:
+        result = evaluate("{1, 2, 3} union {2, 3, 4}")
+        assert set(result) == {1, 2, 3, 4}
+
+    def test_union_with_empty(self) -> None:
+        assert evaluate("{1, 2} union {}") == [1, 2]
+
+    def test_union_empty_with_list(self) -> None:
+        assert evaluate("{} union {1, 2}") == [1, 2]
+
+    def test_union_same_list(self) -> None:
+        result = evaluate("{1, 2} union {1, 2}")
+        assert set(result) == {1, 2}
+
+
+class TestIntersectOperation:
+    """Test intersect set operation."""
+
+    def test_intersect_overlapping(self) -> None:
+        assert evaluate("{1, 2, 3} intersect {2, 3, 4}") == [2, 3]
+
+    def test_intersect_no_overlap(self) -> None:
+        assert evaluate("{1, 2} intersect {3, 4}") == []
+
+    def test_intersect_with_empty(self) -> None:
+        assert evaluate("{1, 2} intersect {}") == []
+
+    def test_intersect_same_list(self) -> None:
+        assert evaluate("{1, 2, 3} intersect {1, 2, 3}") == [1, 2, 3]
+
+    def test_intersect_subset(self) -> None:
+        assert evaluate("{1, 2, 3} intersect {2}") == [2]
+
+
+class TestExceptOperation:
+    """Test except set operation."""
+
+    def test_except_overlapping(self) -> None:
+        assert evaluate("{1, 2, 3} except {2}") == [1, 3]
+
+    def test_except_no_overlap(self) -> None:
+        assert evaluate("{1, 2} except {3, 4}") == [1, 2]
+
+    def test_except_all_removed(self) -> None:
+        assert evaluate("{1, 2} except {1, 2, 3}") == []
+
+    def test_except_with_empty(self) -> None:
+        assert evaluate("{1, 2} except {}") == [1, 2]
+
+    def test_except_empty_from(self) -> None:
+        assert evaluate("{} except {1, 2}") == []
+
+
+# =============================================================================
+# Phase 2: Interval Operation Tests
+# =============================================================================
+
+
+class TestIntervalContains:
+    """Test interval contains operation."""
+
+    def test_interval_contains_point(self) -> None:
+        assert evaluate("Interval[1, 10] contains 5") is True
+
+    def test_interval_not_contains(self) -> None:
+        assert evaluate("Interval[1, 10] contains 15") is False
+
+    def test_interval_contains_boundary_closed(self) -> None:
+        assert evaluate("Interval[1, 10] contains 1") is True
+        assert evaluate("Interval[1, 10] contains 10") is True
+
+    def test_interval_contains_boundary_open(self) -> None:
+        assert evaluate("Interval(1, 10) contains 1") is False
+        assert evaluate("Interval(1, 10) contains 10") is False
+
+
+class TestPointInInterval:
+    """Test point in interval operation."""
+
+    def test_point_in_interval(self) -> None:
+        assert evaluate("5 in Interval[1, 10]") is True
+
+    def test_point_not_in_interval(self) -> None:
+        assert evaluate("15 in Interval[1, 10]") is False
+
+    def test_boundary_in_closed(self) -> None:
+        assert evaluate("1 in Interval[1, 10]") is True
+
+    def test_boundary_not_in_open(self) -> None:
+        assert evaluate("1 in Interval(1, 10)") is False
+
+
+class TestIntervalOverlaps:
+    """Test interval overlaps operation."""
+
+    def test_overlaps_true(self) -> None:
+        interval1 = CQLInterval(low=1, high=5)
+        interval2 = CQLInterval(low=3, high=7)
+        assert interval1.overlaps(interval2) is True
+
+    def test_overlaps_false(self) -> None:
+        interval1 = CQLInterval(low=1, high=3)
+        interval2 = CQLInterval(low=5, high=7)
+        assert interval1.overlaps(interval2) is False
+
+    def test_overlaps_adjacent_closed(self) -> None:
+        interval1 = CQLInterval(low=1, high=3)
+        interval2 = CQLInterval(low=3, high=5)
+        assert interval1.overlaps(interval2) is True
+
+    def test_overlaps_adjacent_open(self) -> None:
+        interval1 = CQLInterval(low=1, high=3, high_closed=False)
+        interval2 = CQLInterval(low=3, high=5, low_closed=False)
+        assert interval1.overlaps(interval2) is False
+
+
+class TestIntervalIncludes:
+    """Test interval includes operation."""
+
+    def test_includes_subset(self) -> None:
+        outer = CQLInterval(low=1, high=10)
+        inner = CQLInterval(low=3, high=7)
+        assert outer.includes(inner) is True
+
+    def test_not_includes(self) -> None:
+        outer = CQLInterval(low=1, high=5)
+        inner = CQLInterval(low=3, high=7)
+        assert outer.includes(inner) is False
+
+    def test_includes_same(self) -> None:
+        interval = CQLInterval(low=1, high=10)
+        same = CQLInterval(low=1, high=10)
+        assert interval.includes(same) is True
+
+
+class TestIntervalMeets:
+    """Test interval meets operation."""
+
+    def test_meets_true(self) -> None:
+        interval1 = CQLInterval(low=1, high=3, high_closed=True)
+        interval2 = CQLInterval(low=3, high=5, low_closed=False)
+        assert interval1.meets(interval2) is True
+
+    def test_meets_false_overlap(self) -> None:
+        interval1 = CQLInterval(low=1, high=3)
+        interval2 = CQLInterval(low=3, high=5)
+        assert interval1.meets(interval2) is False  # Both include 3
+
+    def test_meets_false_gap(self) -> None:
+        interval1 = CQLInterval(low=1, high=3)
+        interval2 = CQLInterval(low=5, high=7)
+        assert interval1.meets(interval2) is False
+
+
+# =============================================================================
+# Phase 2: Query Expression Tests
+# =============================================================================
+
+
+class TestQueryFromReturn:
+    """Test basic query from...return expressions."""
+
+    def test_simple_query_return(self) -> None:
+        lib = compile_library("""
+            library Test
+            define Numbers: {1, 2, 3, 4, 5}
+            define Doubled: from Numbers N return N * 2
+        """)
+        evaluator = CQLEvaluator()
+        evaluator._current_library = lib
+        result = evaluator.evaluate_definition("Doubled")
+        assert result == [2, 4, 6, 8, 10]
+
+    def test_query_with_strings(self) -> None:
+        lib = compile_library("""
+            library Test
+            define Names: {'alice', 'bob', 'charlie'}
+            define Greetings: from Names N return 'Hello ' & N
+        """)
+        evaluator = CQLEvaluator()
+        evaluator._current_library = lib
+        result = evaluator.evaluate_definition("Greetings")
+        assert "Hello alice" in result
+
+    def test_query_identity(self) -> None:
+        lib = compile_library("""
+            library Test
+            define Numbers: {1, 2, 3}
+            define Same: from Numbers N return N
+        """)
+        evaluator = CQLEvaluator()
+        evaluator._current_library = lib
+        result = evaluator.evaluate_definition("Same")
+        assert result == [1, 2, 3]
+
+
+class TestQueryWhere:
+    """Test query where clause."""
+
+    def test_query_where_filter(self) -> None:
+        lib = compile_library("""
+            library Test
+            define Numbers: {1, 2, 3, 4, 5, 6}
+            define Even: from Numbers N where N mod 2 = 0 return N
+        """)
+        evaluator = CQLEvaluator()
+        evaluator._current_library = lib
+        result = evaluator.evaluate_definition("Even")
+        assert result == [2, 4, 6]
+
+    def test_query_where_greater_than(self) -> None:
+        lib = compile_library("""
+            library Test
+            define Numbers: {1, 2, 3, 4, 5}
+            define Large: from Numbers N where N > 3 return N
+        """)
+        evaluator = CQLEvaluator()
+        evaluator._current_library = lib
+        result = evaluator.evaluate_definition("Large")
+        assert result == [4, 5]
+
+    def test_query_where_all_filtered(self) -> None:
+        lib = compile_library("""
+            library Test
+            define Numbers: {1, 2, 3}
+            define None: from Numbers N where N > 10 return N
+        """)
+        evaluator = CQLEvaluator()
+        evaluator._current_library = lib
+        result = evaluator.evaluate_definition("None")
+        assert result == []
+
+
+class TestQueryLet:
+    """Test query let clause."""
+
+    def test_query_let_binding(self) -> None:
+        lib = compile_library("""
+            library Test
+            define Numbers: {1, 2, 3}
+            define WithSquares: from Numbers N
+                let Squared: N * N
+                return Squared
+        """)
+        evaluator = CQLEvaluator()
+        evaluator._current_library = lib
+        result = evaluator.evaluate_definition("WithSquares")
+        assert result == [1, 4, 9]
+
+    def test_query_let_multiple(self) -> None:
+        lib = compile_library("""
+            library Test
+            define Numbers: {2, 3, 4}
+            define Computed: from Numbers N
+                let Doubled: N * 2, Tripled: N * 3
+                return Doubled + Tripled
+        """)
+        evaluator = CQLEvaluator()
+        evaluator._current_library = lib
+        result = evaluator.evaluate_definition("Computed")
+        assert result == [10, 15, 20]  # (2*2+2*3), (3*2+3*3), (4*2+4*3)
+
+
+class TestQuerySort:
+    """Test query sort clause."""
+
+    def test_query_sort_asc(self) -> None:
+        lib = compile_library("""
+            library Test
+            define Numbers: {3, 1, 4, 1, 5}
+            define Sorted: from Numbers N return N sort asc
+        """)
+        evaluator = CQLEvaluator()
+        evaluator._current_library = lib
+        result = evaluator.evaluate_definition("Sorted")
+        assert result == [1, 1, 3, 4, 5]
+
+    def test_query_sort_desc(self) -> None:
+        lib = compile_library("""
+            library Test
+            define Numbers: {3, 1, 4, 1, 5}
+            define Sorted: from Numbers N return N sort desc
+        """)
+        evaluator = CQLEvaluator()
+        evaluator._current_library = lib
+        result = evaluator.evaluate_definition("Sorted")
+        assert result == [5, 4, 3, 1, 1]
+
+
+# =============================================================================
+# Phase 2: Function Chaining Tests
+# =============================================================================
+
+
+class TestListFunctionChaining:
+    """Test chaining list functions."""
+
+    def test_first_of_tail(self) -> None:
+        assert evaluate("First(Tail({1, 2, 3, 4}))") == 2
+
+    def test_last_of_take(self) -> None:
+        assert evaluate("Last(Take({1, 2, 3, 4, 5}, 3))") == 3
+
+    def test_count_of_distinct(self) -> None:
+        assert evaluate("Count(Distinct({1, 2, 2, 3, 3, 3}))") == 3
+
+    def test_sum_of_take(self) -> None:
+        assert evaluate("Sum(Take({1, 2, 3, 4, 5}, 3))") == 6
+
+    def test_flatten_then_distinct(self) -> None:
+        result = evaluate("Distinct(Flatten({{1, 2}, {2, 3}}))")
+        assert set(result) == {1, 2, 3}
+
+    def test_sort_then_take(self) -> None:
+        assert evaluate("Take(Sort({5, 3, 8, 1, 9}), 3)") == [1, 3, 5]
+
+    def test_reverse_of_sort(self) -> None:
+        assert evaluate("Reverse(Sort({3, 1, 2}))") == [3, 2, 1]
+
+
+class TestAggregatesOnComputedLists:
+    """Test aggregate functions on computed lists."""
+
+    def test_sum_of_list_literal(self) -> None:
+        assert evaluate("Sum({1, 2, 3, 4, 5})") == 15
+
+    def test_avg_of_list_literal(self) -> None:
+        assert evaluate("Avg({2, 4, 6, 8, 10})") == 6.0
+
+    def test_min_of_expressions(self) -> None:
+        assert evaluate("Min({1 + 1, 2 + 2, 3 + 3})") == 2
+
+    def test_max_of_expressions(self) -> None:
+        assert evaluate("Max({1 * 1, 2 * 2, 3 * 3})") == 9
+
+    def test_count_of_filtered(self) -> None:
+        # Using Distinct as a filter
+        assert evaluate("Count(Distinct({1, 1, 2, 2, 3}))") == 3

@@ -131,6 +131,14 @@ class CQLContext(EvaluationContext):
             return self._alias_scopes.pop()
         return {}
 
+    def push_scope(self) -> None:
+        """Alias for push_alias_scope for query execution."""
+        self.push_alias_scope()
+
+    def pop_scope(self) -> dict[str, Any]:
+        """Alias for pop_alias_scope for query execution."""
+        return self.pop_alias_scope()
+
     def set_alias(self, name: str, value: Any) -> None:
         """Set an alias in the current scope."""
         self._alias_scopes[-1][name] = value

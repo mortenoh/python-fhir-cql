@@ -859,6 +859,385 @@ class CQLEvaluatorVisitor(cqlVisitor):
         return self._cast_type(value, type_name)
 
     # =========================================================================
+    # Query Expressions
+    # =========================================================================
+
+    def visitQueryExpression(self, ctx: cqlParser.QueryExpressionContext) -> list[Any]:
+        """Visit query expression."""
+        return self.visit(ctx.query())
+
+    def visitQuery(self, ctx: cqlParser.QueryContext) -> list[Any]:
+        """Visit a query and execute it."""
+        # Get source clause
+        source_clause = ctx.sourceClause()
+        results = self._process_query_sources(source_clause)
+
+        # Apply let clauses
+        let_clause = ctx.letClause()
+        if let_clause:
+            results = self._apply_let_clause(results, let_clause)
+
+        # Apply where clause
+        where_clause = ctx.whereClause()
+        if where_clause:
+            results = self._apply_where_clause(results, where_clause)
+
+        # Apply return clause
+        return_clause = ctx.returnClause()
+        if return_clause:
+            results = self._apply_return_clause(results, return_clause)
+
+        # Apply sort clause
+        sort_clause = ctx.sortClause()
+        if sort_clause:
+            results = self._apply_sort_clause(results, sort_clause)
+
+        return results
+
+    def _process_query_sources(self, ctx: cqlParser.SourceClauseContext) -> list[Any]:
+        """Process query source clause and return initial result set."""
+        results: list[dict[str, Any]] = []
+
+        for alias_def in ctx.aliasedQuerySource():
+            source = alias_def.querySource()
+            alias = self._get_identifier_text(alias_def.alias().identifier())
+
+            # Evaluate the source expression
+            source_value = self._evaluate_query_source(source)
+
+            # Convert to list if necessary
+            if not isinstance(source_value, list):
+                source_value = [source_value] if source_value is not None else []
+
+            # Initialize result set with source
+            if not results:
+                results = [{alias: item} for item in source_value]
+            else:
+                # Cross join with additional source
+                new_results = []
+                for existing in results:
+                    for item in source_value:
+                        combined = dict(existing)
+                        combined[alias] = item
+                        new_results.append(combined)
+                results = new_results
+
+        return results
+
+    def _evaluate_query_source(self, ctx: cqlParser.QuerySourceContext) -> Any:
+        """Evaluate a query source."""
+        # Check if it's a retrieve
+        retrieve = ctx.retrieve()
+        if retrieve:
+            return self.visit(retrieve)
+
+        # Check if it's an expression
+        expr = ctx.expression()
+        if expr:
+            return self.visit(expr)
+
+        # Check if it's a qualified identifier expression (reference to definition)
+        qual_id = ctx.qualifiedIdentifierExpression()
+        if qual_id:
+            name = self._get_identifier_text(qual_id)
+            if self._library and name in self._library.definitions:
+                return self._evaluate_definition(name)
+            return self.context.get_alias(name)
+
+        return None
+
+    def _apply_let_clause(
+        self, results: list[dict[str, Any]], ctx: cqlParser.LetClauseContext
+    ) -> list[dict[str, Any]]:
+        """Apply let clause to bind additional variables."""
+        for let_item in ctx.letClauseItem():
+            identifier = self._get_identifier_text(let_item.identifier())
+            expr = let_item.expression()
+
+            new_results = []
+            for row in results:
+                # Create context with current row aliases
+                self.context.push_scope()
+                for alias, value in row.items():
+                    self.context.set_alias(alias, value)
+
+                try:
+                    let_value = self.visit(expr)
+                    new_row = dict(row)
+                    new_row[identifier] = let_value
+                    new_results.append(new_row)
+                finally:
+                    self.context.pop_scope()
+
+            results = new_results
+
+        return results
+
+    def _apply_where_clause(
+        self, results: list[dict[str, Any]], ctx: cqlParser.WhereClauseContext
+    ) -> list[dict[str, Any]]:
+        """Apply where clause filter."""
+        expr = ctx.expression()
+        filtered = []
+
+        for row in results:
+            # Create context with current row aliases
+            self.context.push_scope()
+            for alias, value in row.items():
+                self.context.set_alias(alias, value)
+
+            try:
+                condition = self.visit(expr)
+                if condition is True:
+                    filtered.append(row)
+            finally:
+                self.context.pop_scope()
+
+        return filtered
+
+    def _apply_return_clause(
+        self, results: list[dict[str, Any]], ctx: cqlParser.ReturnClauseContext
+    ) -> list[Any]:
+        """Apply return clause to shape output."""
+        expr = ctx.expression()
+        distinct = ctx.getText().lower().startswith("return distinct") or ctx.getText().lower().startswith(
+            "return all"
+        )
+        is_all = "all" in ctx.getText().lower()
+
+        returned = []
+        for row in results:
+            # Create context with current row aliases
+            self.context.push_scope()
+            for alias, value in row.items():
+                self.context.set_alias(alias, value)
+
+            try:
+                value = self.visit(expr)
+                returned.append(value)
+            finally:
+                self.context.pop_scope()
+
+        # Apply distinct if specified
+        if distinct and not is_all:
+            seen: list[Any] = []
+            for item in returned:
+                if item not in seen:
+                    seen.append(item)
+            return seen
+
+        return returned
+
+    def _apply_sort_clause(
+        self, results: list[Any], ctx: cqlParser.SortClauseContext
+    ) -> list[Any]:
+        """Apply sort clause to order results."""
+        sort_items = ctx.sortByItem()
+
+        # Check for simple sort direction (sort asc / sort desc)
+        if not sort_items:
+            direction = ctx.sortDirection()
+            if direction:
+                dir_text = direction.getText().lower()
+                reverse = dir_text in ("desc", "descending")
+                try:
+                    # Filter out None values for sorting, then sort
+                    non_none = [r for r in results if r is not None]
+                    none_count = len(results) - len(non_none)
+                    sorted_results = sorted(non_none, reverse=reverse)
+                    # Add None values at the end
+                    return sorted_results + [None] * none_count
+                except TypeError:
+                    pass  # Keep original order if not sortable
+            return results
+
+        # Complex sort with sortByItem
+        for sort_item in reversed(sort_items):  # Apply in reverse order
+            direction = sort_item.sortDirection()
+            dir_text = direction.getText().lower() if direction else "asc"
+            reverse = dir_text in ("desc", "descending")
+
+            expr = sort_item.expressionTerm()
+            if expr:
+                # Sort by expression
+                def sort_key(item: Any) -> Any:
+                    self.context.push_scope()
+                    self.context.set_alias("$this", item)
+                    try:
+                        key = self.visit(expr)
+                        return (key is None, key)  # None values sort last
+                    finally:
+                        self.context.pop_scope()
+
+                try:
+                    results = sorted(results, key=sort_key, reverse=reverse)
+                except TypeError:
+                    pass  # Keep original order if not sortable
+            else:
+                # Sort by natural order
+                try:
+                    results = sorted(results, reverse=reverse)
+                except TypeError:
+                    pass
+
+        return results
+
+    def visitRetrieve(self, ctx: cqlParser.RetrieveContext) -> list[Any]:
+        """Visit retrieve expression [ResourceType: property in ValueSet]."""
+        # Get resource type
+        named_type = ctx.namedTypeSpecifier()
+        if named_type:
+            resource_type = self._get_identifier_text(named_type)
+        else:
+            resource_type = ctx.getText().split(":")[0].strip("[")
+
+        # Get code filter if present
+        context_expr = ctx.contextIdentifier() if hasattr(ctx, "contextIdentifier") else None
+        terminology = ctx.terminology() if hasattr(ctx, "terminology") else None
+        code_path = ctx.codePath() if hasattr(ctx, "codePath") else None
+
+        # Build filter parameters
+        filters: dict[str, Any] = {"resourceType": resource_type}
+
+        if terminology:
+            # Parse terminology reference (valueset or code)
+            term_expr = terminology.qualifiedIdentifierExpression()
+            if term_expr:
+                term_name = self._get_identifier_text(term_expr)
+                if self._library:
+                    if term_name in self._library.valuesets:
+                        filters["valueset"] = self._library.valuesets[term_name].id
+                    elif term_name in self._library.codes:
+                        code = self._library.resolve_code(term_name)
+                        if code:
+                            filters["code"] = code
+
+        if code_path:
+            filters["codePath"] = self._get_identifier_text(code_path)
+
+        # Use data source if available
+        if self.context.data_source:
+            return self.context.data_source.retrieve(**filters)
+
+        return []
+
+    # =========================================================================
+    # Set Operations
+    # =========================================================================
+
+    def visitInFixSetExpression(self, ctx: cqlParser.InFixSetExpressionContext) -> list[Any]:
+        """Visit infix set expression (union, intersect, except)."""
+        left = self.visit(ctx.expression(0))
+        right = self.visit(ctx.expression(1))
+        op = ctx.getChild(1).getText().lower()
+
+        if not isinstance(left, list):
+            left = [left] if left is not None else []
+        if not isinstance(right, list):
+            right = [right] if right is not None else []
+
+        if op == "union":
+            # Union removes duplicates
+            result = list(left)
+            for item in right:
+                if item not in result:
+                    result.append(item)
+            return result
+        elif op == "intersect":
+            return [item for item in left if item in right]
+        elif op == "except":
+            return [item for item in left if item not in right]
+
+        return left
+
+    # =========================================================================
+    # Interval Operations
+    # =========================================================================
+
+    def visitTimingExpression(self, ctx: cqlParser.TimingExpressionContext) -> bool | None:
+        """Visit timing expression (before, after, during, etc.)."""
+        left = self.visit(ctx.expression(0))
+        right = self.visit(ctx.expression(1))
+
+        # Get the operator
+        op_text = ""
+        for i in range(1, ctx.getChildCount() - 1):
+            child = ctx.getChild(i)
+            if hasattr(child, "getText"):
+                op_text += child.getText().lower() + " "
+        op_text = op_text.strip()
+
+        if left is None or right is None:
+            return None
+
+        # Handle interval timing
+        if isinstance(left, CQLInterval) and isinstance(right, CQLInterval):
+            return self._interval_timing(left, right, op_text)
+        elif isinstance(left, CQLInterval):
+            return self._interval_point_timing(left, right, op_text)
+        elif isinstance(right, CQLInterval):
+            return self._point_interval_timing(left, right, op_text)
+
+        # Handle point comparisons
+        if "before" in op_text:
+            return left < right
+        elif "after" in op_text:
+            return left > right
+
+        return None
+
+    def _interval_timing(self, left: CQLInterval[Any], right: CQLInterval[Any], op: str) -> bool | None:
+        """Handle interval-to-interval timing comparisons."""
+        if "before" in op:
+            if left.high is None or right.low is None:
+                return None
+            return left.high < right.low
+        elif "after" in op:
+            if left.low is None or right.high is None:
+                return None
+            return left.low > right.high
+        elif "meets" in op:
+            if "before" in op:
+                return left.high == right.low
+            elif "after" in op:
+                return left.low == right.high
+            else:
+                return left.high == right.low or left.low == right.high
+        elif "overlaps" in op:
+            return left.overlaps(right)
+        elif "starts" in op:
+            return left.low == right.low
+        elif "ends" in op:
+            return left.high == right.high
+        elif "during" in op or "included in" in op:
+            return right.includes(left)
+        elif "includes" in op:
+            return left.includes(right)
+        elif "same" in op:
+            return left == right
+        return None
+
+    def _interval_point_timing(self, interval: CQLInterval[Any], point: Any, op: str) -> bool | None:
+        """Handle interval-to-point timing comparisons."""
+        if "before" in op:
+            return interval.high is not None and interval.high < point
+        elif "after" in op:
+            return interval.low is not None and interval.low > point
+        elif "contains" in op or "includes" in op:
+            return interval.contains(point)
+        return None
+
+    def _point_interval_timing(self, point: Any, interval: CQLInterval[Any], op: str) -> bool | None:
+        """Handle point-to-interval timing comparisons."""
+        if "before" in op:
+            return interval.low is not None and point < interval.low
+        elif "after" in op:
+            return interval.high is not None and point > interval.high
+        elif "during" in op or "in" in op or "included in" in op:
+            return interval.contains(point)
+        return None
+
+    # =========================================================================
     # Indexing
     # =========================================================================
 
@@ -1059,6 +1438,225 @@ class CQLEvaluatorVisitor(cqlVisitor):
                     return min(values)
                 if name_lower == "max":
                     return max(values)
+            return None
+
+        # Phase 2: List functions
+        if name_lower == "tail":
+            if args and isinstance(args[0], list) and len(args[0]) > 0:
+                return args[0][1:]
+            return []
+
+        if name_lower == "take":
+            if len(args) >= 2 and isinstance(args[0], list):
+                n = args[1]
+                if n is None or n < 0:
+                    return []
+                return args[0][:n]
+            return []
+
+        if name_lower == "skip":
+            if len(args) >= 2 and isinstance(args[0], list):
+                n = args[1]
+                if n is None or n < 0:
+                    return args[0]
+                return args[0][n:]
+            return []
+
+        if name_lower == "flatten":
+            if args and isinstance(args[0], list):
+                result = []
+                for item in args[0]:
+                    if isinstance(item, list):
+                        result.extend(item)
+                    else:
+                        result.append(item)
+                return result
+            return []
+
+        if name_lower == "distinct":
+            if args and isinstance(args[0], list):
+                seen: list[Any] = []
+                for item in args[0]:
+                    if item not in seen:
+                        seen.append(item)
+                return seen
+            return []
+
+        if name_lower == "sort":
+            if args and isinstance(args[0], list):
+                items = [i for i in args[0] if i is not None]
+                try:
+                    return sorted(items)
+                except TypeError:
+                    return items
+            return []
+
+        if name_lower == "indexof":
+            if len(args) >= 2 and isinstance(args[0], list):
+                try:
+                    return args[0].index(args[1])
+                except ValueError:
+                    return -1
+            return -1
+
+        if name_lower == "singleton":
+            if args and isinstance(args[0], list):
+                if len(args[0]) == 1:
+                    return args[0][0]
+                elif len(args[0]) == 0:
+                    return None
+                else:
+                    raise CQLError("Expected single element but found multiple")
+            return args[0] if args else None
+
+        if name_lower == "alltrue":
+            if args and isinstance(args[0], list):
+                for item in args[0]:
+                    if item is not True:
+                        return False
+                return True
+            return True
+
+        if name_lower == "anytrue":
+            if args and isinstance(args[0], list):
+                for item in args[0]:
+                    if item is True:
+                        return True
+                return False
+            return False
+
+        if name_lower == "allfalse":
+            if args and isinstance(args[0], list):
+                for item in args[0]:
+                    if item is not False:
+                        return False
+                return True
+            return True
+
+        if name_lower == "anyfalse":
+            if args and isinstance(args[0], list):
+                for item in args[0]:
+                    if item is False:
+                        return True
+                return False
+            return False
+
+        if name_lower == "reverse":
+            if args and isinstance(args[0], list):
+                return list(reversed(args[0]))
+            return []
+
+        if name_lower == "slice":
+            if len(args) >= 3 and isinstance(args[0], list):
+                start = args[1] if args[1] is not None else 0
+                length = args[2] if args[2] is not None else len(args[0])
+                return args[0][start : start + length]
+            return []
+
+        if name_lower == "singletonFrom":
+            return self._call_builtin_function("singleton", args)
+
+        if name_lower == "combine":
+            if len(args) >= 2 and isinstance(args[0], list) and isinstance(args[1], list):
+                return args[0] + args[1]
+            return []
+
+        if name_lower == "union":
+            if len(args) >= 2 and isinstance(args[0], list) and isinstance(args[1], list):
+                result = list(args[0])
+                for item in args[1]:
+                    if item not in result:
+                        result.append(item)
+                return result
+            return []
+
+        if name_lower == "intersect":
+            if len(args) >= 2 and isinstance(args[0], list) and isinstance(args[1], list):
+                return [item for item in args[0] if item in args[1]]
+            return []
+
+        if name_lower == "except":
+            if len(args) >= 2 and isinstance(args[0], list) and isinstance(args[1], list):
+                return [item for item in args[0] if item not in args[1]]
+            return []
+
+        # Aggregate functions with context
+        if name_lower == "populationvariance":
+            if args and isinstance(args[0], list):
+                values = [v for v in args[0] if v is not None and isinstance(v, (int, float, Decimal))]
+                if len(values) < 1:
+                    return None
+                mean = sum(values) / len(values)
+                return sum((v - mean) ** 2 for v in values) / len(values)
+            return None
+
+        if name_lower == "variance":
+            if args and isinstance(args[0], list):
+                values = [v for v in args[0] if v is not None and isinstance(v, (int, float, Decimal))]
+                if len(values) < 2:
+                    return None
+                mean = sum(values) / len(values)
+                return sum((v - mean) ** 2 for v in values) / (len(values) - 1)
+            return None
+
+        if name_lower == "populationstddev":
+            if args and isinstance(args[0], list):
+                variance = self._call_builtin_function("populationvariance", args)
+                if variance is not None:
+                    return Decimal(variance).sqrt()
+            return None
+
+        if name_lower == "stddev":
+            if args and isinstance(args[0], list):
+                variance = self._call_builtin_function("variance", args)
+                if variance is not None:
+                    return Decimal(variance).sqrt()
+            return None
+
+        if name_lower == "median":
+            if args and isinstance(args[0], list):
+                values = sorted(v for v in args[0] if v is not None and isinstance(v, (int, float, Decimal)))
+                if not values:
+                    return None
+                n = len(values)
+                if n % 2 == 1:
+                    return values[n // 2]
+                else:
+                    return (values[n // 2 - 1] + values[n // 2]) / 2
+            return None
+
+        if name_lower == "mode":
+            if args and isinstance(args[0], list):
+                values = [v for v in args[0] if v is not None]
+                if not values:
+                    return None
+                # Count occurrences
+                counts: dict[Any, int] = {}
+                for v in values:
+                    counts[v] = counts.get(v, 0) + 1
+                max_count = max(counts.values())
+                return [k for k, v in counts.items() if v == max_count][0]
+            return None
+
+        if name_lower == "product":
+            if args and isinstance(args[0], list):
+                values = [v for v in args[0] if v is not None and isinstance(v, (int, float, Decimal))]
+                if not values:
+                    return None
+                result = Decimal(1)
+                for v in values:
+                    result *= Decimal(str(v))
+                return result
+            return None
+
+        if name_lower == "geometricmean":
+            if args and isinstance(args[0], list):
+                values = [v for v in args[0] if v is not None and isinstance(v, (int, float, Decimal))]
+                if not values or any(v <= 0 for v in values):
+                    return None
+                product = self._call_builtin_function("product", args)
+                if product is not None:
+                    return Decimal(product) ** (Decimal(1) / Decimal(len(values)))
             return None
 
         # Function not found
