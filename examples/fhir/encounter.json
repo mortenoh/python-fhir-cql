@@ -1,0 +1,117 @@
+{
+  "resourceType": "Encounter",
+  "id": "encounter-outpatient",
+  "meta": {
+    "profile": ["http://hl7.org/fhir/us/core/StructureDefinition/us-core-encounter"]
+  },
+  "identifier": [{
+    "use": "official",
+    "system": "http://hospital.example.org/encounters",
+    "value": "ENC-2024-001234"
+  }],
+  "status": "finished",
+  "class": {
+    "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+    "code": "AMB",
+    "display": "ambulatory"
+  },
+  "type": [{
+    "coding": [{
+      "system": "http://snomed.info/sct",
+      "code": "185349003",
+      "display": "Encounter for check up"
+    }],
+    "text": "Annual wellness visit"
+  }],
+  "serviceType": {
+    "coding": [{
+      "system": "http://snomed.info/sct",
+      "code": "788007007",
+      "display": "General practice service"
+    }]
+  },
+  "priority": {
+    "coding": [{
+      "system": "http://terminology.hl7.org/CodeSystem/v3-ActPriority",
+      "code": "R",
+      "display": "routine"
+    }]
+  },
+  "subject": {
+    "reference": "Patient/patient-diabetic",
+    "display": "John Smith"
+  },
+  "participant": [{
+    "type": [{
+      "coding": [{
+        "system": "http://terminology.hl7.org/CodeSystem/v3-ParticipationType",
+        "code": "PPRF",
+        "display": "primary performer"
+      }]
+    }],
+    "individual": {
+      "reference": "Practitioner/practitioner-1",
+      "display": "Dr. Sarah Johnson"
+    }
+  }],
+  "period": {
+    "start": "2024-03-15T09:00:00-05:00",
+    "end": "2024-03-15T09:45:00-05:00"
+  },
+  "length": {
+    "value": 45,
+    "unit": "minutes",
+    "system": "http://unitsofmeasure.org",
+    "code": "min"
+  },
+  "reasonCode": [
+    {
+      "coding": [{
+        "system": "http://snomed.info/sct",
+        "code": "73211009",
+        "display": "Diabetes mellitus"
+      }],
+      "text": "Diabetes follow-up"
+    },
+    {
+      "coding": [{
+        "system": "http://snomed.info/sct",
+        "code": "38341003",
+        "display": "Hypertensive disorder"
+      }],
+      "text": "Hypertension management"
+    }
+  ],
+  "diagnosis": [{
+    "condition": {
+      "reference": "Condition/condition-diabetes"
+    },
+    "use": {
+      "coding": [{
+        "system": "http://terminology.hl7.org/CodeSystem/diagnosis-role",
+        "code": "billing",
+        "display": "Billing"
+      }]
+    },
+    "rank": 1
+  }],
+  "hospitalization": {
+    "dischargeDisposition": {
+      "coding": [{
+        "system": "http://terminology.hl7.org/CodeSystem/discharge-disposition",
+        "code": "home",
+        "display": "Home"
+      }]
+    }
+  },
+  "location": [{
+    "location": {
+      "display": "Primary Care Clinic - Room 203"
+    },
+    "status": "completed"
+  }],
+  "serviceProvider": {
+    "reference": "Organization/organization-1",
+    "display": "General Hospital Primary Care"
+  }
+}

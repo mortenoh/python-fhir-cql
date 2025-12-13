@@ -1,0 +1,93 @@
+{
+  "resourceType": "AllergyIntolerance",
+  "id": "allergy-penicillin",
+  "meta": {
+    "profile": ["http://hl7.org/fhir/us/core/StructureDefinition/us-core-allergyintolerance"]
+  },
+  "clinicalStatus": {
+    "coding": [{
+      "system": "http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical",
+      "code": "active",
+      "display": "Active"
+    }]
+  },
+  "verificationStatus": {
+    "coding": [{
+      "system": "http://terminology.hl7.org/CodeSystem/allergyintolerance-verification",
+      "code": "confirmed",
+      "display": "Confirmed"
+    }]
+  },
+  "type": "allergy",
+  "category": ["medication"],
+  "criticality": "high",
+  "code": {
+    "coding": [
+      {
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "code": "7980",
+        "display": "Penicillin"
+      },
+      {
+        "system": "http://snomed.info/sct",
+        "code": "764146007",
+        "display": "Penicillin (substance)"
+      }
+    ],
+    "text": "Penicillin"
+  },
+  "patient": {
+    "reference": "Patient/patient-diabetic",
+    "display": "John Smith"
+  },
+  "onsetDateTime": "2015-03-01",
+  "recordedDate": "2015-03-15",
+  "recorder": {
+    "reference": "Practitioner/practitioner-1",
+    "display": "Dr. Sarah Johnson"
+  },
+  "asserter": {
+    "reference": "Patient/patient-diabetic",
+    "display": "John Smith"
+  },
+  "lastOccurrence": "2015-03-01",
+  "note": [{
+    "text": "Patient developed severe rash and difficulty breathing after taking amoxicillin."
+  }],
+  "reaction": [{
+    "substance": {
+      "coding": [{
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "code": "723",
+        "display": "Amoxicillin"
+      }]
+    },
+    "manifestation": [
+      {
+        "coding": [{
+          "system": "http://snomed.info/sct",
+          "code": "271807003",
+          "display": "Eruption of skin"
+        }],
+        "text": "Skin rash"
+      },
+      {
+        "coding": [{
+          "system": "http://snomed.info/sct",
+          "code": "267036007",
+          "display": "Dyspnea"
+        }],
+        "text": "Difficulty breathing"
+      }
+    ],
+    "severity": "severe",
+    "exposureRoute": {
+      "coding": [{
+        "system": "http://snomed.info/sct",
+        "code": "26643006",
+        "display": "Oral route"
+      }]
+    },
+    "onset": "2015-03-01"
+  }]
+}

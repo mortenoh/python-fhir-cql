@@ -1,0 +1,104 @@
+{
+  "resourceType": "Procedure",
+  "id": "procedure-colonoscopy",
+  "meta": {
+    "profile": ["http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"]
+  },
+  "identifier": [{
+    "system": "http://hospital.example.org/procedures",
+    "value": "PROC-2024-00567"
+  }],
+  "status": "completed",
+  "category": {
+    "coding": [{
+      "system": "http://snomed.info/sct",
+      "code": "103693007",
+      "display": "Diagnostic procedure"
+    }]
+  },
+  "code": {
+    "coding": [
+      {
+        "system": "http://snomed.info/sct",
+        "code": "73761001",
+        "display": "Colonoscopy"
+      },
+      {
+        "system": "http://www.ama-assn.org/go/cpt",
+        "code": "45378",
+        "display": "Colonoscopy, flexible; diagnostic"
+      }
+    ],
+    "text": "Screening colonoscopy"
+  },
+  "subject": {
+    "reference": "Patient/patient-diabetic",
+    "display": "John Smith"
+  },
+  "encounter": {
+    "reference": "Encounter/encounter-outpatient"
+  },
+  "performedDateTime": "2024-02-20T10:30:00-05:00",
+  "recorder": {
+    "reference": "Practitioner/practitioner-1",
+    "display": "Dr. Sarah Johnson"
+  },
+  "asserter": {
+    "reference": "Practitioner/practitioner-1",
+    "display": "Dr. Sarah Johnson"
+  },
+  "performer": [{
+    "function": {
+      "coding": [{
+        "system": "http://snomed.info/sct",
+        "code": "304292004",
+        "display": "Surgeon"
+      }]
+    },
+    "actor": {
+      "reference": "Practitioner/practitioner-gi",
+      "display": "Dr. Michael Chen, Gastroenterologist"
+    }
+  }],
+  "location": {
+    "display": "Endoscopy Suite"
+  },
+  "reasonCode": [{
+    "coding": [{
+      "system": "http://snomed.info/sct",
+      "code": "268548003",
+      "display": "Screening for malignant neoplasm of colon"
+    }],
+    "text": "Colorectal cancer screening"
+  }],
+  "bodySite": [{
+    "coding": [{
+      "system": "http://snomed.info/sct",
+      "code": "71854001",
+      "display": "Colon structure"
+    }]
+  }],
+  "outcome": {
+    "coding": [{
+      "system": "http://snomed.info/sct",
+      "code": "385669000",
+      "display": "Successful"
+    }],
+    "text": "Procedure completed without complications"
+  },
+  "report": [{
+    "reference": "DiagnosticReport/colonoscopy-report"
+  }],
+  "complication": [],
+  "followUp": [{
+    "coding": [{
+      "system": "http://snomed.info/sct",
+      "code": "183617005",
+      "display": "Follow-up in 10 years"
+    }],
+    "text": "Repeat colonoscopy in 10 years if normal"
+  }],
+  "note": [{
+    "text": "Patient tolerated procedure well. No polyps found. Cecum reached."
+  }]
+}
