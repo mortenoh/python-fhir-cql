@@ -1,6 +1,6 @@
 # python-fhir-cql
 
-FHIRPath and CQL (Clinical Quality Language) evaluators for Python using ANTLR4.
+FHIRPath, CQL (Clinical Quality Language), ELM, and CDS Hooks for Python using ANTLR4.
 
 ## Overview
 
@@ -8,7 +8,9 @@ This project provides complete implementations of:
 
 - **FHIRPath Evaluator**: Parse and evaluate [FHIRPath](http://hl7.org/fhirpath/) expressions against FHIR resources
 - **CQL Evaluator**: Parse and evaluate [CQL](https://cql.hl7.org/) (Clinical Quality Language) libraries and expressions
-- **CLI Tools**: Command-line interfaces for evaluation, AST visualization, and validation
+- **ELM Support**: Load, execute, and export [ELM](https://cql.hl7.org/elm.html) (Expression Logical Model) - the compiled representation of CQL
+- **CDS Hooks Server**: Build and deploy [CDS Hooks](https://cds-hooks.hl7.org/) services with CQL-based clinical decision support
+- **CLI Tools**: Command-line interfaces for evaluation, AST visualization, validation, and CDS server management
 - **Python API**: Programmatic access to evaluators for integration into applications
 
 ## Quick Examples
@@ -62,23 +64,29 @@ greeting = evaluator.evaluate_definition("Greeting")  # 'Hello, CQL!'
 
 ## Features
 
-| Feature | FHIRPath | CQL |
-|---------|----------|-----|
-| Parsing | Yes | Yes |
-| Evaluation | Yes | Yes |
-| AST visualization | Yes | Yes |
-| Token stream | Yes | Yes |
-| Interactive REPL | Yes | - |
-| Library compilation | - | Yes |
-| User-defined functions | - | Yes |
-| Queries with from/where/return | - | Yes |
-| Interval operations | - | Yes |
-| Temporal operations | - | Yes |
-| Terminology (codes/valuesets) | - | Yes |
-| FHIR data sources | - | Yes |
-| Quality measures | - | Yes |
+| Feature | FHIRPath | CQL | ELM | CDS Hooks |
+|---------|----------|-----|-----|-----------|
+| Parsing | Yes | Yes | - | - |
+| Evaluation | Yes | Yes | Yes | - |
+| AST visualization | Yes | Yes | - | - |
+| Interactive REPL | Yes | - | - | - |
+| Library compilation | - | Yes | - | - |
+| User-defined functions | - | Yes | Yes | - |
+| Queries (from/where/return) | - | Yes | Yes | - |
+| Interval operations | - | Yes | Yes | - |
+| Temporal operations | - | Yes | Yes | - |
+| Terminology (codes/valuesets) | - | Yes | Yes | - |
+| FHIR data sources | - | Yes | Yes | - |
+| Quality measures | - | Yes | Yes | - |
+| CQL-to-ELM export | - | Yes | - | - |
+| ELM JSON loading | - | - | Yes | - |
+| Service discovery | - | - | - | Yes |
+| Card generation | - | - | - | Yes |
+| Prefetch templates | - | - | - | Yes |
 
-## CQL Implementation Status
+## Implementation Status
+
+### CQL
 
 | Phase | Status | Description |
 |-------|--------|-------------|
@@ -90,7 +98,25 @@ greeting = evaluator.evaluate_definition("Greeting")  # 'Hello, CQL!'
 | Phase 6: Quality Measures | Complete | Measure evaluation, populations, stratification |
 | Phase 7: Production | Complete | CLI commands, expression/library caching |
 
-**Current test count: 1225+ passing tests**
+### ELM
+
+| Phase | Status | Description |
+|-------|--------|-------------|
+| Phase 1: Foundation | Complete | Models, loader, visitor, evaluator |
+| Phase 2: CQL-to-ELM | Complete | Serializer for exporting CQL to ELM JSON |
+| Phase 3-5: Advanced | Complete | Query, clinical, and advanced expressions |
+| Phase 6: CLI | Complete | ELM CLI commands |
+
+### CDS Hooks
+
+| Component | Status | Description |
+|-----------|--------|-------------|
+| API Server | Complete | FastAPI-based CDS Hooks server |
+| Service Registry | Complete | YAML-based service configuration |
+| Card Builder | Complete | Jinja2 template-based card generation |
+| Executor | Complete | CQL evaluation engine integration |
+
+**Current test count: 1637+ passing tests**
 
 ## Requirements
 
@@ -106,10 +132,12 @@ greeting = evaluator.evaluate_definition("Greeting")  # 'Hello, CQL!'
 - [FHIRPath Tutorial](fhirpath-tutorial.md) - Learn FHIRPath from scratch
 - [CQL Tutorial](cql-tutorial.md) - Learn CQL from scratch
 
-### Reference
+### Reference Guides
 - [FHIRPath Guide](fhirpath-guide.md) - Comprehensive FHIRPath documentation
 - [FHIRPath API](fhirpath-api.md) - Python API for FHIRPath
 - [CQL API](cql-api.md) - Python API for CQL
+- [ELM Guide](elm-guide.md) - ELM loading, evaluation, and CQL-to-ELM export
+- [CDS Hooks Guide](cds-hooks-guide.md) - Building clinical decision support services
 - [FHIRPath & CQL Reference](fhirpath-cql-tutorial.md) - Deep dive reference with examples
 
 ## Examples

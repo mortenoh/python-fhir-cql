@@ -471,16 +471,146 @@ The following ELM expression types are supported:
 
 ## Converting CQL to ELM
 
-To convert CQL source code to ELM JSON, you can use the HL7 CQL-to-ELM translator:
+This library includes a built-in CQL-to-ELM serializer that converts CQL source code to ELM JSON without requiring external tools.
+
+### Using the CLI
 
 ```bash
-# Using the CQL translator (Java-based)
+# Convert CQL to ELM JSON file
+fhir elm convert library.cql -o library.elm.json
+
+# Convert and output to stdout
+fhir elm convert library.cql --quiet > library.elm.json
+
+# Or use the CQL export command
+fhir cql export library.cql -o library.elm.json
+```
+
+### Using the Python API
+
+```python
+from fhir_cql.engine.cql import CQLEvaluator
+
+evaluator = CQLEvaluator()
+
+# Compile a library first
+library = evaluator.compile("""
+    library Example version '1.0'
+    define Sum: 1 + 2 + 3
+    define Greeting: 'Hello, ELM!'
+""")
+
+# Convert to ELM model
+elm_model = evaluator.to_elm()
+
+# Convert to ELM JSON string
+elm_json = evaluator.to_elm_json(indent=2)
+print(elm_json)
+
+# Convert to ELM dictionary
+elm_dict = evaluator.to_elm_dict()
+```
+
+### Using the Serializer Directly
+
+```python
+from fhir_cql.engine.elm import ELMSerializer
+
+serializer = ELMSerializer()
+
+cql_source = """
+    library MyLibrary version '1.0'
+    using FHIR version '4.0.1'
+
+    define PatientAge: AgeInYears()
+    define IsAdult: PatientAge >= 18
+"""
+
+# Convert to ELMLibrary model
+elm_model = serializer.serialize_to_model(cql_source)
+
+# Convert to JSON string
+elm_json = serializer.serialize_library_json(cql_source, indent=2)
+
+# Convert to dictionary
+elm_dict = serializer.serialize_library(cql_source)
+```
+
+### External CQL-to-ELM Translators
+
+You can also use external CQL-to-ELM translators:
+
+```bash
+# Using the HL7 CQL translator (Java-based)
 java -jar cql-to-elm.jar -f path/to/library.cql -o output/
 
 # This produces library.json (ELM JSON) that can be loaded with this library
 ```
 
 Or use the CQL testing framework available at [cql-execution](https://github.com/cqframework/cql-execution).
+
+## CLI Commands
+
+The `fhir elm` CLI provides commands for working with ELM files.
+
+### Load and Validate
+
+```bash
+# Load and validate an ELM file
+fhir elm load library.elm.json
+
+# Show detailed information
+fhir elm load library.elm.json --verbose
+```
+
+### Evaluate Definitions
+
+```bash
+# Evaluate a specific definition
+fhir elm eval library.elm.json MyDefinition
+
+# With patient data
+fhir elm eval library.elm.json PatientAge --data patient.json
+
+# With parameters
+fhir elm eval library.elm.json Calculate --param Multiplier=10
+```
+
+### Run All Definitions
+
+```bash
+# Run all definitions
+fhir elm run library.elm.json
+
+# With data and save results
+fhir elm run library.elm.json --data patient.json --output results.json
+```
+
+### Validate Multiple Files
+
+```bash
+# Validate multiple ELM files
+fhir elm validate *.elm.json
+```
+
+### Display ELM
+
+```bash
+# Show ELM with syntax highlighting
+fhir elm show library.elm.json
+```
+
+### Convert CQL to ELM
+
+```bash
+# Convert CQL file to ELM JSON
+fhir elm convert library.cql -o library.elm.json
+
+# Output to stdout
+fhir elm convert library.cql --quiet
+```
+
+For complete CLI documentation, see the [CLI Reference](cli.md#elm-cli).
 
 ## Next Steps
 

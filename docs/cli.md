@@ -1,9 +1,10 @@
 # CLI Reference
 
-The unified `fhir` CLI provides access to CQL, FHIRPath, and CDS Hooks functionality:
+The unified `fhir` CLI provides access to CQL, FHIRPath, ELM, and CDS Hooks functionality:
 
 ```bash
 fhir cql <command>      # CQL commands
+fhir elm <command>      # ELM commands
 fhir fhirpath <command> # FHIRPath commands
 fhir cds <command>      # CDS Hooks commands
 ```
@@ -327,6 +328,216 @@ Display a file with syntax highlighting.
 fhir cql show <file.cql>
 ```
 
+### export
+
+Export a CQL library to ELM JSON format.
+
+```bash
+fhir cql export <file.cql>
+fhir cql export <file.cql> -o <output.elm.json>
+fhir cql export <file.cql> --quiet > output.elm.json
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `-o, --output` | Output file for ELM JSON |
+| `-i, --indent` | JSON indentation level (default: 2) |
+| `-q, --quiet` | Only output JSON (no status messages) |
+
+**Examples:**
+
+```bash
+# Export to file
+fhir cql export library.cql -o library.elm.json
+
+# Export to stdout (quiet mode)
+fhir cql export library.cql --quiet > library.elm.json
+
+# View ELM with syntax highlighting
+fhir cql export library.cql
+```
+
+---
+
+## ELM CLI
+
+### load
+
+Load and validate an ELM JSON file.
+
+```bash
+fhir elm load <file.elm.json>
+fhir elm load <file.elm.json> --verbose
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `-v, --verbose` | Show detailed library information |
+
+**Examples:**
+
+```bash
+# Basic load and validate
+fhir elm load library.elm.json
+
+# Show full details
+fhir elm load library.elm.json --verbose
+```
+
+**Output:**
+
+```
+✓ Successfully loaded: library.elm.json
+
+Library: MyLibrary v1.0.0
+
+Definitions   3
+Functions     1
+Parameters    0
+Value Sets    2
+Code Systems  1
+Codes         0
+```
+
+### eval
+
+Evaluate a specific definition from an ELM library.
+
+```bash
+fhir elm eval <file.elm.json> <definition>
+fhir elm eval <file.elm.json> <definition> --data <data.json>
+fhir elm eval <file.elm.json> <definition> --param name=value
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `-d, --data` | JSON data file for context |
+| `-p, --param` | Parameter in name=value format (repeatable) |
+
+**Examples:**
+
+```bash
+# Evaluate simple definition
+fhir elm eval library.elm.json Sum
+
+# With patient data
+fhir elm eval library.elm.json PatientAge --data patient.json
+
+# With parameters
+fhir elm eval library.elm.json Calculate --param Multiplier=10
+```
+
+### run
+
+Run all definitions in an ELM library.
+
+```bash
+fhir elm run <file.elm.json>
+fhir elm run <file.elm.json> --data <data.json>
+fhir elm run <file.elm.json> --output <results.json>
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `-d, --data` | JSON data file for context |
+| `-p, --param` | Parameter in name=value format (repeatable) |
+| `-o, --output` | Output file for results (JSON format) |
+| `--private` | Include private definitions |
+
+**Examples:**
+
+```bash
+# Run all definitions
+fhir elm run library.elm.json
+
+# With patient data
+fhir elm run library.elm.json --data patient.json
+
+# Save results to file
+fhir elm run library.elm.json --output results.json
+```
+
+**Output:**
+
+```
+Library: MyLibrary v1.0.0
+
+┏━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Definition       ┃ Value                   ┃
+┡━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ Sum              │ 6                       │
+│ Greeting         │ 'Hello, ELM!'           │
+│ IsActive         │ true                    │
+└──────────────────┴─────────────────────────┘
+```
+
+### show
+
+Display an ELM JSON file with syntax highlighting.
+
+```bash
+fhir elm show <file.elm.json>
+```
+
+### validate
+
+Validate one or more ELM JSON files.
+
+```bash
+fhir elm validate <file.elm.json>
+fhir elm validate *.elm.json
+```
+
+**Output:**
+
+```
+✓ library1.elm.json
+✓ library2.elm.json
+✗ library3.elm.json
+    • Missing required field: library.identifier
+
+Results: 2/3 passed, 1/3 failed
+```
+
+### convert
+
+Convert a CQL file to ELM JSON.
+
+```bash
+fhir elm convert <file.cql>
+fhir elm convert <file.cql> -o <output.elm.json>
+fhir elm convert <file.cql> --quiet > output.elm.json
+```
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `-o, --output` | Output ELM JSON file |
+| `-i, --indent` | JSON indentation level (default: 2) |
+| `-q, --quiet` | Only output JSON (no status messages) |
+
+**Examples:**
+
+```bash
+# Convert to file
+fhir elm convert library.cql -o library.elm.json
+
+# Convert to stdout
+fhir elm convert library.cql --quiet > library.elm.json
+
+# View with syntax highlighting
+fhir elm convert library.cql
+```
+
 ---
 
 ## CDS Hooks CLI
@@ -485,6 +696,18 @@ Cards generated: 1
 | `fhir cql validate` | Validate multiple files |
 | `fhir cql definitions` | List library definitions |
 | `fhir cql show` | Display file with highlighting |
+| `fhir cql export` | Export CQL to ELM JSON |
+
+### ELM Commands
+
+| Command | Description |
+|---------|-------------|
+| `fhir elm load` | Load and validate ELM JSON |
+| `fhir elm eval` | Evaluate a specific definition |
+| `fhir elm run` | Run all definitions in a library |
+| `fhir elm show` | Display ELM with syntax highlighting |
+| `fhir elm validate` | Validate ELM JSON files |
+| `fhir elm convert` | Convert CQL to ELM JSON |
 
 ### CDS Hooks Commands
 

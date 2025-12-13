@@ -15,10 +15,12 @@ This project provides complete implementations of:
 
 - **FHIRPath Evaluator**: Parse and evaluate [FHIRPath](http://hl7.org/fhirpath/) expressions against FHIR resources
 - **CQL Evaluator**: Parse and evaluate [CQL](https://cql.hl7.org/) (Clinical Quality Language) libraries and expressions
-- **CLI Tools**: Command-line interfaces for evaluation, AST visualization, and validation
+- **ELM Support**: Load, execute, and export [ELM](https://cql.hl7.org/elm.html) (Expression Logical Model) - the compiled representation of CQL
+- **CDS Hooks Server**: Build and deploy [CDS Hooks](https://cds-hooks.hl7.org/) services with CQL-based clinical decision support
+- **CLI Tools**: Command-line interfaces for evaluation, AST visualization, validation, and CDS server management
 - **Python API**: Programmatic access to evaluators for integration into applications
 
-**Current test count: 1225+ passing tests**
+**Current test count: 1637+ passing tests**
 
 ## Requirements
 
@@ -115,21 +117,27 @@ all_results = evaluator.evaluate_all_definitions()
 
 ## Features
 
-| Feature | FHIRPath | CQL |
-|---------|----------|-----|
-| Parsing | Yes | Yes |
-| Evaluation | Yes | Yes |
-| AST visualization | Yes | Yes |
-| Interactive REPL | Yes | - |
-| Library compilation | - | Yes |
-| User-defined functions | - | Yes |
-| Queries (from/where/return) | - | Yes |
-| Interval operations | - | Yes |
-| Temporal operations | - | Yes |
-| Terminology (codes/valuesets) | - | Yes |
-| FHIR data sources | - | Yes |
-| Retrieve with patient context | - | Yes |
-| Quality measures | - | Yes |
+| Feature | FHIRPath | CQL | ELM | CDS Hooks |
+|---------|----------|-----|-----|-----------|
+| Parsing | Yes | Yes | - | - |
+| Evaluation | Yes | Yes | Yes | - |
+| AST visualization | Yes | Yes | - | - |
+| Interactive REPL | Yes | - | - | - |
+| Library compilation | - | Yes | - | - |
+| User-defined functions | - | Yes | Yes | - |
+| Queries (from/where/return) | - | Yes | Yes | - |
+| Interval operations | - | Yes | Yes | - |
+| Temporal operations | - | Yes | Yes | - |
+| Terminology (codes/valuesets) | - | Yes | Yes | - |
+| FHIR data sources | - | Yes | Yes | - |
+| Retrieve with patient context | - | Yes | Yes | - |
+| Quality measures | - | Yes | Yes | - |
+| CQL-to-ELM export | - | Yes | - | - |
+| ELM JSON loading | - | - | Yes | - |
+| YAML-based service config | - | - | - | Yes |
+| Service discovery | - | - | - | Yes |
+| Card generation | - | - | - | Yes |
+| Prefetch templates | - | - | - | Yes |
 
 ## CQL Implementation Status
 
@@ -145,14 +153,14 @@ all_results = evaluator.evaluate_all_definitions()
 
 ## CLI Commands
 
-The unified `fhir` CLI provides access to both CQL and FHIRPath functionality:
+The unified `fhir` CLI provides access to CQL, ELM, FHIRPath, and CDS Hooks functionality:
 
 ```bash
 fhir cql <command>      # CQL commands
+fhir elm <command>      # ELM commands
 fhir fhirpath <command> # FHIRPath commands
+fhir cds <command>      # CDS Hooks commands
 ```
-
-Standalone commands are also available: `cql` and `fhirpath`.
 
 ### CQL
 
@@ -162,11 +170,21 @@ Standalone commands are also available: `cql` and `fhirpath`.
 | `fhir cql run <file>` | Run library and evaluate definitions |
 | `fhir cql check <file>` | Validate and analyze library |
 | `fhir cql measure <file>` | Evaluate quality measure |
+| `fhir cql export <file>` | Export CQL to ELM JSON |
 | `fhir cql parse <file>` | Parse and validate file |
 | `fhir cql ast <file>` | Display AST tree |
-| `fhir cql tokens <file>` | Show token stream |
 | `fhir cql validate <files...>` | Validate multiple files |
-| `fhir cql definitions <file>` | List library definitions |
+
+### ELM
+
+| Command | Description |
+|---------|-------------|
+| `fhir elm load <file>` | Load and validate ELM JSON |
+| `fhir elm eval <file> <def>` | Evaluate a specific definition |
+| `fhir elm run <file>` | Run all definitions |
+| `fhir elm convert <file>` | Convert CQL to ELM JSON |
+| `fhir elm validate <files...>` | Validate ELM JSON files |
+| `fhir elm show <file>` | Display ELM with highlighting |
 
 ### FHIRPath
 
@@ -178,6 +196,15 @@ Standalone commands are also available: `cql` and `fhirpath`.
 | `fhir fhirpath ast <expr>` | Display AST tree |
 | `fhir fhirpath tokens <expr>` | Show token stream |
 | `fhir fhirpath repl` | Interactive REPL |
+
+### CDS Hooks
+
+| Command | Description |
+|---------|-------------|
+| `fhir cds serve` | Start the CDS Hooks server |
+| `fhir cds validate <config>` | Validate service configuration |
+| `fhir cds list` | List configured services |
+| `fhir cds test <service>` | Test a service with sample data |
 
 ## Examples
 
@@ -225,11 +252,17 @@ Standalone commands are also available: `cql` and `fhirpath`.
 
 - [Getting Started](docs/getting-started.md)
 - [CLI Reference](docs/cli.md)
+
+### Tutorials
 - [FHIRPath Tutorial](docs/fhirpath-tutorial.md) - Step-by-step guide
 - [CQL Tutorial](docs/cql-tutorial.md) - Step-by-step guide
+
+### Reference Guides
 - [FHIRPath Guide](docs/fhirpath-guide.md)
 - [FHIRPath API](docs/fhirpath-api.md)
 - [CQL API](docs/cql-api.md)
+- [ELM Guide](docs/elm-guide.md) - ELM loading, evaluation, and CQL-to-ELM export
+- [CDS Hooks Guide](docs/cds-hooks-guide.md) - Building clinical decision support services
 - [FHIRPath & CQL Reference](docs/fhirpath-cql-tutorial.md)
 
 ## Development
