@@ -6,11 +6,14 @@ This module handles:
 - Loading and caching compiled libraries
 """
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from .types import CQLCode, CQLConcept
+
+if TYPE_CHECKING:
+    from .library_resolver import LibraryResolver
 
 
 class UsingDefinition(BaseModel):
@@ -204,22 +207,87 @@ class CQLLibrary(BaseModel):
 
 
 class LibraryManager:
-    """Manages loading and caching of CQL libraries."""
+    """Manages loading and caching of CQL libraries.
+
+    Supports library resolution through configurable resolvers that can
+    load libraries from the filesystem, memory, or other sources.
+    """
 
     def __init__(self) -> None:
+        from .library_resolver import LibraryResolver
+
         self._cache: dict[str, CQLLibrary] = {}
         self._sources: dict[str, str] = {}  # library name -> source path/content
+        self._resolver: LibraryResolver | None = None
+        self._compile_fn: Any = None  # Set by evaluator to compile resolved sources
+
+    def set_resolver(self, resolver: "LibraryResolver") -> None:
+        """Set the library resolver for loading dependencies.
+
+        Args:
+            resolver: Resolver to use for finding library sources
+        """
+
+        self._resolver = resolver
+
+    def set_compile_function(self, compile_fn: Any) -> None:
+        """Set the compilation function for compiling resolved sources.
+
+        Args:
+            compile_fn: Function that takes source code and returns CQLLibrary
+        """
+        self._compile_fn = compile_fn
 
     def register_source(self, name: str, source: str) -> None:
         """Register a library source by name."""
         self._sources[name] = source
 
     def get_library(self, name: str, version: str | None = None) -> CQLLibrary | None:
-        """Get a library by name, loading if necessary."""
+        """Get a library by name, loading if necessary.
+
+        If the library is not in cache, attempts to resolve it using the
+        configured resolver.
+
+        Args:
+            name: Library name
+            version: Optional version string
+
+        Returns:
+            The loaded library, or None if not found
+        """
         cache_key = f"{name}|{version or ''}"
         if cache_key in self._cache:
             return self._cache[cache_key]
+
+        # Try to resolve and compile the library
+        if self._resolver and self._compile_fn:
+            source = self._resolver.resolve(name, version)
+            if source:
+                library = self._compile_fn(source)
+                if library:
+                    self.add_library(library)
+                    return library
+
         return None
+
+    def resolve_includes(self, library: CQLLibrary) -> dict[str, CQLLibrary]:
+        """Resolve all include dependencies for a library.
+
+        Args:
+            library: The library with includes to resolve
+
+        Returns:
+            Dictionary mapping alias (or name) to resolved library
+        """
+        resolved: dict[str, CQLLibrary] = {}
+
+        for include in library.includes:
+            alias = include.alias or include.library
+            included = self.get_library(include.library, include.version)
+            if included:
+                resolved[alias] = included
+
+        return resolved
 
     def add_library(self, library: CQLLibrary) -> None:
         """Add a compiled library to the cache."""

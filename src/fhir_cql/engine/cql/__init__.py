@@ -47,6 +47,12 @@ from .library import (
     UsingDefinition,
     ValueSetDefinition,
 )
+from .library_resolver import (
+    CompositeLibraryResolver,
+    FileLibraryResolver,
+    InMemoryLibraryResolver,
+    LibraryResolver,
+)
 from .measure import (
     GroupResult,
     MeasureEvaluator,
@@ -58,6 +64,13 @@ from .measure import (
     PopulationCount,
     PopulationType,
     StratifierResult,
+)
+from .plugins import (
+    CQLPluginRegistry,
+    create_math_plugins,
+    create_string_plugins,
+    get_global_registry,
+    register_function,
 )
 from .types import (
     CQLBoolean,
@@ -107,6 +120,11 @@ __all__ = [
     "ConceptDefinition",
     "ExpressionDefinition",
     "FunctionDefinition",
+    # Library resolvers
+    "LibraryResolver",
+    "FileLibraryResolver",
+    "InMemoryLibraryResolver",
+    "CompositeLibraryResolver",
     # Types
     "CQLCode",
     "CQLConcept",
@@ -136,4 +154,10 @@ __all__ = [
     "PatientResult",
     "GroupResult",
     "StratifierResult",
+    # Plugin system
+    "CQLPluginRegistry",
+    "register_function",
+    "get_global_registry",
+    "create_math_plugins",
+    "create_string_plugins",
 ]

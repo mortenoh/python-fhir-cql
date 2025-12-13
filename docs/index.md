@@ -64,25 +64,31 @@ greeting = evaluator.evaluate_definition("Greeting")  # 'Hello, CQL!'
 
 ## Features
 
-| Feature | FHIRPath | CQL | ELM | CDS Hooks |
-|---------|----------|-----|-----|-----------|
-| Parsing | Yes | Yes | - | - |
-| Evaluation | Yes | Yes | Yes | - |
-| AST visualization | Yes | Yes | - | - |
-| Interactive REPL | Yes | - | - | - |
-| Library compilation | - | Yes | - | - |
-| User-defined functions | - | Yes | Yes | - |
-| Queries (from/where/return) | - | Yes | Yes | - |
-| Interval operations | - | Yes | Yes | - |
-| Temporal operations | - | Yes | Yes | - |
-| Terminology (codes/valuesets) | - | Yes | Yes | - |
-| FHIR data sources | - | Yes | Yes | - |
-| Quality measures | - | Yes | Yes | - |
-| CQL-to-ELM export | - | Yes | - | - |
-| ELM JSON loading | - | - | Yes | - |
-| Service discovery | - | - | - | Yes |
-| Card generation | - | - | - | Yes |
-| Prefetch templates | - | - | - | Yes |
+| Feature | FHIRPath | CQL | ELM | CDS Hooks | Terminology |
+|---------|----------|-----|-----|-----------|-------------|
+| Parsing | Yes | Yes | - | - | - |
+| Evaluation | Yes | Yes | Yes | - | - |
+| AST visualization | Yes | Yes | - | - | - |
+| Interactive REPL | Yes | Yes | - | - | - |
+| Library compilation | - | Yes | - | - | - |
+| Library resolution | - | Yes | - | - | - |
+| User-defined functions | - | Yes | Yes | - | - |
+| Queries (from/where/return) | - | Yes | Yes | - | - |
+| Query aggregate clause | - | Yes | Yes | - | - |
+| Interval operations | - | Yes | Yes | - | - |
+| Temporal operations | - | Yes | Yes | - | - |
+| Terminology (codes/valuesets) | - | Yes | Yes | - | Yes |
+| FHIR data sources | - | Yes | Yes | - | - |
+| Quality measures | - | Yes | Yes | - | - |
+| CQL-to-ELM export | - | Yes | - | - | - |
+| ELM JSON loading | - | - | Yes | - | - |
+| Service discovery | - | - | - | Yes | - |
+| Card generation | - | - | - | Yes | - |
+| Prefetch templates | - | - | - | Yes | - |
+| $validate-code | - | - | - | - | Yes |
+| memberOf check | - | - | - | - | Yes |
+| $subsumes | - | - | - | - | Yes |
+| FastAPI server | - | - | - | - | Yes |
 
 ## Implementation Status
 
@@ -116,7 +122,17 @@ greeting = evaluator.evaluate_definition("Greeting")  # 'Hello, CQL!'
 | Card Builder | Complete | Jinja2 template-based card generation |
 | Executor | Complete | CQL evaluation engine integration |
 
-**Current test count: 1637+ passing tests**
+### Terminology Service
+
+| Component | Status | Description |
+|-----------|--------|-------------|
+| Models | Complete | Coding, ValueSet, CodeSystem models |
+| InMemoryService | Complete | In-memory terminology validation |
+| FHIRService | Complete | Proxy to external FHIR server |
+| FastAPI Server | Complete | REST API for terminology operations |
+| CLI Commands | Complete | serve, validate, member-of, list-valuesets |
+
+**Current test count: 1723+ passing tests**
 
 ## Requirements
 

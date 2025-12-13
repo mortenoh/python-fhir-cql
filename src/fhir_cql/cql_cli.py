@@ -704,5 +704,202 @@ def export(
         raise typer.Exit(1)
 
 
+@app.command()
+def repl(
+    library: Annotated[Optional[Path], typer.Option("--library", "-l", help="CQL library file to load")] = None,
+    data: Annotated[Optional[Path], typer.Option("--data", "-d", help="FHIR resource JSON file for context")] = None,
+) -> None:
+    """Start an interactive CQL REPL.
+
+    The REPL allows you to:
+    - Evaluate CQL expressions interactively
+    - Load CQL library files
+    - Load FHIR data for context
+    - View definitions and AST
+
+    Examples:
+        fhir cql repl
+        fhir cql repl --library mylib.cql
+        fhir cql repl --library mylib.cql --data patient.json
+
+    Commands in REPL:
+        load <file>     - Load a CQL library
+        data <file>     - Load FHIR data for context
+        defs            - List loaded definitions
+        ast <expr>      - Show AST for expression
+        help            - Show help
+        quit            - Exit REPL
+    """
+    from rich.tree import Tree
+
+    rprint("[bold blue]CQL REPL[/bold blue]")
+    rprint("Enter CQL expressions to evaluate. Type 'help' for commands.\n")
+
+    evaluator = CQLEvaluator()
+    context_data: dict[str, Any] | None = None
+
+    # Load initial library if provided
+    if library and library.exists():
+        try:
+            source = library.read_text()
+            lib = evaluator.compile(source)
+            rprint(f"[green]✓[/green] Loaded library: {lib.name}")
+            if lib.definitions:
+                rprint(f"  Definitions: {', '.join(lib.definitions.keys())}")
+        except Exception as e:
+            rprint(f"[yellow]Warning:[/yellow] Failed to load library: {e}")
+
+    # Load initial data if provided
+    if data and data.exists():
+        try:
+            context_data = json.loads(data.read_text())
+            rprint(f"[green]✓[/green] Loaded data: {data}")
+            if isinstance(context_data, dict) and "resourceType" in context_data:
+                rprint(f"  Resource type: {context_data['resourceType']}")
+        except Exception as e:
+            rprint(f"[yellow]Warning:[/yellow] Failed to load data: {e}")
+
+    if library or data:
+        rprint()
+
+    while True:
+        try:
+            expr = console.input("[bold green]cql>[/bold green] ")
+        except (EOFError, KeyboardInterrupt):
+            rprint("\nGoodbye!")
+            break
+
+        expr = expr.strip()
+        if not expr:
+            continue
+
+        if expr.lower() in ("quit", "exit", "q"):
+            rprint("Goodbye!")
+            break
+
+        if expr.lower() == "help":
+            rprint("""[dim]Commands:
+  load <file>     Load a CQL library file
+  data <file>     Load FHIR data for context
+  defs            List loaded definitions
+  ast <expr>      Show AST for expression
+  eval <name>     Evaluate a definition by name
+  clear           Clear loaded library
+  help            Show this help
+  quit            Exit REPL
+
+Examples:
+  1 + 2 * 3                            Evaluate expression
+  Today()                              Today's date
+  Upper('hello')                       String function
+  load mylib.cql                       Load a library
+  defs                                 List definitions
+  eval MyDefinition                    Evaluate definition[/dim]""")
+            continue
+
+        # Load library command
+        if expr.lower().startswith("load "):
+            lib_path = Path(expr[5:].strip())
+            if not lib_path.exists():
+                rprint(f"[red]Error:[/red] File not found: {lib_path}")
+                continue
+            try:
+                source = lib_path.read_text()
+                lib = evaluator.compile(source)
+                rprint(f"[green]✓[/green] Loaded: {lib.name}")
+                if lib.definitions:
+                    rprint(f"  Definitions: {', '.join(lib.definitions.keys())}")
+            except Exception as e:
+                rprint(f"[red]Error:[/red] {e}")
+            continue
+
+        # Load data command
+        if expr.lower().startswith("data "):
+            data_path = Path(expr[5:].strip())
+            if not data_path.exists():
+                rprint(f"[red]Error:[/red] File not found: {data_path}")
+                continue
+            try:
+                context_data = json.loads(data_path.read_text())
+                rprint(f"[green]✓[/green] Loaded data: {data_path}")
+                if isinstance(context_data, dict) and "resourceType" in context_data:
+                    rprint(f"  Resource type: {context_data['resourceType']}")
+            except Exception as e:
+                rprint(f"[red]Error:[/red] {e}")
+            continue
+
+        # List definitions command
+        if expr.lower() == "defs":
+            current_lib = evaluator.current_library
+            if not current_lib:
+                rprint("[yellow]No library loaded[/yellow]")
+                continue
+            if current_lib.definitions:
+                rprint(f"[bold]{current_lib.name}[/bold] definitions:")
+                for name in current_lib.definitions.keys():
+                    rprint(f"  • {name}")
+            if current_lib.functions:
+                rprint("Functions:")
+                for name in current_lib.functions.keys():
+                    rprint(f"  • {name}")
+            if not current_lib.definitions and not current_lib.functions:
+                rprint("[dim]No definitions[/dim]")
+            continue
+
+        # Clear library command
+        if expr.lower() == "clear":
+            evaluator = CQLEvaluator()
+            context_data = None
+            rprint("[green]✓[/green] Cleared")
+            continue
+
+        # Eval definition command
+        if expr.lower().startswith("eval "):
+            def_name = expr[5:].strip()
+            try:
+                result = evaluator.evaluate_definition(def_name, resource=context_data)
+                rprint(_format_result(result))
+            except Exception as e:
+                rprint(f"[red]Error:[/red] {e}")
+            continue
+
+        # AST command
+        if expr.lower().startswith("ast "):
+            cql_expr = expr[4:].strip()
+            try:
+                input_stream = InputStream(cql_expr)
+                lexer = cqlLexer(input_stream)
+                token_stream = CommonTokenStream(lexer)
+                parser = cqlParser(token_stream)
+                tree = parser.expression()
+                rich_tree = Tree("[bold blue]expression[/bold blue]")
+                _build_tree(tree, rich_tree, parser)
+                rprint(rich_tree)
+            except Exception as e:
+                rprint(f"[red]Error:[/red] {e}")
+            continue
+
+        # Default: evaluate as expression
+        try:
+            result = evaluator.evaluate_expression(expr, resource=context_data)
+            rprint(_format_result(result))
+        except Exception as e:
+            rprint(f"[red]Error:[/red] {e}")
+
+
+def _build_tree(node: Any, rich_tree: "Tree", parser: Any) -> None:
+    """Build a Rich tree from a parse tree node."""
+    if hasattr(node, "getChildCount"):
+        for i in range(node.getChildCount()):
+            child = node.getChild(i)
+            if hasattr(child, "getText"):
+                child_type = type(child).__name__.replace("Context", "")
+                text = child.getText()
+                if len(text) > 40:
+                    text = text[:40] + "..."
+                branch = rich_tree.add(f"[cyan]{child_type}[/cyan]: {text}")
+                _build_tree(child, branch, parser)
+
+
 if __name__ == "__main__":
     app()

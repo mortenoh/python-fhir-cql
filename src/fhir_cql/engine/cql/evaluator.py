@@ -21,6 +21,8 @@ from cqlParser import cqlParser  # noqa: E402
 from ..exceptions import CQLError  # noqa: E402
 from .context import CQLContext, DataSource  # noqa: E402
 from .library import CQLLibrary, LibraryManager  # noqa: E402
+from .library_resolver import FileLibraryResolver, LibraryResolver  # noqa: E402
+from .plugins import CQLPluginRegistry  # noqa: E402
 from .visitor import CQLEvaluatorVisitor  # noqa: E402
 
 # Import ELM serializer (lazy import to avoid circular dependency)
@@ -109,17 +111,33 @@ class CQLEvaluator:
         self,
         data_source: DataSource | None = None,
         library_manager: LibraryManager | None = None,
+        library_resolver: LibraryResolver | None = None,
+        library_paths: list[Path | str] | None = None,
+        plugin_registry: CQLPluginRegistry | None = None,
     ):
         """Initialize the CQL evaluator.
 
         Args:
             data_source: Optional data source for retrieve operations
             library_manager: Optional library manager for dependencies
+            library_resolver: Optional library resolver for loading includes
+            library_paths: Optional list of directories to search for libraries
+            plugin_registry: Optional plugin registry for custom functions
         """
         self._library_manager = library_manager or LibraryManager()
         self._data_source = data_source
+        self._plugin_registry = plugin_registry
         self._current_library: CQLLibrary | None = None
         self._expression_cache: dict[str, cqlParser.ExpressionContext] = {}
+
+        # Set up library resolver
+        if library_resolver:
+            self._library_manager.set_resolver(library_resolver)
+        elif library_paths:
+            self._library_manager.set_resolver(FileLibraryResolver(library_paths))
+
+        # Set compile function for library manager to resolve includes
+        self._library_manager.set_compile_function(self._compile_source)
 
     @property
     def library_manager(self) -> LibraryManager:
@@ -130,6 +148,16 @@ class CQLEvaluator:
     def current_library(self) -> CQLLibrary | None:
         """Get the currently loaded library."""
         return self._current_library
+
+    @property
+    def plugin_registry(self) -> CQLPluginRegistry | None:
+        """Get the plugin registry."""
+        return self._plugin_registry
+
+    @plugin_registry.setter
+    def plugin_registry(self, value: CQLPluginRegistry | None) -> None:
+        """Set the plugin registry."""
+        self._plugin_registry = value
 
     def compile(self, source: str) -> CQLLibrary:
         """Compile CQL source code into a library.
@@ -147,6 +175,7 @@ class CQLEvaluator:
         context = CQLContext(
             library_manager=self._library_manager,
             data_source=self._data_source,
+            plugin_registry=self._plugin_registry,
         )
         visitor = CQLEvaluatorVisitor(context)
 
@@ -159,6 +188,36 @@ class CQLEvaluator:
         self._current_library = library
 
         return library
+
+    def _compile_source(self, source: str) -> CQLLibrary | None:
+        """Internal compile method used by library manager for resolving includes.
+
+        This method doesn't update current_library, which is important when
+        resolving includes during compilation.
+
+        Args:
+            source: CQL source code
+
+        Returns:
+            Compiled CQLLibrary or None if compilation fails
+        """
+        try:
+            tree = self._parse_library(source)
+            context = CQLContext(
+                library_manager=self._library_manager,
+                data_source=self._data_source,
+                plugin_registry=self._plugin_registry,
+            )
+            visitor = CQLEvaluatorVisitor(context)
+
+            library = visitor.visit(tree)
+            if not isinstance(library, CQLLibrary):
+                return None
+
+            library.source = source
+            return library
+        except Exception:
+            return None
 
     def load_library(self, name: str, version: str | None = None) -> CQLLibrary | None:
         """Load a library by name.
@@ -213,6 +272,7 @@ class CQLEvaluator:
             library=lib,
             library_manager=self._library_manager,
             data_source=self._data_source,
+            plugin_registry=self._plugin_registry,
         )
 
         # Set parameters
@@ -255,6 +315,7 @@ class CQLEvaluator:
             library=lib,
             library_manager=self._library_manager,
             data_source=self._data_source,
+            plugin_registry=self._plugin_registry,
         )
 
         # Set parameters
@@ -299,6 +360,7 @@ class CQLEvaluator:
             library=lib,
             library_manager=self._library_manager,
             data_source=self._data_source,
+            plugin_registry=self._plugin_registry,
         )
 
         # Set parameters

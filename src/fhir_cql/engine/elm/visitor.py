@@ -6,13 +6,14 @@ Each expression type is handled by a registered handler method.
 
 from __future__ import annotations
 
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any, Callable
 
 from fhir_cql.engine.cql.context import CQLContext
 from fhir_cql.engine.cql.types import CQLCode, CQLConcept, CQLInterval, CQLTuple
 from fhir_cql.engine.elm.exceptions import ELMExecutionError, ELMReferenceError
-from fhir_cql.engine.types import FHIRDate, FHIRDateTime, Quantity
+from fhir_cql.engine.types import FHIRDate, FHIRDateTime, FHIRTime, Quantity
 
 if TYPE_CHECKING:
     from fhir_cql.engine.elm.models.library import ELMLibrary
@@ -29,6 +30,9 @@ class ELMExpressionVisitor:
         """
         self.context = context
         self._library: ELMLibrary | None = None
+
+        # Storage for included libraries (alias -> ELMLibrary)
+        self._included_libraries: dict[str, ELMLibrary] = {}
 
         # Register type handlers
         self._handlers: dict[str, Callable[[dict[str, Any]], Any]] = {
@@ -139,6 +143,7 @@ class ELMExpressionVisitor:
             "ExpressionRef": self._eval_expression_ref,
             "FunctionRef": self._eval_function_ref,
             "ParameterRef": self._eval_parameter_ref,
+            "OperandRef": self._eval_operand_ref,
             "Property": self._eval_property,
             "AliasRef": self._eval_alias_ref,
             "QueryLetRef": self._eval_query_let_ref,
@@ -263,6 +268,30 @@ class ELMExpressionVisitor:
             library: The ELM library containing definitions.
         """
         self._library = library
+
+    def add_included_library(self, alias: str, library: "ELMLibrary") -> None:
+        """Register an included library by its alias.
+
+        Args:
+            alias: The local identifier (alias) used in the include statement.
+            library: The ELM library that was included.
+        """
+        self._included_libraries[alias] = library
+
+    def get_included_library(self, alias: str) -> "ELMLibrary | None":
+        """Get an included library by alias.
+
+        Args:
+            alias: The local identifier (alias) from the include statement.
+
+        Returns:
+            The included ELM library, or None if not found.
+        """
+        return self._included_libraries.get(alias)
+
+    def clear_included_libraries(self) -> None:
+        """Clear all registered included libraries."""
+        self._included_libraries.clear()
 
     # =========================================================================
     # Literal Handlers
@@ -541,22 +570,200 @@ class ELMExpressionVisitor:
         return Decimal(str(math.exp(float(operand))))
 
     def _eval_successor(self, node: dict[str, Any]) -> Any:
-        """Evaluate successor."""
+        """Evaluate successor - returns the next value after the operand.
+
+        CQL semantics:
+        - Integer: operand + 1
+        - Decimal: operand + minimum decimal increment
+        - Date: next day
+        - DateTime: next millisecond
+        - Time: next millisecond
+        - Quantity: value + minimum increment for that unit
+        """
         operand = self._get_unary_operand(node)
         if operand is None:
             return None
         if isinstance(operand, int):
             return operand + 1
-        return operand  # TODO: Handle other types
+        if isinstance(operand, Decimal):
+            # Minimum decimal increment (8 decimal places)
+            return operand + Decimal("0.00000001")
+        if isinstance(operand, FHIRDate):
+            py_date = operand.to_date()
+            if py_date:
+                next_day = py_date + timedelta(days=1)
+                return FHIRDate(year=next_day.year, month=next_day.month, day=next_day.day)
+            # Partial date - increment at highest precision available
+            if operand.month is not None:
+                # Has month, increment month
+                if operand.month == 12:
+                    return FHIRDate(year=operand.year + 1, month=1)
+                return FHIRDate(year=operand.year, month=operand.month + 1)
+            # Year only
+            return FHIRDate(year=operand.year + 1)
+        if isinstance(operand, FHIRDateTime):
+            py_dt = operand.to_datetime()
+            if py_dt:
+                next_ms = py_dt + timedelta(milliseconds=1)
+                return FHIRDateTime(
+                    year=next_ms.year,
+                    month=next_ms.month,
+                    day=next_ms.day,
+                    hour=next_ms.hour,
+                    minute=next_ms.minute,
+                    second=next_ms.second,
+                    millisecond=next_ms.microsecond // 1000,
+                    tz_offset=operand.tz_offset,
+                )
+            # Partial datetime - increment at highest precision
+            return self._increment_partial_datetime(operand, 1)
+        if isinstance(operand, FHIRTime):
+            py_time = operand.to_time()
+            if py_time:
+                # Convert to total milliseconds, add 1, convert back
+                total_ms = (
+                    py_time.hour * 3600000
+                    + py_time.minute * 60000
+                    + py_time.second * 1000
+                    + py_time.microsecond // 1000
+                )
+                total_ms += 1
+                if total_ms >= 86400000:  # Overflow past midnight
+                    total_ms = 86400000 - 1  # Max time
+                hour = total_ms // 3600000
+                minute = (total_ms % 3600000) // 60000
+                second = (total_ms % 60000) // 1000
+                ms = total_ms % 1000
+                return FHIRTime(hour=hour, minute=minute, second=second, millisecond=ms)
+        if isinstance(operand, Quantity):
+            # Increment by minimum unit (1 in the unit's smallest denomination)
+            return Quantity(value=operand.value + Decimal("0.00000001"), unit=operand.unit)
+        return operand
 
     def _eval_predecessor(self, node: dict[str, Any]) -> Any:
-        """Evaluate predecessor."""
+        """Evaluate predecessor - returns the value before the operand.
+
+        CQL semantics:
+        - Integer: operand - 1
+        - Decimal: operand - minimum decimal decrement
+        - Date: previous day
+        - DateTime: previous millisecond
+        - Time: previous millisecond
+        - Quantity: value - minimum decrement for that unit
+        """
         operand = self._get_unary_operand(node)
         if operand is None:
             return None
         if isinstance(operand, int):
             return operand - 1
-        return operand  # TODO: Handle other types
+        if isinstance(operand, Decimal):
+            return operand - Decimal("0.00000001")
+        if isinstance(operand, FHIRDate):
+            py_date = operand.to_date()
+            if py_date:
+                prev_day = py_date - timedelta(days=1)
+                return FHIRDate(year=prev_day.year, month=prev_day.month, day=prev_day.day)
+            # Partial date - decrement at highest precision available
+            if operand.month is not None:
+                if operand.month == 1:
+                    return FHIRDate(year=operand.year - 1, month=12)
+                return FHIRDate(year=operand.year, month=operand.month - 1)
+            # Year only
+            return FHIRDate(year=operand.year - 1)
+        if isinstance(operand, FHIRDateTime):
+            py_dt = operand.to_datetime()
+            if py_dt:
+                prev_ms = py_dt - timedelta(milliseconds=1)
+                return FHIRDateTime(
+                    year=prev_ms.year,
+                    month=prev_ms.month,
+                    day=prev_ms.day,
+                    hour=prev_ms.hour,
+                    minute=prev_ms.minute,
+                    second=prev_ms.second,
+                    millisecond=prev_ms.microsecond // 1000,
+                    tz_offset=operand.tz_offset,
+                )
+            # Partial datetime - decrement at highest precision
+            return self._increment_partial_datetime(operand, -1)
+        if isinstance(operand, FHIRTime):
+            py_time = operand.to_time()
+            if py_time:
+                total_ms = (
+                    py_time.hour * 3600000
+                    + py_time.minute * 60000
+                    + py_time.second * 1000
+                    + py_time.microsecond // 1000
+                )
+                total_ms -= 1
+                if total_ms < 0:
+                    total_ms = 0  # Min time
+                hour = total_ms // 3600000
+                minute = (total_ms % 3600000) // 60000
+                second = (total_ms % 60000) // 1000
+                ms = total_ms % 1000
+                return FHIRTime(hour=hour, minute=minute, second=second, millisecond=ms)
+        if isinstance(operand, Quantity):
+            return Quantity(value=operand.value - Decimal("0.00000001"), unit=operand.unit)
+        return operand
+
+    def _increment_partial_datetime(self, dt: FHIRDateTime, delta: int) -> FHIRDateTime:
+        """Increment/decrement a partial datetime at its highest precision."""
+        if dt.second is not None:
+            # Has seconds - increment milliseconds
+            ms = (dt.millisecond or 0) + delta
+            new_ms = max(0, min(999, ms))
+            return FHIRDateTime(
+                year=dt.year,
+                month=dt.month,
+                day=dt.day,
+                hour=dt.hour,
+                minute=dt.minute,
+                second=dt.second,
+                millisecond=new_ms,
+                tz_offset=dt.tz_offset,
+            )
+        if dt.minute is not None:
+            return FHIRDateTime(
+                year=dt.year,
+                month=dt.month,
+                day=dt.day,
+                hour=dt.hour,
+                minute=dt.minute,
+                second=max(0, min(59, 0 + delta)) if delta > 0 else 59,
+                tz_offset=dt.tz_offset,
+            )
+        if dt.hour is not None:
+            return FHIRDateTime(
+                year=dt.year,
+                month=dt.month,
+                day=dt.day,
+                hour=dt.hour,
+                minute=max(0, min(59, 0 + delta)) if delta > 0 else 59,
+                tz_offset=dt.tz_offset,
+            )
+        if dt.day is not None:
+            return FHIRDateTime(
+                year=dt.year,
+                month=dt.month,
+                day=dt.day,
+                hour=max(0, min(23, 0 + delta)) if delta > 0 else 23,
+                tz_offset=dt.tz_offset,
+            )
+        if dt.month is not None:
+            new_day = 1 + delta if delta > 0 else 28  # Approximate last day
+            return FHIRDateTime(
+                year=dt.year,
+                month=dt.month,
+                day=max(1, min(28, new_day)),
+                tz_offset=dt.tz_offset,
+            )
+        # Year only
+        return FHIRDateTime(
+            year=dt.year,
+            month=1 + delta if delta > 0 else 12,
+            tz_offset=dt.tz_offset,
+        )
 
     def _eval_min_value(self, node: dict[str, Any]) -> Any:
         """Evaluate minimum value for type."""
@@ -1266,23 +1473,35 @@ class ELMExpressionVisitor:
     # =========================================================================
 
     def _eval_expression_ref(self, node: dict[str, Any]) -> Any:
-        """Evaluate expression reference."""
+        """Evaluate expression reference.
+
+        Supports both local and external (included) library references.
+        When libraryName is specified, looks up the definition in that
+        included library.
+        """
         name = node.get("name")
         library_name = node.get("libraryName")
 
         if not name:
             raise ELMReferenceError("Expression reference missing name")
 
+        # Create cache key (qualified for external refs)
+        cache_key = f"{library_name}.{name}" if library_name else name
+
         # Check for cached definition
-        found, cached = self.context.get_cached_definition(name)
+        found, cached = self.context.get_cached_definition(cache_key)
         if found:
             return cached
 
         # Find definition in library
         library = self._library
         if library_name:
-            # TODO: Resolve included library
-            raise ELMReferenceError(f"External library references not yet supported: {library_name}")
+            # Resolve included library
+            library = self.get_included_library(library_name)
+            if not library:
+                raise ELMReferenceError(
+                    f"Included library '{library_name}' not found. Make sure the library is loaded and registered."
+                )
 
         if not library:
             raise ELMReferenceError(f"No library context for expression reference: {name}")
@@ -1296,13 +1515,28 @@ class ELMExpressionVisitor:
         if hasattr(expression, "model_dump"):
             expression = expression.model_dump(by_alias=True, exclude_none=True)
 
-        # Evaluate and cache
-        result = self.evaluate(expression)
-        self.context.cache_definition(name, result)
-        return result
+        # For external library references, temporarily switch library context
+        original_library = self._library
+        if library_name:
+            self._library = library
+
+        try:
+            # Evaluate and cache
+            result = self.evaluate(expression)
+            self.context.cache_definition(cache_key, result)
+            return result
+        finally:
+            # Restore original library context
+            if library_name:
+                self._library = original_library
 
     def _eval_function_ref(self, node: dict[str, Any]) -> Any:
-        """Evaluate function reference."""
+        """Evaluate function reference.
+
+        Supports both local and external (included) library references.
+        When libraryName is specified, looks up the function in that
+        included library.
+        """
         name = node.get("name")
         library_name = node.get("libraryName")
         operands = node.get("operand", [])
@@ -1313,15 +1547,21 @@ class ELMExpressionVisitor:
         # Evaluate operands
         args = [self.evaluate(op) for op in operands]
 
-        # Check for built-in functions
-        builtin = self._get_builtin_function(name)
-        if builtin:
-            return builtin(*args)
+        # Check for built-in functions (only for non-qualified refs)
+        if not library_name:
+            builtin = self._get_builtin_function(name)
+            if builtin:
+                return builtin(*args)
 
         # Find function in library
         library = self._library
         if library_name:
-            raise ELMReferenceError(f"External library references not yet supported: {library_name}")
+            # Resolve included library
+            library = self.get_included_library(library_name)
+            if not library:
+                raise ELMReferenceError(
+                    f"Included library '{library_name}' not found. Make sure the library is loaded and registered."
+                )
 
         if not library:
             raise ELMReferenceError(f"No library context for function reference: {name}")
@@ -1332,6 +1572,11 @@ class ELMExpressionVisitor:
 
         if func_def.external:
             raise ELMReferenceError(f"External function not implemented: {name}")
+
+        # For external library references, temporarily switch library context
+        original_library = self._library
+        if library_name:
+            self._library = library
 
         # Create new scope for function execution
         self.context.push_alias_scope()
@@ -1345,6 +1590,9 @@ class ELMExpressionVisitor:
             return self.evaluate(func_def.expression)
         finally:
             self.context.pop_alias_scope()
+            # Restore original library context
+            if library_name:
+                self._library = original_library
 
     def _eval_parameter_ref(self, node: dict[str, Any]) -> Any:
         """Evaluate parameter reference."""
@@ -1364,6 +1612,19 @@ class ELMExpressionVisitor:
                 return self.evaluate(param.default)
 
         return None
+
+    def _eval_operand_ref(self, node: dict[str, Any]) -> Any:
+        """Evaluate operand reference (function parameter).
+
+        OperandRef is used within function bodies to reference function parameters.
+        The parameter values are bound as aliases when the function is called.
+        """
+        name = node.get("name")
+        if not name:
+            raise ELMReferenceError("Operand reference missing name")
+
+        # Parameters are bound as aliases in the context
+        return self.context.get_alias(name)
 
     def _eval_property(self, node: dict[str, Any]) -> Any:
         """Evaluate property access."""
@@ -1729,11 +1990,179 @@ class ELMExpressionVisitor:
     # =========================================================================
 
     def _eval_as(self, node: dict[str, Any]) -> Any:
-        """Evaluate type cast."""
+        """Evaluate type cast (As expression).
+
+        CQL semantics:
+        - If the value is of the target type, return it unchanged
+        - If the value can be implicitly converted, convert it
+        - If strict=true and cast fails, raise error
+        - If strict=false and cast fails, return null
+        """
         operand = self.evaluate(node.get("operand"))
-        # For now, just return the operand
-        # TODO: Implement actual type casting
-        return operand
+        strict = node.get("strict", False)
+
+        # Get target type
+        as_type = node.get("asType", "")
+        as_type_specifier = node.get("asTypeSpecifier", {})
+
+        if as_type_specifier:
+            target_type = as_type_specifier.get("name", "")
+        else:
+            target_type = as_type
+
+        # Handle null operand
+        if operand is None:
+            return None
+
+        # Extract type name (remove namespace prefixes like System., FHIR., etc.)
+        if "}" in target_type:
+            target_type = target_type.split("}")[-1]
+        if "." in target_type:
+            target_type = target_type.split(".")[-1]
+        target_type_lower = target_type.lower()
+
+        # Perform type cast
+        try:
+            result = self._cast_to_type(operand, target_type_lower)
+            if result is not None:
+                return result
+
+            # If cast failed and strict mode, raise error
+            if strict:
+                raise ELMExecutionError(f"Cannot cast {type(operand).__name__} to {target_type}")
+
+            return None
+        except (ValueError, TypeError) as e:
+            if strict:
+                raise ELMExecutionError(f"Cast error: {e}")
+            return None
+
+    def _cast_to_type(self, value: Any, target_type: str) -> Any:
+        """Cast a value to the specified type.
+
+        Returns the cast value, or None if cast is not possible.
+        """
+        # If value is already the correct type, return it
+        if target_type in ("integer", "int"):
+            if isinstance(value, int) and not isinstance(value, bool):
+                return value
+            if isinstance(value, (float, Decimal)):
+                return int(value)
+            if isinstance(value, str):
+                try:
+                    return int(value)
+                except ValueError:
+                    return None
+            return None
+
+        if target_type == "decimal":
+            if isinstance(value, Decimal):
+                return value
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                return Decimal(str(value))
+            if isinstance(value, str):
+                try:
+                    return Decimal(value)
+                except Exception:
+                    return None
+            return None
+
+        if target_type == "string":
+            if isinstance(value, str):
+                return value
+            if isinstance(value, bool):
+                return "true" if value else "false"
+            if isinstance(value, (int, float, Decimal)):
+                return str(value)
+            if isinstance(value, FHIRDate):
+                return str(value)
+            if isinstance(value, FHIRDateTime):
+                return str(value)
+            if isinstance(value, FHIRTime):
+                return str(value)
+            return str(value)
+
+        if target_type == "boolean":
+            if isinstance(value, bool):
+                return value
+            if isinstance(value, str):
+                lower = value.lower()
+                if lower in ("true", "t", "yes", "y", "1"):
+                    return True
+                if lower in ("false", "f", "no", "n", "0"):
+                    return False
+            if isinstance(value, (int, float, Decimal)):
+                return value != 0
+            return None
+
+        if target_type == "date":
+            if isinstance(value, FHIRDate):
+                return value
+            if isinstance(value, FHIRDateTime):
+                return FHIRDate(year=value.year, month=value.month, day=value.day)
+            if isinstance(value, str):
+                return FHIRDate.parse(value)
+            return None
+
+        if target_type == "datetime":
+            if isinstance(value, FHIRDateTime):
+                return value
+            if isinstance(value, FHIRDate):
+                return FHIRDateTime(year=value.year, month=value.month, day=value.day)
+            if isinstance(value, str):
+                return FHIRDateTime.parse(value)
+            return None
+
+        if target_type == "time":
+            if isinstance(value, FHIRTime):
+                return value
+            if isinstance(value, str):
+                return FHIRTime.parse(value)
+            return None
+
+        if target_type == "quantity":
+            if isinstance(value, Quantity):
+                return value
+            # Can't cast other types to Quantity without unit info
+            return None
+
+        if target_type == "code":
+            if isinstance(value, CQLCode):
+                return value
+            # Handle dict-like objects
+            if isinstance(value, dict) and "code" in value:
+                return CQLCode(
+                    code=value.get("code", ""),
+                    system=value.get("system") or "",
+                    display=value.get("display"),
+                )
+            return None
+
+        if target_type == "concept":
+            if isinstance(value, CQLConcept):
+                return value
+            if isinstance(value, CQLCode):
+                return CQLConcept(codes=(value,), display=value.display)
+            return None
+
+        # List/collection types
+        if target_type.startswith("list"):
+            if isinstance(value, list):
+                return value
+            return [value]  # Singleton promotion
+
+        # For FHIR resource types, check if it's a dict with resourceType
+        if isinstance(value, dict):
+            resource_type = value.get("resourceType", "")
+            if resource_type.lower() == target_type:
+                return value
+            # Allow cast if target is Any or generic Resource
+            if target_type in ("any", "resource", "domainresource"):
+                return value
+
+        # Default: return value if we can't determine incompatibility
+        # This allows for FHIR subtype casting
+        return value
 
     def _eval_is(self, node: dict[str, Any]) -> bool:
         """Evaluate type check."""
@@ -1975,15 +2404,98 @@ class ELMExpressionVisitor:
         return ":".join(parts)
 
     def _eval_duration_between(self, node: dict[str, Any]) -> int | None:
-        """Evaluate duration between dates."""
+        """Evaluate duration between two dates/datetimes.
+
+        CQL semantics: Returns the number of whole calendar periods between two dates.
+        For example, years between 2000-01-01 and 2000-12-31 is 0 (not 1 complete year).
+        """
         left, right = self._get_binary_operands(node)
-        _ = node.get("precision", "Day")  # precision - for future implementation
+        precision = node.get("precision", "Day").lower()
 
         if left is None or right is None:
             return None
 
-        # TODO: Implement full duration calculation
+        # Convert to Python datetime/date for calculation
+        dt_left = self._to_python_datetime(left)
+        dt_right = self._to_python_datetime(right)
+
+        if dt_left is None or dt_right is None:
+            return None
+
+        # Calculate duration based on precision
+        if precision == "year":
+            return self._years_between(dt_left, dt_right)
+        elif precision == "month":
+            return self._months_between(dt_left, dt_right)
+        elif precision == "week":
+            delta = dt_right - dt_left
+            return int(delta.days // 7)
+        elif precision == "day":
+            delta = dt_right - dt_left
+            return int(delta.days)
+        elif precision == "hour":
+            delta = dt_right - dt_left
+            return int(delta.total_seconds() // 3600)
+        elif precision == "minute":
+            delta = dt_right - dt_left
+            return int(delta.total_seconds() // 60)
+        elif precision == "second":
+            delta = dt_right - dt_left
+            return int(delta.total_seconds())
+        elif precision == "millisecond":
+            delta = dt_right - dt_left
+            return int(delta.total_seconds() * 1000)
+
         return None
+
+    def _to_python_datetime(self, value: Any) -> datetime | None:
+        """Convert a FHIR date/datetime to Python datetime."""
+        if isinstance(value, datetime):
+            return value
+        if isinstance(value, date):
+            return datetime(value.year, value.month, value.day)
+        if isinstance(value, FHIRDateTime):
+            return value.to_datetime()
+        if isinstance(value, FHIRDate):
+            py_date = value.to_date()
+            if py_date:
+                return datetime(py_date.year, py_date.month, py_date.day)
+            # Partial date - use what we have
+            return datetime(value.year, value.month or 1, value.day or 1)
+        return None
+
+    def _years_between(self, dt1: datetime, dt2: datetime) -> int:
+        """Calculate whole years between two datetimes.
+
+        CQL semantics: Returns completed years, not just year difference.
+        """
+        years = dt2.year - dt1.year
+        # Adjust if we haven't reached the anniversary
+        if (dt2.month, dt2.day, dt2.hour, dt2.minute, dt2.second) < (
+            dt1.month,
+            dt1.day,
+            dt1.hour,
+            dt1.minute,
+            dt1.second,
+        ):
+            years -= 1
+        return years
+
+    def _months_between(self, dt1: datetime, dt2: datetime) -> int:
+        """Calculate whole months between two datetimes.
+
+        CQL semantics: Returns completed months.
+        """
+        months = (dt2.year - dt1.year) * 12 + (dt2.month - dt1.month)
+        # Adjust if we haven't reached the day of month
+        if (dt2.day, dt2.hour, dt2.minute, dt2.second) < (
+            dt1.day,
+            dt1.hour,
+            dt1.minute,
+            dt1.second,
+        ):
+            months -= 1
+        return months
 
     def _eval_difference_between(self, node: dict[str, Any]) -> int | None:
         """Evaluate difference between dates."""

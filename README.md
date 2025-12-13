@@ -20,7 +20,7 @@ This project provides complete implementations of:
 - **CLI Tools**: Command-line interfaces for evaluation, AST visualization, validation, and CDS server management
 - **Python API**: Programmatic access to evaluators for integration into applications
 
-**Current test count: 1637+ passing tests**
+**Current test count: 1723+ passing tests**
 
 ## Requirements
 
@@ -117,27 +117,33 @@ all_results = evaluator.evaluate_all_definitions()
 
 ## Features
 
-| Feature | FHIRPath | CQL | ELM | CDS Hooks |
-|---------|----------|-----|-----|-----------|
-| Parsing | Yes | Yes | - | - |
-| Evaluation | Yes | Yes | Yes | - |
-| AST visualization | Yes | Yes | - | - |
-| Interactive REPL | Yes | - | - | - |
-| Library compilation | - | Yes | - | - |
-| User-defined functions | - | Yes | Yes | - |
-| Queries (from/where/return) | - | Yes | Yes | - |
-| Interval operations | - | Yes | Yes | - |
-| Temporal operations | - | Yes | Yes | - |
-| Terminology (codes/valuesets) | - | Yes | Yes | - |
-| FHIR data sources | - | Yes | Yes | - |
-| Retrieve with patient context | - | Yes | Yes | - |
-| Quality measures | - | Yes | Yes | - |
-| CQL-to-ELM export | - | Yes | - | - |
-| ELM JSON loading | - | - | Yes | - |
-| YAML-based service config | - | - | - | Yes |
-| Service discovery | - | - | - | Yes |
-| Card generation | - | - | - | Yes |
-| Prefetch templates | - | - | - | Yes |
+| Feature | FHIRPath | CQL | ELM | CDS Hooks | Terminology |
+|---------|----------|-----|-----|-----------|-------------|
+| Parsing | Yes | Yes | - | - | - |
+| Evaluation | Yes | Yes | Yes | - | - |
+| AST visualization | Yes | Yes | - | - | - |
+| Interactive REPL | Yes | Yes | - | - | - |
+| Library compilation | - | Yes | - | - | - |
+| Library resolution | - | Yes | - | - | - |
+| User-defined functions | - | Yes | Yes | - | - |
+| Queries (from/where/return) | - | Yes | Yes | - | - |
+| Query aggregate clause | - | Yes | Yes | - | - |
+| Interval operations | - | Yes | Yes | - | - |
+| Temporal operations | - | Yes | Yes | - | - |
+| Terminology (codes/valuesets) | - | Yes | Yes | - | Yes |
+| FHIR data sources | - | Yes | Yes | - | - |
+| Retrieve with patient context | - | Yes | Yes | - | - |
+| Quality measures | - | Yes | Yes | - | - |
+| CQL-to-ELM export | - | Yes | - | - | - |
+| ELM JSON loading | - | - | Yes | - | - |
+| YAML-based service config | - | - | - | Yes | - |
+| Service discovery | - | - | - | Yes | - |
+| Card generation | - | - | - | Yes | - |
+| Prefetch templates | - | - | - | Yes | - |
+| $validate-code | - | - | - | - | Yes |
+| memberOf check | - | - | - | - | Yes |
+| $subsumes | - | - | - | - | Yes |
+| FastAPI server | - | - | - | - | Yes |
 
 ## CQL Implementation Status
 
@@ -153,13 +159,14 @@ all_results = evaluator.evaluate_all_definitions()
 
 ## CLI Commands
 
-The unified `fhir` CLI provides access to CQL, ELM, FHIRPath, and CDS Hooks functionality:
+The unified `fhir` CLI provides access to CQL, ELM, FHIRPath, CDS Hooks, and Terminology functionality:
 
 ```bash
-fhir cql <command>      # CQL commands
-fhir elm <command>      # ELM commands
-fhir fhirpath <command> # FHIRPath commands
-fhir cds <command>      # CDS Hooks commands
+fhir cql <command>         # CQL commands
+fhir elm <command>         # ELM commands
+fhir fhirpath <command>    # FHIRPath commands
+fhir cds <command>         # CDS Hooks commands
+fhir terminology <command> # Terminology Service commands
 ```
 
 ### CQL
@@ -168,6 +175,7 @@ fhir cds <command>      # CDS Hooks commands
 |---------|-------------|
 | `fhir cql eval <expr>` | Evaluate CQL expression |
 | `fhir cql run <file>` | Run library and evaluate definitions |
+| `fhir cql repl` | Interactive REPL |
 | `fhir cql check <file>` | Validate and analyze library |
 | `fhir cql measure <file>` | Evaluate quality measure |
 | `fhir cql export <file>` | Export CQL to ELM JSON |
@@ -205,6 +213,15 @@ fhir cds <command>      # CDS Hooks commands
 | `fhir cds validate <config>` | Validate service configuration |
 | `fhir cds list` | List configured services |
 | `fhir cds test <service>` | Test a service with sample data |
+
+### Terminology Service
+
+| Command | Description |
+|---------|-------------|
+| `fhir terminology serve` | Start the terminology server |
+| `fhir terminology validate <code>` | Validate a code against a value set |
+| `fhir terminology member-of <code>` | Check value set membership |
+| `fhir terminology list-valuesets <dir>` | List value sets in directory |
 
 ## Examples
 

@@ -255,11 +255,15 @@ class TestUnimplementedFunctions:
         result = fn_slice(ctx, [{"resourceType": "Patient"}], "profile", "slice-name")
         assert result == []
 
-    def test_conforms_to_returns_empty(self) -> None:
-        """Test conformsTo returns empty."""
+    def test_conforms_to_basic(self) -> None:
+        """Test conformsTo basic functionality."""
         ctx = EvaluationContext()
-        result = fn_conforms_to(ctx, [{"resourceType": "Patient"}], "http://example.org/profile")
-        assert result == []
+        # Resource without matching profile should return False
+        result = fn_conforms_to(ctx, [{"resourceType": "Patient"}], "http://example.org/custom-profile")
+        assert result == [False]
+        # Resource should conform to its base type profile
+        result = fn_conforms_to(ctx, [{"resourceType": "Patient"}], "http://hl7.org/fhir/StructureDefinition/Patient")
+        assert result == [True]
 
     def test_member_of_returns_empty(self) -> None:
         """Test memberOf returns empty."""

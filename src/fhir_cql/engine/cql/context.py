@@ -14,6 +14,7 @@ from ..context import EvaluationContext, ModelProvider
 
 if TYPE_CHECKING:
     from .library import CQLLibrary, LibraryManager
+    from .plugins import CQLPluginRegistry
 
 
 class DataSource(Protocol):
@@ -59,6 +60,7 @@ class CQLContext(EvaluationContext):
         library: "CQLLibrary | None" = None,
         library_manager: "LibraryManager | None" = None,
         data_source: DataSource | None = None,
+        plugin_registry: "CQLPluginRegistry | None" = None,
     ):
         """Initialize CQL evaluation context.
 
@@ -71,6 +73,7 @@ class CQLContext(EvaluationContext):
             library: Current CQL library being evaluated
             library_manager: Manager for loading/caching libraries
             data_source: Source for retrieve operations
+            plugin_registry: Optional registry for custom plugin functions
         """
         super().__init__(
             resource=resource,
@@ -83,6 +86,7 @@ class CQLContext(EvaluationContext):
         self._library = library
         self._library_manager = library_manager
         self._data_source = data_source
+        self._plugin_registry = plugin_registry
 
         # Query alias stack for nested queries
         self._alias_scopes: list[dict[str, Any]] = [{}]
@@ -120,6 +124,16 @@ class CQLContext(EvaluationContext):
     def data_source(self, value: DataSource | None) -> None:
         """Set the data source."""
         self._data_source = value
+
+    @property
+    def plugin_registry(self) -> "CQLPluginRegistry | None":
+        """Get the plugin registry."""
+        return self._plugin_registry
+
+    @plugin_registry.setter
+    def plugin_registry(self, value: "CQLPluginRegistry | None") -> None:
+        """Set the plugin registry."""
+        self._plugin_registry = value
 
     # Alias scope management for queries
 
@@ -237,6 +251,7 @@ class CQLContext(EvaluationContext):
             library=self._library,
             library_manager=self._library_manager,
             data_source=self._data_source,
+            plugin_registry=self._plugin_registry,
         )
         child_ctx._constants = self._constants.copy()
         child_ctx._function_overrides = self._function_overrides.copy()
