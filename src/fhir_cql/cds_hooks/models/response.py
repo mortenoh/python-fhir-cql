@@ -39,14 +39,8 @@ class Action(BaseModel):
         ...,
         description="Human-readable action description",
     )
-    resource: dict[str, Any] | None = Field(
-        None,
-        description="FHIR resource for create/update",
-    )
-    resourceId: str | None = Field(
-        None,
-        description="Resource ID for delete",
-    )
+    resource: dict[str, Any] | None = None
+    resourceId: str | None = None
 
     model_config = {"populate_by_name": True}
 
@@ -137,6 +131,6 @@ class CDSResponse(BaseModel):
     """
 
     cards: list[Card] = Field(default_factory=list)
-    systemActions: list[Action] | None = Field(None)
+    systemActions: list[Action] | None = None
 
     model_config = {"populate_by_name": True}

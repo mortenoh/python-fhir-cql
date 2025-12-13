@@ -28,29 +28,11 @@ class CDSRequest(BaseModel):
     See: https://cds-hooks.hl7.org/2.0/#http-request_1
     """
 
-    hook: str = Field(
-        ...,
-        description="The hook that triggered this request",
-    )
-    hookInstance: UUID = Field(
-        ...,
-        description="UUID identifying this specific hook invocation",
-    )
-    fhirServer: str | None = Field(
-        None,
-        description="Base URL of the EHR's FHIR server",
-    )
-    fhirAuthorization: FHIRAuthorization | None = Field(
-        None,
-        description="OAuth2 credentials for FHIR server",
-    )
-    context: dict[str, Any] = Field(
-        ...,
-        description="Hook-specific context data",
-    )
-    prefetch: dict[str, Any] | None = Field(
-        None,
-        description="Pre-fetched FHIR resources",
-    )
+    hook: str = Field(..., description="The hook that triggered this request")
+    hookInstance: UUID = Field(..., description="UUID identifying this specific hook invocation")
+    context: dict[str, Any] = Field(..., description="Hook-specific context data")
+    fhirServer: str | None = None
+    fhirAuthorization: FHIRAuthorization | None = None
+    prefetch: dict[str, Any] | None = None
 
     model_config = {"populate_by_name": True}

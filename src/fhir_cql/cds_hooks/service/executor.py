@@ -34,8 +34,9 @@ class CDSExecutor:
         # Get or create evaluator for this service
         evaluator = self._get_evaluator(service)
 
-        # Build data source from prefetch
+        # Build data source from prefetch and set on evaluator
         data_source = self._build_data_source(request)
+        evaluator._data_source = data_source
 
         # Get patient resource for context
         patient = self._extract_patient(request)
@@ -47,7 +48,6 @@ class CDSExecutor:
                 result = evaluator.evaluate_definition(
                     definition_name,
                     resource=patient,
-                    data_source=data_source,
                 )
                 results[definition_name] = self._serialize_result(result)
             except Exception as e:

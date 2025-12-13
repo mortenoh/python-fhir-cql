@@ -35,6 +35,7 @@ dev = [
     "pyright>=1.1.390",
     "pytest>=8.3.0",
     "pytest-cov>=4.0.0",
+    "types-PyYAML>=6.0",
 ]
 docs = [
     "mkdocs>=1.6.0",

@@ -82,11 +82,11 @@ class CDSHooksSettings(BaseSettings):
 
     # Service configuration
     services_config_path: str = Field(
-        "cds_services.yaml",
+        default="cds_services.yaml",
         description="Path to services configuration file",
     )
     cql_library_path: str = Field(
-        "",
+        default="",
         description="Base path for CQL library files (defaults to current dir)",
     )
 
