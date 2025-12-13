@@ -272,3 +272,90 @@ class TestIntervalPointFrom:
     def test_point_from_non_unit_raises(self, evaluator):
         with pytest.raises(Exception):
             evaluator.evaluate_expression("point from Interval[1, 5]")
+
+
+class TestIntervalMeetsBefore:
+    """Test interval meets before operator."""
+
+    def test_meets_before_true(self, evaluator):
+        # [1,5] meets before [5,10] at point 5 (half-open/half-closed)
+        result = evaluator.evaluate_expression("Interval[1, 5) meets before Interval[5, 10]")
+        assert result is True
+
+    def test_meets_before_false(self, evaluator):
+        # [5,10] does not meet before [1,5]
+        result = evaluator.evaluate_expression("Interval[5, 10] meets before Interval[1, 5]")
+        assert result is False
+
+
+class TestIntervalMeetsAfter:
+    """Test interval meets after operator."""
+
+    def test_meets_after_true(self, evaluator):
+        # [5,10] meets after [1,5)
+        result = evaluator.evaluate_expression("Interval[5, 10] meets after Interval[1, 5)")
+        assert result is True
+
+    def test_meets_after_false(self, evaluator):
+        # [1,5) does not meet after [5,10]
+        result = evaluator.evaluate_expression("Interval[1, 5) meets after Interval[5, 10]")
+        assert result is False
+
+
+class TestIntervalUnion:
+    """Test interval union as list operation."""
+
+    def test_union_overlapping(self, evaluator):
+        # Union returns a list containing both intervals
+        result = evaluator.evaluate_expression("{ Interval[1, 5] } union { Interval[3, 8] }")
+        assert isinstance(result, list)
+        assert len(result) == 2
+
+    def test_union_removes_duplicates(self, evaluator):
+        # Union of same interval returns single item
+        result = evaluator.evaluate_expression("{ Interval[1, 5] } union { Interval[1, 5] }")
+        assert len(result) == 1
+
+
+class TestIntervalIntersect:
+    """Test interval intersect as list operation."""
+
+    def test_intersect_common(self, evaluator):
+        # Intersect returns items in both lists
+        result = evaluator.evaluate_expression("{ Interval[1, 5] } intersect { Interval[1, 5] }")
+        assert isinstance(result, list)
+        assert len(result) == 1
+
+    def test_intersect_different(self, evaluator):
+        result = evaluator.evaluate_expression("{ Interval[1, 5] } intersect { Interval[10, 15] }")
+        assert result == []
+
+
+class TestIntervalExcept:
+    """Test interval except as list operation."""
+
+    def test_except_removes_matching(self, evaluator):
+        # Except removes items from first list that are in second
+        result = evaluator.evaluate_expression("{ Interval[1, 5], Interval[10, 15] } except { Interval[10, 15] }")
+        assert len(result) == 1
+        assert result[0].low == 1
+
+
+class TestCollapseDateIntervals:
+    """Test collapse with date intervals."""
+
+    def test_collapse_date_overlapping(self, evaluator):
+        result = evaluator.evaluate_expression(
+            "collapse { Interval[@2024-01-01, @2024-01-15], Interval[@2024-01-10, @2024-01-25] }"
+        )
+        assert len(result) == 1
+
+
+class TestExpandWithPer:
+    """Test expand with per quantity."""
+
+    def test_expand_per_2(self, evaluator):
+        # Expand with step of 2
+        result = evaluator.evaluate_expression("expand Interval[1, 6] per 2")
+        # Should create intervals of width 2
+        assert len(result) >= 1

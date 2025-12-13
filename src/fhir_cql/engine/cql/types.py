@@ -189,6 +189,167 @@ class CQLInterval(BaseModel, Generic[T]):
         """CQL meets after - this starts exactly where other ends."""
         return other.meets(self)
 
+    def starts(self, other: "CQLInterval[Any]") -> bool:
+        """CQL starts - this interval starts at the same point as other.
+
+        Returns True if:
+        - Both intervals have the same low bound value
+        - Both intervals have the same low_closed status
+        - This interval ends at or before other ends
+        """
+        if self.low is None and other.low is None:
+            pass  # Both unbounded low is a match
+        elif self.low is None or other.low is None:
+            return False
+        elif self.low != other.low:
+            return False
+        elif self.low_closed != other.low_closed:
+            return False
+
+        # This interval must end at or before the other
+        if self.high is None:
+            return other.high is None
+        if other.high is None:
+            return True  # This ends, other doesn't
+        if self.high < other.high:
+            return True
+        if self.high == other.high:
+            # Must have same or more restrictive high bound
+            return self.high_closed == other.high_closed or not self.high_closed
+        return False
+
+    def ends(self, other: "CQLInterval[Any]") -> bool:
+        """CQL ends - this interval ends at the same point as other.
+
+        Returns True if:
+        - Both intervals have the same high bound value
+        - Both intervals have the same high_closed status
+        - This interval starts at or after other starts
+        """
+        if self.high is None and other.high is None:
+            pass  # Both unbounded high is a match
+        elif self.high is None or other.high is None:
+            return False
+        elif self.high != other.high:
+            return False
+        elif self.high_closed != other.high_closed:
+            return False
+
+        # This interval must start at or after the other
+        if self.low is None:
+            return other.low is None
+        if other.low is None:
+            return True  # Other starts unbounded, this starts bounded
+        if self.low > other.low:
+            return True
+        if self.low == other.low:
+            # Must have same or more restrictive low bound
+            return self.low_closed == other.low_closed or not self.low_closed
+        return False
+
+    def overlaps_before(self, other: "CQLInterval[Any]") -> bool:
+        """CQL overlaps before - this interval overlaps other and starts before.
+
+        Returns True if this interval:
+        - Starts before other starts
+        - Overlaps with other
+        - Ends within or before other ends
+        """
+        if not self.overlaps(other):
+            return False
+
+        # This must start before other
+        if self.low is None and other.low is not None:
+            # Unbounded start is before any bounded start
+            pass
+        elif self.low is None and other.low is None:
+            return False  # Both unbounded, doesn't start "before"
+        elif self.low is not None and other.low is None:
+            return False  # Other is unbounded, can't start before
+        elif self.low is not None and other.low is not None:
+            if self.low > other.low:
+                return False
+            if self.low == other.low:
+                # Only starts before if this is closed and other is open
+                if not (self.low_closed and not other.low_closed):
+                    return False
+
+        # This must end within or at other (not after)
+        if self.high is None:
+            return False  # This extends beyond other
+        if other.high is None:
+            return True  # Other is unbounded, this ends within
+        if self.high > other.high:
+            return False
+        return True
+
+    def overlaps_after(self, other: "CQLInterval[Any]") -> bool:
+        """CQL overlaps after - this interval overlaps other and starts after.
+
+        Returns True if this interval:
+        - Starts within or after other starts
+        - Overlaps with other
+        - Ends after other ends
+        """
+        if not self.overlaps(other):
+            return False
+
+        # This must start within other (not before)
+        if self.low is None:
+            return False  # Unbounded start can't be "after"
+        if other.low is None:
+            pass  # Other unbounded, this starts after
+        elif self.low < other.low:
+            return False
+
+        # This must end after other
+        if other.high is None:
+            return False  # Other is unbounded, can't end after
+        if self.high is None:
+            return True  # This is unbounded, ends after
+        if self.high < other.high:
+            return False
+        if self.high == other.high:
+            # Only ends after if this is closed and other is open
+            if not (self.high_closed and not other.high_closed):
+                return False
+        return True
+
+    def union(self, other: "CQLInterval[Any]") -> "CQLInterval[Any] | None":
+        """Return the union of two intervals if they overlap or meet."""
+        if not self.overlaps(other) and not self.meets(other) and not other.meets(self):
+            return None
+
+        # Determine low bound
+        if self.low is None or other.low is None:
+            new_low = None
+            new_low_closed = True
+        elif self.low < other.low:
+            new_low = self.low
+            new_low_closed = self.low_closed
+        elif self.low > other.low:
+            new_low = other.low
+            new_low_closed = other.low_closed
+        else:  # Equal
+            new_low = self.low
+            new_low_closed = self.low_closed or other.low_closed
+
+        # Determine high bound
+        if self.high is None or other.high is None:
+            new_high = None
+            new_high_closed = True
+        elif self.high > other.high:
+            new_high = self.high
+            new_high_closed = self.high_closed
+        elif self.high < other.high:
+            new_high = other.high
+            new_high_closed = other.high_closed
+        else:  # Equal
+            new_high = self.high
+            new_high_closed = self.high_closed or other.high_closed
+
+        return CQLInterval(low=new_low, high=new_high, low_closed=new_low_closed, high_closed=new_high_closed)
+
     @property
     def is_empty(self) -> bool:
         """Check if interval is empty (low > high or equal with open bounds)."""

@@ -2631,12 +2631,20 @@ class ELMExpressionVisitor:
 
     def _eval_overlaps_before(self, node: dict[str, Any]) -> bool | None:
         """Check if interval overlaps before another."""
-        # TODO: Implement
+        left, right = self._get_binary_operands(node)
+        if left is None or right is None:
+            return None
+        if isinstance(left, CQLInterval) and isinstance(right, CQLInterval):
+            return left.overlaps_before(right)
         return None
 
     def _eval_overlaps_after(self, node: dict[str, Any]) -> bool | None:
         """Check if interval overlaps after another."""
-        # TODO: Implement
+        left, right = self._get_binary_operands(node)
+        if left is None or right is None:
+            return None
+        if isinstance(left, CQLInterval) and isinstance(right, CQLInterval):
+            return left.overlaps_after(right)
         return None
 
     def _eval_meets(self, node: dict[str, Any]) -> bool | None:
@@ -2650,12 +2658,20 @@ class ELMExpressionVisitor:
 
     def _eval_meets_before(self, node: dict[str, Any]) -> bool | None:
         """Check if interval meets before another."""
-        # TODO: Implement
+        left, right = self._get_binary_operands(node)
+        if left is None or right is None:
+            return None
+        if isinstance(left, CQLInterval) and isinstance(right, CQLInterval):
+            return left.meets_before(right)
         return None
 
     def _eval_meets_after(self, node: dict[str, Any]) -> bool | None:
         """Check if interval meets after another."""
-        # TODO: Implement
+        left, right = self._get_binary_operands(node)
+        if left is None or right is None:
+            return None
+        if isinstance(left, CQLInterval) and isinstance(right, CQLInterval):
+            return left.meets_after(right)
         return None
 
     def _eval_before(self, node: dict[str, Any]) -> bool | None:
@@ -2675,23 +2691,174 @@ class ELMExpressionVisitor:
 
     def _eval_starts(self, node: dict[str, Any]) -> bool | None:
         """Check if interval starts another."""
-        # TODO: Implement
+        left, right = self._get_binary_operands(node)
+        if left is None or right is None:
+            return None
+        if isinstance(left, CQLInterval) and isinstance(right, CQLInterval):
+            return left.starts(right)
         return None
 
     def _eval_ends(self, node: dict[str, Any]) -> bool | None:
         """Check if interval ends another."""
-        # TODO: Implement
+        left, right = self._get_binary_operands(node)
+        if left is None or right is None:
+            return None
+        if isinstance(left, CQLInterval) and isinstance(right, CQLInterval):
+            return left.ends(right)
         return None
 
     def _eval_collapse(self, node: dict[str, Any]) -> list[Any]:
-        """Collapse overlapping intervals."""
-        # TODO: Implement
-        return []
+        """Collapse overlapping/adjacent intervals into non-overlapping intervals.
+
+        Takes a list of intervals and returns a list of non-overlapping intervals
+        that cover the same range. Adjacent intervals (that meet) are merged.
+        """
+        operand = self.evaluate(node.get("operand"))
+        if operand is None:
+            return []
+
+        # Ensure we have a list of intervals
+        intervals: list[CQLInterval] = []
+        if isinstance(operand, list):
+            for item in operand:
+                if isinstance(item, CQLInterval):
+                    intervals.append(item)
+        elif isinstance(operand, CQLInterval):
+            intervals = [operand]
+        else:
+            return []
+
+        if not intervals:
+            return []
+
+        # Sort intervals by low bound (None/unbounded first)
+        def sort_key(iv: CQLInterval) -> tuple[bool, Any]:
+            if iv.low is None:
+                return (False, None)  # Unbounded comes first
+            return (True, iv.low)
+
+        sorted_intervals = sorted(intervals, key=sort_key)
+
+        # Merge overlapping/adjacent intervals
+        result: list[CQLInterval] = []
+        current = sorted_intervals[0]
+
+        for next_iv in sorted_intervals[1:]:
+            # Try to merge current with next
+            merged = current.union(next_iv)
+            if merged is not None:
+                current = merged
+            else:
+                result.append(current)
+                current = next_iv
+
+        result.append(current)
+        return result
 
     def _eval_expand(self, node: dict[str, Any]) -> list[Any]:
-        """Expand interval into points."""
-        # TODO: Implement
+        """Expand interval into a list of points based on per unit.
+
+        Takes an interval and a per quantity, returning a list of intervals
+        of the specified width covering the original interval.
+        """
+        operand = self.evaluate(node.get("operand"))
+        per = self.evaluate(node.get("per"))
+
+        if operand is None:
+            return []
+
+        # Handle list of intervals
+        if isinstance(operand, list):
+            result: list[Any] = []
+            for item in operand:
+                if isinstance(item, CQLInterval):
+                    expanded = self._expand_single_interval(item, per)
+                    result.extend(expanded)
+            return result
+        elif isinstance(operand, CQLInterval):
+            return self._expand_single_interval(operand, per)
+
         return []
+
+    def _expand_single_interval(self, interval: CQLInterval, per: Any) -> list[CQLInterval]:
+        """Expand a single interval into unit intervals."""
+        if interval.low is None or interval.high is None:
+            # Cannot expand unbounded intervals
+            return [interval]
+
+        result: list[CQLInterval] = []
+
+        # Determine step size
+        step = 1  # Default step
+        if per is not None:
+            if isinstance(per, Quantity):
+                step = int(per.value)
+            elif isinstance(per, int | Decimal):
+                step = int(per)
+
+        # Handle integer intervals
+        if isinstance(interval.low, int) and isinstance(interval.high, int):
+            int_low = interval.low
+            int_high = interval.high
+            if not interval.low_closed:
+                int_low += 1
+            if not interval.high_closed:
+                int_high -= 1
+
+            int_current = int_low
+            while int_current <= int_high:
+                int_end = min(int_current + step - 1, int_high)
+                result.append(CQLInterval(low=int_current, high=int_end, low_closed=True, high_closed=True))
+                int_current = int_end + 1
+
+        # Handle date intervals
+        elif isinstance(interval.low, (date, FHIRDate)) and isinstance(interval.high, (date, FHIRDate)):
+            low_date = interval.low.to_date() if isinstance(interval.low, FHIRDate) else interval.low
+            high_date = interval.high.to_date() if isinstance(interval.high, FHIRDate) else interval.high
+
+            if low_date is None or high_date is None:
+                return [interval]
+
+            if not interval.low_closed:
+                low_date = low_date + timedelta(days=1)
+            if not interval.high_closed:
+                high_date = high_date - timedelta(days=1)
+
+            current_date = low_date
+            while current_date <= high_date:
+                end_date = min(current_date + timedelta(days=step - 1), high_date)
+                result.append(
+                    CQLInterval(
+                        low=FHIRDate(year=current_date.year, month=current_date.month, day=current_date.day),
+                        high=FHIRDate(year=end_date.year, month=end_date.month, day=end_date.day),
+                        low_closed=True,
+                        high_closed=True,
+                    )
+                )
+                current_date = end_date + timedelta(days=1)
+
+        # Handle decimal intervals
+        elif isinstance(interval.low, Decimal | float) and isinstance(interval.high, Decimal | float):
+            dec_low = Decimal(str(interval.low))
+            dec_high = Decimal(str(interval.high))
+            step_val = Decimal(str(step))
+
+            if not interval.low_closed:
+                dec_low += Decimal("0.00000001")
+            if not interval.high_closed:
+                dec_high -= Decimal("0.00000001")
+
+            dec_current = dec_low
+            while dec_current <= dec_high:
+                dec_end = min(dec_current + step_val - Decimal(1), dec_high)
+                result.append(CQLInterval(low=dec_current, high=dec_end, low_closed=True, high_closed=True))
+                dec_current = dec_end + Decimal(1)
+
+        else:
+            # Unknown interval type, return as-is
+            return [interval]
+
+        return result if result else [interval]
 
     # =========================================================================
     # Clinical Handlers

@@ -101,6 +101,23 @@ class FHIRDate(BaseModel):
             return False
         return self.day < other.day
 
+    def __le__(self, other: "FHIRDate") -> bool:
+        return self == other or self < other
+
+    def __gt__(self, other: "FHIRDate") -> bool:
+        if self.year != other.year:
+            return self.year > other.year
+        if self.month is None or other.month is None:
+            return False  # Incomparable precision
+        if self.month != other.month:
+            return self.month > other.month
+        if self.day is None or other.day is None:
+            return False
+        return self.day > other.day
+
+    def __ge__(self, other: "FHIRDate") -> bool:
+        return self == other or self > other
+
 
 class FHIRDateTime(BaseModel):
     """FHIRPath DateTime type with timezone support."""
