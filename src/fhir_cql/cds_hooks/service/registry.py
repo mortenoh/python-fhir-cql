@@ -28,7 +28,7 @@ class ServiceRegistry:
         if not config:
             return
 
-        for service_data in config.get("services", []):
+        for service_data in config.get("services") or []:
             service = CDSServiceConfig(**service_data)
             if service.enabled:
                 self._services[service.id] = service
