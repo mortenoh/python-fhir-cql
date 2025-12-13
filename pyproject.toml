@@ -18,8 +18,6 @@ dependencies = [
 
 [project.scripts]
 fhir = "fhir_cql.cli:app"
-cql = "fhir_cql.cql_cli:app"
-fhirpath = "fhir_cql.fhirpath_cli:app"
 
 [build-system]
 requires = ["hatchling"]
