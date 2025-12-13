@@ -75,6 +75,8 @@ greeting = evaluator.evaluate_definition("Greeting")  # 'Hello, CQL!'
 | Interval operations | - | Yes |
 | Temporal operations | - | Yes |
 | Terminology (codes/valuesets) | - | Yes |
+| FHIR data sources | - | Yes |
+| Quality measures | - | Yes |
 
 ## CQL Implementation Status
 
@@ -85,10 +87,10 @@ greeting = evaluator.evaluate_definition("Greeting")  # 'Hello, CQL!'
 | Phase 3: Temporal | Complete | Date/time, intervals, durations |
 | Phase 4: Functions | Complete | String, math, type conversion, user-defined |
 | Phase 5: FHIR Integration | Complete | Data sources, retrieve, patient context |
-| Phase 6: Quality Measures | Planned | Measure evaluation |
+| Phase 6: Quality Measures | Complete | Measure evaluation, populations, stratification |
 | Phase 7: Production | Planned | Type checking, optimization |
 
-**Current test count: 1150+ passing tests**
+**Current test count: 1190+ passing tests**
 
 ## Requirements
 

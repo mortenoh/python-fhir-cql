@@ -1766,20 +1766,20 @@ class CQLEvaluatorVisitor(cqlVisitor):
         # Aggregate functions with context
         if name_lower == "populationvariance":
             if args and isinstance(args[0], list):
-                values = [v for v in args[0] if v is not None and isinstance(v, (int, float, Decimal))]
+                values = [Decimal(str(v)) for v in args[0] if v is not None and isinstance(v, (int, float, Decimal))]
                 if len(values) < 1:
                     return None
-                mean = sum(values) / len(values)
-                return sum((v - mean) ** 2 for v in values) / len(values)
+                mean = sum(values) / Decimal(len(values))
+                return sum((v - mean) ** 2 for v in values) / Decimal(len(values))
             return None
 
         if name_lower == "variance":
             if args and isinstance(args[0], list):
-                values = [v for v in args[0] if v is not None and isinstance(v, (int, float, Decimal))]
+                values = [Decimal(str(v)) for v in args[0] if v is not None and isinstance(v, (int, float, Decimal))]
                 if len(values) < 2:
                     return None
-                mean = sum(values) / len(values)
-                return sum((v - mean) ** 2 for v in values) / (len(values) - 1)
+                mean = sum(values) / Decimal(len(values))
+                return sum((v - mean) ** 2 for v in values) / Decimal(len(values) - 1)
             return None
 
         if name_lower == "populationstddev":
@@ -1798,7 +1798,9 @@ class CQLEvaluatorVisitor(cqlVisitor):
 
         if name_lower == "median":
             if args and isinstance(args[0], list):
-                values = sorted(v for v in args[0] if v is not None and isinstance(v, (int, float, Decimal)))
+                values = sorted(
+                    Decimal(str(v)) for v in args[0] if v is not None and isinstance(v, (int, float, Decimal))
+                )
                 if not values:
                     return None
                 n = len(values)
@@ -1826,10 +1828,10 @@ class CQLEvaluatorVisitor(cqlVisitor):
                 values = [v for v in args[0] if v is not None and isinstance(v, (int, float, Decimal))]
                 if not values:
                     return None
-                result = Decimal(1)
+                product_result = Decimal(1)
                 for v in values:
-                    result *= Decimal(str(v))
-                return result
+                    product_result *= Decimal(str(v))
+                return product_result
             return None
 
         if name_lower == "geometricmean":
@@ -2030,8 +2032,8 @@ class CQLEvaluatorVisitor(cqlVisitor):
         if name_lower in ("timezone", "timezonefrom", "timezoneoffsetfrom"):
             if args and args[0] is not None:
                 val = args[0]
-                if isinstance(val, FHIRDateTime) and val.timezone_offset is not None:
-                    return val.timezone_offset
+                if isinstance(val, FHIRDateTime) and val.tz_offset is not None:
+                    return val.tz_offset
                 if isinstance(val, datetime) and val.tzinfo is not None:
                     offset = val.utcoffset()
                     if offset is not None:
@@ -2111,11 +2113,11 @@ class CQLEvaluatorVisitor(cqlVisitor):
 
         if name_lower == "concat":
             # Concatenate all string arguments
-            result = ""
+            concat_result = ""
             for arg in args:
                 if arg is not None:
-                    result += str(arg)
-            return result
+                    concat_result += str(arg)
+            return concat_result
 
         if name_lower == "split":
             # Split string by separator
@@ -2420,9 +2422,9 @@ class CQLEvaluatorVisitor(cqlVisitor):
                 if isinstance(args[0], CQLConcept):
                     return args[0]
                 if isinstance(args[0], CQLCode):
-                    return CQLConcept(codes=[args[0]])
+                    return CQLConcept(codes=(args[0],))
                 if isinstance(args[0], list):
-                    codes = [c for c in args[0] if isinstance(c, CQLCode)]
+                    codes = tuple(c for c in args[0] if isinstance(c, CQLCode))
                     if codes:
                         return CQLConcept(codes=codes)
             return None
@@ -2450,27 +2452,25 @@ class CQLEvaluatorVisitor(cqlVisitor):
         if not func_def:
             return None
 
-        # Check argument count
-        if len(args) < len([p for p in func_def.parameters if p.default_value is None]):
+        # Check argument count (all parameters are required - no defaults)
+        if len(args) < len(func_def.parameters):
             return None
 
         # Create child context for function execution
         func_context = self.context.child()
 
-        # Bind parameters
-        for i, param in enumerate(func_def.parameters):
+        # Bind parameters - parameters are (name, type) tuples
+        for i, (param_name, _param_type) in enumerate(func_def.parameters):
             if i < len(args):
-                func_context.set_alias(param.name, args[i])
-            elif param.default_value is not None:
-                func_context.set_alias(param.name, param.default_value)
+                func_context.set_alias(param_name, args[i])
 
         # Create a new visitor with the function context
         func_visitor = CQLEvaluatorVisitor(func_context)
         func_visitor._library = self._library
 
         # Evaluate function body
-        if func_def.expression_tree:
-            return func_visitor.visit(func_def.expression_tree)
+        if func_def.body_tree:
+            return func_visitor.visit(func_def.body_tree)
 
         return None
 
@@ -2491,7 +2491,7 @@ class CQLEvaluatorVisitor(cqlVisitor):
         if isinstance(right, (FHIRDate, FHIRDateTime, date, datetime)) and isinstance(left, Quantity):
             return self._add_duration(right, int(left.value), left.unit)
 
-        return left + right
+        return left + right  # type: ignore[operator]
 
     def _subtract(self, left: Any, right: Any) -> Any:
         """Subtract two values."""
@@ -2515,7 +2515,7 @@ class CQLEvaluatorVisitor(cqlVisitor):
                 delta = left_date - right_date
                 return delta.days
 
-        return left - right
+        return left - right  # type: ignore[operator]
 
     def _multiply(self, left: Any, right: Any) -> Any:
         """Multiply two values."""
@@ -2704,7 +2704,7 @@ class CQLEvaluatorVisitor(cqlVisitor):
     def _get_patient_birthdate(self) -> date | None:
         """Get the patient's birthdate from context."""
         resource = self.context.resource
-        if resource and isinstance(resource, dict):
+        if resource:
             birthdate = resource.get("birthDate")
             if birthdate:
                 if isinstance(birthdate, str):
@@ -2868,8 +2868,9 @@ class CQLEvaluatorVisitor(cqlVisitor):
         if not intervals:
             return []
 
-        # Sort by low bound
-        sorted_intervals = sorted([i for i in intervals if i.low is not None], key=lambda x: x.low)
+        # Sort by low bound - we filter to only intervals with non-None low
+        filtered = [i for i in intervals if i.low is not None]
+        sorted_intervals = sorted(filtered, key=lambda x: x.low)  # type: ignore[arg-type,return-value]
 
         if not sorted_intervals:
             return []

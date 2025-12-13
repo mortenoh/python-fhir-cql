@@ -73,7 +73,7 @@ class FHIRDataSource:
             The value at the path, or None if not found
         """
         parts = path.split(".")
-        current = resource
+        current: Any = resource
 
         for part in parts:
             if current is None:
@@ -210,17 +210,17 @@ class FHIRDataSource:
         # Parse date value
         if isinstance(date_value, str):
             if "T" in date_value:
-                date_value = FHIRDateTime.from_string(date_value)
+                date_value = FHIRDateTime.parse(date_value)
             else:
-                date_value = FHIRDate.from_string(date_value)
+                date_value = FHIRDate.parse(date_value)
         elif isinstance(date_value, dict):
             # Period type - check start and end
             start = date_value.get("start")
             end = date_value.get("end")
             if start:
-                start = FHIRDateTime.from_string(start) if "T" in start else FHIRDate.from_string(start)
+                start = FHIRDateTime.parse(start) if "T" in start else FHIRDate.parse(start)
             if end:
-                end = FHIRDateTime.from_string(end) if "T" in end else FHIRDate.from_string(end)
+                end = FHIRDateTime.parse(end) if "T" in end else FHIRDate.parse(end)
 
             # Check if period overlaps with date_range
             if start and date_range.high:

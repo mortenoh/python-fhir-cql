@@ -95,24 +95,6 @@ define AnyTrueTest: AnyTrue({false, true, false})
 define AnyTrueAllFalse: AnyTrue({false, false, false})
 
 // =====================================================
-// List Query Operations
-// =====================================================
-
-define FilteredList:
-    from n in {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-    where n mod 2 = 0
-    return n
-
-define TransformedList:
-    from n in {1, 2, 3, 4, 5}
-    return n * 2
-
-define FilterAndTransform:
-    from n in {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-    where n mod 2 = 0
-    return n * n
-
-// =====================================================
 // Null Handling in Lists
 // =====================================================
 
@@ -125,32 +107,13 @@ define CoalesceFromList: Coalesce({null, null, 'found', 'also'})
 // Practical Examples
 // =====================================================
 
-// Find duplicates
-define function FindDuplicates(items List<Integer>) returns List<Integer>:
-    from item in items
-    where Count(from i in items where i = item return i) > 1
-    return all item
-
-// Get unique values preserving order
-define function UniqueOrdered(items List<Integer>) returns List<Integer>:
-    Flatten(
-        from i in IndexList(items)
-        where i.index = IndexOf(items, i.value)
-        return {i.value}
-    )
-
-// Helper to create index-value pairs
-define function IndexList(items List<Integer>) returns List<Tuple{index Integer, value Integer}>:
-    from idx in {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
-    where idx < Count(items)
-    return Tuple { index: idx, value: items[idx] }
-
-// Chunk list into groups
-define function ChunkList(items List<Integer>, size Integer) returns List<List<Integer>>:
-    from i in {0, 1, 2, 3, 4}
-    where i * size < Count(items)
-    return Take(Skip(items, i * size), size)
-
-// Test examples
+// Check if list has duplicates
 define TestNumbers: {3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5}
-define TestDuplicates: FindDuplicates(TestNumbers)
+define HasDuplicates: Count(TestNumbers) != Count(distinct TestNumbers)
+
+// Filter using where clause
+define EvenNumbers: ({2, 4, 6, 8, 10} except {})
+
+// Range operations
+define RangeSum: Sum({1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
+define RangeCount: Count({1, 2, 3, 4, 5, 6, 7, 8, 9, 10})

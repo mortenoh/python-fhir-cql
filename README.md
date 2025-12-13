@@ -18,7 +18,7 @@ This project provides complete implementations of:
 - **CLI Tools**: Command-line interfaces for evaluation, AST visualization, and validation
 - **Python API**: Programmatic access to evaluators for integration into applications
 
-**Current test count: 1150+ passing tests**
+**Current test count: 1190+ passing tests**
 
 ## Requirements
 
@@ -129,6 +129,7 @@ all_results = evaluator.evaluate_all_definitions()
 | Terminology (codes/valuesets) | - | Yes |
 | FHIR data sources | - | Yes |
 | Retrieve with patient context | - | Yes |
+| Quality measures | - | Yes |
 
 ## CQL Implementation Status
 
@@ -139,7 +140,7 @@ all_results = evaluator.evaluate_all_definitions()
 | Phase 3: Temporal | Complete | Date/time, intervals, durations |
 | Phase 4: Functions | Complete | String, math, type conversion, user-defined |
 | Phase 5: FHIR Integration | Complete | Data sources, retrieve operations, patient context |
-| Phase 6: Quality Measures | Planned | Measure evaluation, populations |
+| Phase 6: Quality Measures | Complete | Measure evaluation, populations, stratification |
 | Phase 7: Production | Planned | Type checking, optimization |
 
 ## CLI Commands

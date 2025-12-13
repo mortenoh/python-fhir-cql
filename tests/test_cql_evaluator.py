@@ -1590,7 +1590,7 @@ class TestPopulationVarianceFunction:
     def test_popvariance_basic(self) -> None:
         # Pop variance of {2, 4, 6} = ((2-4)^2 + (4-4)^2 + (6-4)^2) / 3 = 8/3
         result = evaluate("PopulationVariance({2, 4, 6})")
-        assert abs(result - (8 / 3)) < 0.0001
+        assert abs(float(result) - (8 / 3)) < 0.0001
 
 
 # =============================================================================

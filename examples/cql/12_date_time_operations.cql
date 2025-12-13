@@ -127,10 +127,6 @@ define function CalculateAge(birthDate Date) returns Integer:
 define function AgeAt(birthDate Date, asOf Date) returns Integer:
     years between birthDate and asOf
 
-// Check if date is within last N days
-define function WithinLastDays(testDate Date, days Integer) returns Boolean:
-    testDate >= Today() - days day and testDate <= Today()
-
 // Check if within measurement period
 define function DuringMeasurementPeriod(eventDate Date, periodStart Date, periodEnd Date) returns Boolean:
     eventDate >= periodStart and eventDate <= periodEnd
@@ -138,14 +134,6 @@ define function DuringMeasurementPeriod(eventDate Date, periodStart Date, period
 // Calculate days since event
 define function DaysSince(eventDate Date) returns Integer:
     days between eventDate and Today()
-
-// Get start of year
-define function StartOfYear(d Date) returns Date:
-    @(year from d)-01-01
-
-// Get end of year
-define function EndOfYear(d Date) returns Date:
-    @(year from d)-12-31
 
 // Check if pediatric patient (under 18)
 define function IsPediatric(birthDate Date) returns Boolean:
@@ -155,6 +143,10 @@ define function IsPediatric(birthDate Date) returns Boolean:
 define function IsGeriatric(birthDate Date) returns Boolean:
     CalculateAge(birthDate) >= 65
 
+// Check if date is recent (within last 30 days)
+define function IsRecent(testDate Date) returns Boolean:
+    days between testDate and Today() <= 30 and testDate <= Today()
+
 // =====================================================
 // Test Examples
 // =====================================================
@@ -162,5 +154,4 @@ define function IsGeriatric(birthDate Date) returns Boolean:
 define TestBirthDate: @1985-07-20
 define TestAge: CalculateAge(TestBirthDate)
 define TestAgeAt2020: AgeAt(TestBirthDate, @2020-07-20)
-define TestWithinLast30Days: WithinLastDays(@2024-06-01, 30)
 define TestDaysSince: DaysSince(@2024-01-01)

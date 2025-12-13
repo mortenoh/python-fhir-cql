@@ -631,3 +631,310 @@ for patient in patients:
 df = pd.DataFrame(results)
 print(df)
 ```
+
+## Quality Measure Evaluation
+
+The `MeasureEvaluator` class provides support for evaluating CQL-based clinical quality measures.
+
+### Basic Usage
+
+```python
+from fhir_cql.engine.cql import MeasureEvaluator
+
+# Create measure evaluator
+evaluator = MeasureEvaluator()
+
+# Load a measure from CQL source
+evaluator.load_measure("""
+    library DiabetesMeasure version '1.0'
+    using FHIR version '4.0.1'
+
+    context Patient
+
+    define "Initial Population":
+        AgeInYears() >= 18
+
+    define "Denominator":
+        "Initial Population"
+
+    define "Numerator":
+        AgeInYears() >= 40
+""")
+
+# Evaluate for a single patient
+patient = {"resourceType": "Patient", "id": "p1", "birthDate": "1990-01-01"}
+result = evaluator.evaluate_patient(patient)
+
+print(result.patient_id)  # 'p1'
+print(result.populations)  # {'initial-population': True, 'denominator': True, 'numerator': False}
+```
+
+### Population Evaluation
+
+Evaluate a measure across multiple patients:
+
+```python
+patients = [
+    {"resourceType": "Patient", "id": "p1", "birthDate": "1990-01-01"},
+    {"resourceType": "Patient", "id": "p2", "birthDate": "1980-01-01"},
+    {"resourceType": "Patient", "id": "p3", "birthDate": "1970-01-01"},
+]
+
+# Evaluate for entire population
+report = evaluator.evaluate_population(patients)
+
+print(report.measure_id)  # 'DiabetesMeasure'
+print(len(report.patient_results))  # 3
+
+# Get population counts
+for group in report.groups:
+    print(f"Group: {group.id}")
+    for pop_type, count in group.populations.items():
+        print(f"  {pop_type}: {count.count}")
+    print(f"  Measure Score: {group.measure_score}")
+```
+
+### With Data Sources
+
+```python
+from fhir_cql.engine.cql import MeasureEvaluator, InMemoryDataSource
+
+# Create data source with conditions
+ds = InMemoryDataSource()
+ds.add_resource({"resourceType": "Patient", "id": "p1", "birthDate": "1980-01-01"})
+ds.add_resource({
+    "resourceType": "Condition",
+    "id": "c1",
+    "subject": {"reference": "Patient/p1"},
+    "code": {"coding": [{"system": "http://snomed.info/sct", "code": "44054006"}]},
+})
+
+evaluator = MeasureEvaluator(data_source=ds)
+evaluator.load_measure("""
+    library DiabetesMeasure version '1.0'
+    using FHIR version '4.0.1'
+
+    context Patient
+
+    define "Initial Population":
+        exists([Patient])
+
+    define "Denominator":
+        "Initial Population"
+
+    define "Numerator":
+        exists([Condition])
+""")
+
+patient = {"resourceType": "Patient", "id": "p1", "birthDate": "1980-01-01"}
+result = evaluator.evaluate_patient(patient, data_source=ds)
+print(result.populations["numerator"])  # True (patient has conditions)
+```
+
+### Stratification
+
+Measures can include stratifiers for population breakdown:
+
+```python
+evaluator.load_measure("""
+    library StratifiedMeasure version '1.0'
+
+    context Patient
+
+    define "Initial Population":
+        true
+
+    define "Denominator":
+        true
+
+    define "Numerator":
+        AgeInYears() >= 50
+
+    define "Stratifier Age Group":
+        if AgeInYears() < 50 then 'Under 50'
+        else '50+'
+""")
+
+patients = [
+    {"resourceType": "Patient", "id": "p1", "birthDate": "2000-01-01"},  # Under 50
+    {"resourceType": "Patient", "id": "p2", "birthDate": "1960-01-01"},  # 50+
+]
+
+report = evaluator.evaluate_population(patients)
+
+# Access stratified results
+for group in report.groups:
+    for strat_name, strat_results in group.stratifiers.items():
+        print(f"Stratifier: {strat_name}")
+        for result in strat_results:
+            print(f"  {result.value}: {result.populations}")
+```
+
+### MeasureReport to FHIR
+
+Convert measure results to a FHIR MeasureReport:
+
+```python
+report = evaluator.evaluate_population(patients)
+
+# Convert to FHIR MeasureReport
+fhir_report = report.to_fhir()
+print(json.dumps(fhir_report, indent=2))
+
+# Output:
+# {
+#   "resourceType": "MeasureReport",
+#   "status": "complete",
+#   "type": "summary",
+#   "measure": "DiabetesMeasure",
+#   "date": "2025-12-13T10:30:00",
+#   "group": [{
+#     "id": "default",
+#     "population": [
+#       {"code": {"coding": [{"code": "initial-population"}]}, "count": 3},
+#       {"code": {"coding": [{"code": "denominator"}]}, "count": 3},
+#       {"code": {"coding": [{"code": "numerator"}]}, "count": 2}
+#     ],
+#     "measureScore": {"value": 0.6667}
+#   }]
+# }
+```
+
+### Population Summary
+
+Get a quick summary of population counts:
+
+```python
+report = evaluator.evaluate_population(patients)
+summary = evaluator.get_population_summary(report)
+
+print(summary)
+# {
+#   'measure': 'DiabetesMeasure',
+#   'total_patients': 3,
+#   'groups': [{
+#     'id': 'default',
+#     'populations': {
+#       'initial-population': 3,
+#       'denominator': 3,
+#       'numerator': 2
+#     },
+#     'measure_score': 0.6667
+#   }]
+# }
+```
+
+### Measure Scoring Types
+
+```python
+from fhir_cql.engine.cql import MeasureScoring
+
+evaluator = MeasureEvaluator()
+evaluator.set_scoring(MeasureScoring.PROPORTION)  # Default
+# evaluator.set_scoring(MeasureScoring.RATIO)
+# evaluator.set_scoring(MeasureScoring.COHORT)
+# evaluator.set_scoring(MeasureScoring.CONTINUOUS_VARIABLE)
+```
+
+### Population Types
+
+The following population types are supported:
+
+| Type | CQL Definition Names |
+|------|---------------------|
+| Initial Population | `Initial Population`, `InitialPopulation` |
+| Denominator | `Denominator` |
+| Denominator Exclusion | `Denominator Exclusion`, `DenominatorExclusion` |
+| Denominator Exception | `Denominator Exception`, `DenominatorException` |
+| Numerator | `Numerator` |
+| Numerator Exclusion | `Numerator Exclusion`, `NumeratorExclusion` |
+| Measure Population | `Measure Population`, `MeasurePopulation` |
+| Measure Observation | `Measure Observation`, `MeasureObservation` |
+
+### Proportion Score Calculation
+
+For proportion measures, the score is calculated as:
+
+```
+Score = (Numerator - Numerator Exclusion) /
+        (Denominator - Denominator Exclusion - Denominator Exception)
+```
+
+### Complete Example
+
+```python
+from fhir_cql.engine.cql import MeasureEvaluator, InMemoryDataSource
+import json
+
+# Create data source with patient data
+ds = InMemoryDataSource()
+
+# Add patients
+patients = []
+for i in range(10):
+    age = 30 + i * 5  # Ages 30, 35, 40, ..., 75
+    birth_year = 2025 - age
+    patient = {
+        "resourceType": "Patient",
+        "id": f"p{i}",
+        "birthDate": f"{birth_year}-01-01",
+        "gender": "male" if i % 2 == 0 else "female",
+    }
+    ds.add_resource(patient)
+    patients.append(patient)
+
+    # Add diabetes condition for some patients
+    if age >= 50:
+        ds.add_resource({
+            "resourceType": "Condition",
+            "id": f"cond-{i}",
+            "subject": {"reference": f"Patient/p{i}"},
+            "code": {"coding": [{"system": "http://snomed.info/sct", "code": "44054006"}]},
+        })
+
+# Create evaluator
+evaluator = MeasureEvaluator(data_source=ds)
+
+# Load diabetes screening measure
+evaluator.load_measure("""
+    library DiabetesScreening version '1.0'
+    using FHIR version '4.0.1'
+
+    context Patient
+
+    define "Initial Population":
+        AgeInYears() >= 18
+
+    define "Denominator":
+        "Initial Population" and AgeInYears() >= 45
+
+    define "Denominator Exclusion":
+        AgeInYears() > 75
+
+    define "Numerator":
+        exists([Condition])
+
+    define "Stratifier Gender":
+        Patient.gender
+""")
+
+# Evaluate population
+report = evaluator.evaluate_population(patients, data_source=ds)
+
+# Print summary
+summary = evaluator.get_population_summary(report)
+print("Diabetes Screening Measure Results")
+print("=" * 40)
+print(f"Total Patients: {summary['total_patients']}")
+for group in summary['groups']:
+    print(f"\nGroup: {group['id']}")
+    for pop, count in group['populations'].items():
+        print(f"  {pop}: {count}")
+    if group['measure_score'] is not None:
+        print(f"  Score: {group['measure_score']:.1%}")
+
+# Export FHIR MeasureReport
+fhir_report = report.to_fhir()
+print("\nFHIR MeasureReport:")
+print(json.dumps(fhir_report, indent=2))
+```

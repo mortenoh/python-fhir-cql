@@ -1,6 +1,5 @@
 """Tests for CQL data source implementations."""
 
-
 from fhir_cql.engine.cql import (
     BundleDataSource,
     CQLCode,

@@ -52,12 +52,12 @@ define PatientBMICategory:
 // Body Surface Area (BSA)
 // =====================================================
 
-// Mosteller formula: BSA (m²) = sqrt((height(cm) × weight(kg)) / 3600)
+// Mosteller formula: BSA (m^2) = sqrt((height(cm) * weight(kg)) / 3600)
 define function CalculateBSA(weightKg Decimal, heightCm Decimal) returns Decimal:
     if weightKg is null or heightCm is null then null
     else Round(Sqrt((heightCm * weightKg) / 3600), 2)
 
-// DuBois formula: BSA = 0.007184 × height^0.725 × weight^0.425
+// DuBois formula: BSA = 0.007184 * height^0.725 * weight^0.425
 define function CalculateBSA_DuBois(weightKg Decimal, heightCm Decimal) returns Decimal:
     if weightKg is null or heightCm is null then null
     else Round(0.007184 * Power(heightCm, 0.725) * Power(weightKg, 0.425), 2)
@@ -66,34 +66,23 @@ define function CalculateBSA_DuBois(weightKg Decimal, heightCm Decimal) returns 
 // Renal Function (eGFR)
 // =====================================================
 
-// CKD-EPI Creatinine Equation (simplified)
-define function CalculateEGFR_CKDEPI(
-    creatinine Decimal,
-    age Integer,
-    isFemale Boolean
-) returns Integer:
-    if creatinine is null or age is null then null
-    else
-        let kappa: if isFemale then 0.7 else 0.9,
-            alpha: if isFemale then -0.329 else -0.411,
-            crRatio: creatinine / kappa,
-            minTerm: Power(Min(crRatio, 1.0), alpha),
-            maxTerm: Power(Max(crRatio, 1.0), -1.209),
-            ageTerm: Power(0.993, age),
-            sexFactor: if isFemale then 1.018 else 1.0
-        return Truncate(141 * minTerm * maxTerm * ageTerm * sexFactor)
+// Simplified eGFR calculation
+define function CalculateEGFR(creatinine Decimal, age Integer, isFemale Boolean) returns Integer:
+    if creatinine is null or age is null or creatinine = 0 then null
+    else Truncate(
+        (if isFemale then 175 else 186)
+        * Power(creatinine, -1.154)
+        * Power(age, -0.203)
+        * (if isFemale then 0.742 else 1.0)
+    )
 
-// Cockcroft-Gault CrCl
-define function CalculateCrCl(
-    creatinine Decimal,
-    weightKg Decimal,
-    age Integer,
-    isFemale Boolean
-) returns Decimal:
+// Cockcroft-Gault CrCl (simplified)
+define function CalculateCrCl(creatinine Decimal, weightKg Decimal, age Integer, isFemale Boolean) returns Decimal:
     if creatinine is null or creatinine = 0 or weightKg is null or age is null then null
-    else
-        let baseCrCl: ((140 - age) * weightKg) / (72 * creatinine)
-        return Round(baseCrCl * (if isFemale then 0.85 else 1.0), 1)
+    else Round(
+        ((140 - age) * weightKg) / (72 * creatinine) * (if isFemale then 0.85 else 1.0),
+        1
+    )
 
 // CKD Stage based on eGFR
 define function CKDStage(egfr Integer) returns String:
@@ -106,69 +95,16 @@ define function CKDStage(egfr Integer) returns String:
     else 'Stage 5'
 
 // =====================================================
-// Cardiovascular Risk (Framingham)
-// =====================================================
-
-// Simplified Framingham Risk Score (10-year CVD risk)
-define function FraminghamRiskScore(
-    age Integer,
-    totalCholesterol Decimal,
-    hdlCholesterol Decimal,
-    systolicBP Decimal,
-    isTreatedBP Boolean,
-    isSmoker Boolean,
-    isDiabetic Boolean,
-    isMale Boolean
-) returns Decimal:
-    // Simplified implementation - actual scoring uses lookup tables
-    let agePoints: if isMale then
-                       if age < 35 then 0
-                       else if age < 45 then 6
-                       else if age < 55 then 11
-                       else if age < 65 then 15
-                       else 18
-                   else
-                       if age < 35 then 0
-                       else if age < 45 then 3
-                       else if age < 55 then 6
-                       else if age < 65 then 9
-                       else 12,
-        cholPoints: if totalCholesterol < 160 then 0
-                    else if totalCholesterol < 200 then 1
-                    else if totalCholesterol < 240 then 2
-                    else 3,
-        hdlPoints: if hdlCholesterol >= 60 then -1
-                   else if hdlCholesterol >= 50 then 0
-                   else if hdlCholesterol >= 40 then 1
-                   else 2,
-        bpPoints: if systolicBP < 120 then 0
-                  else if systolicBP < 140 then (if isTreatedBP then 2 else 1)
-                  else if systolicBP < 160 then (if isTreatedBP then 3 else 2)
-                  else (if isTreatedBP then 4 else 3),
-        smokePoints: if isSmoker then 2 else 0,
-        diabetesPoints: if isDiabetic then 3 else 0,
-        totalPoints: agePoints + cholPoints + hdlPoints + bpPoints + smokePoints + diabetesPoints
-    // Convert points to approximate risk percentage
-    return if totalPoints < 5 then 1.0
-           else if totalPoints < 10 then 5.0
-           else if totalPoints < 15 then 10.0
-           else if totalPoints < 20 then 20.0
-           else 30.0
-
-// =====================================================
 // Ideal Body Weight
 // =====================================================
 
 // Devine formula
 define function IdealBodyWeight(heightCm Decimal, isFemale Boolean) returns Decimal:
     if heightCm is null then null
+    else if isFemale then
+        45.5 + (2.3 * ((heightCm / 2.54) - 60))
     else
-        let heightInches: heightCm / 2.54,
-            inchesOver5Feet: heightInches - 60
-        return if isFemale then
-                   45.5 + (2.3 * inchesOver5Feet)
-               else
-                   50.0 + (2.3 * inchesOver5Feet)
+        50.0 + (2.3 * ((heightCm / 2.54) - 60))
 
 // Adjusted Body Weight (for obesity)
 define function AdjustedBodyWeight(actualKg Decimal, idealKg Decimal) returns Decimal:
@@ -264,10 +200,10 @@ define PatientIsFemale:
     Patient.gender = 'female'
 
 define PatientMostRecentCreatinine:
-    Last([Observation: "Serum Creatinine"] sort by effective)
+    Last([Observation: "Serum Creatinine"] O sort by effective)
 
 define PatientEGFR:
-    CalculateEGFR_CKDEPI(
+    CalculateEGFR(
         PatientMostRecentCreatinine.value.value,
         PatientAge,
         PatientIsFemale

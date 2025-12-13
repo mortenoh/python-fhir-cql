@@ -167,14 +167,9 @@ define function GapBetween(interval1 Interval<Integer>, interval2 Interval<Integ
     else
         0
 
-// Check continuous coverage (no gaps)
-define function HasContinuousCoverage(coverageIntervals List<Interval<Date>>, period Interval<Date>) returns Boolean:
-    let collapsed: collapse coverageIntervals
-    return exists(
-        from c in collapsed
-        where c includes period
-        return c
-    )
+// Check if interval list covers a period (after collapsing)
+define function CoversAfterCollapse(coverageIntervals List<Interval<Date>>, period Interval<Date>) returns Boolean:
+    exists(collapse coverageIntervals C where C includes period)
 
 // Create age range interval
 define function AgeRange(minAge Integer, maxAge Integer) returns Interval<Integer>:

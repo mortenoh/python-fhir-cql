@@ -107,13 +107,16 @@ define function CalculatePercentage(part Decimal, whole Decimal) returns Decimal
     if whole is null or whole = 0 then null
     else Round(part / whole * 100, 2)
 
-// Standard deviation (simplified for a list)
-define function Variance(values List<Decimal>) returns Decimal:
-    let avg: Avg(values)
-    return Avg(
-        from v in values
-        return Power(v - avg, 2)
-    )
+// Helper for variance calculation
+define function SquaredDifference(value Decimal, mean Decimal) returns Decimal:
+    Power(value - mean, 2)
+
+// Statistical examples
+define SampleData: {1.0, 2.0, 3.0, 4.0, 5.0}
+define SampleMean: Avg(SampleData)
+define SampleSum: Sum(SampleData)
+define SampleMin: Min(SampleData)
+define SampleMax: Max(SampleData)
 
 // Test calculations
 define TestBMI: CalculateBMI(70.0, 1.75)

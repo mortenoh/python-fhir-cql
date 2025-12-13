@@ -25,8 +25,10 @@ class DataSource(Protocol):
         context: "CQLContext | None" = None,
         code_path: str | None = None,
         codes: list[Any] | None = None,
+        valueset: str | None = None,
         date_path: str | None = None,
         date_range: Any | None = None,
+        **kwargs: Any,
     ) -> list[dict[str, Any]]:
         """Retrieve resources of a given type with optional filters."""
         ...

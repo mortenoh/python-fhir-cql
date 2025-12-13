@@ -16,7 +16,6 @@ codesystem "RxNorm": 'http://www.nlm.nih.gov/research/umls/rxnorm'
 codesystem "CPT": 'http://www.ama-assn.org/go/cpt'
 codesystem "CVX": 'http://hl7.org/fhir/sid/cvx'
 codesystem "UCUM": 'http://unitsofmeasure.org'
-codesystem "ObservationCategory": 'http://terminology.hl7.org/CodeSystem/observation-category'
 
 // =====================================================
 // Value Set Definitions
@@ -107,48 +106,16 @@ define HbA1cResults:
 define GlucoseResults:
     [Observation: "Glucose LOINC"]
 
-// Check if observation code matches
-define IsHbA1cTest(obs Observation):
-    obs.code in "HbA1c Lab Test"
-
-// Check code equivalence
-define MatchesDiabetesCode(condition Condition):
-    condition.code ~ "Diabetes"
-
-// =====================================================
-// Code System Navigation
-// =====================================================
-
-// Get code from CodeableConcept
-define GetPrimaryCode(cc FHIR.CodeableConcept):
-    First(cc.coding).code
-
-// Get display from CodeableConcept
-define GetDisplay(cc FHIR.CodeableConcept):
-    Coalesce(cc.text, First(cc.coding).display)
-
-// Find coding for specific system
-define GetLoincCode(cc FHIR.CodeableConcept):
-    singleton from (
-        cc.coding C
-            where C.system = 'http://loinc.org'
-            return C.code
-    )
-
 // =====================================================
 // Unit Handling (UCUM)
 // =====================================================
 
 // Convert units
-define ConvertMgDlToMmolL(value Decimal):
+define function ConvertMgDlToMmolL(value Decimal) returns Decimal:
     value / 18.0
 
-define ConvertMmolLToMgDl(value Decimal):
+define function ConvertMmolLToMgDl(value Decimal) returns Decimal:
     value * 18.0
-
-// Check if value has expected unit
-define IsValidGlucoseUnit(obs Observation):
-    obs.value.unit in {'mg/dL', 'mmol/L'}
 
 // =====================================================
 // Practical Examples
@@ -167,8 +134,6 @@ define CardiovascularConditions:
 // Active diabetes management medications
 define DiabetesMedications:
     [MedicationRequest: "Insulin Medications"]
-    union [MedicationRequest] M
-        where M.medication in "Statins"
 
 // Multi-condition check
 define HasDiabetesAndHypertension:
@@ -181,29 +146,13 @@ define QualifyingEncounters:
     union [Encounter: "Preventive Care"]
 
 // =====================================================
-// Code Validation
-// =====================================================
-
-// Validate observation has required code
-define ValidLabObservation(obs Observation):
-    obs.code is not null
-        and exists(obs.code.coding C where C.system is not null and C.code is not null)
-
-// Check for required category
-define IsLaboratoryResult(obs Observation):
-    exists(
-        obs.category C
-            where C.coding.code contains 'laboratory'
-    )
-
-// =====================================================
 // Code Display Functions
 // =====================================================
 
 // Format code for display
-define function FormatCode(coding FHIR.Coding) returns String:
-    Coalesce(coding.display, coding.code) + ' (' + coding.system + '#' + coding.code + ')'
+define function FormatCode(codeValue String, systemValue String) returns String:
+    codeValue + ' (' + systemValue + ')'
 
-// Get human-readable condition summary
-define function GetConditionSummary(cond Condition) returns String:
-    GetDisplay(cond.code) + ' - ' + cond.clinicalStatus.coding[0].code
+// Get human-readable summary
+define function GetConditionDisplay(cond Condition) returns String:
+    Coalesce(cond.code.text, First(cond.code.coding).display, 'Unknown')

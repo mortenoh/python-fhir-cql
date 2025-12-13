@@ -47,6 +47,18 @@ from .library import (
     UsingDefinition,
     ValueSetDefinition,
 )
+from .measure import (
+    GroupResult,
+    MeasureEvaluator,
+    MeasureGroup,
+    MeasurePopulation,
+    MeasureReport,
+    MeasureScoring,
+    PatientResult,
+    PopulationCount,
+    PopulationType,
+    StratifierResult,
+)
 from .types import (
     CQLBoolean,
     CQLCode,
@@ -113,4 +125,15 @@ __all__ = [
     # Type utilities
     "is_cql_type",
     "cql_type_name",
+    # Measure evaluation
+    "MeasureEvaluator",
+    "MeasureReport",
+    "MeasureGroup",
+    "MeasurePopulation",
+    "MeasureScoring",
+    "PopulationType",
+    "PopulationCount",
+    "PatientResult",
+    "GroupResult",
+    "StratifierResult",
 ]

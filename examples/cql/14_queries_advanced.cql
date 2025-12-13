@@ -111,31 +111,19 @@ define AnalyzedGlucose:
 
 // Return specific elements
 define GlucoseValues:
-    from O in [Observation: "Blood Glucose Tests"]
-    where O.effective during "Measurement Period"
-    return O.value
+    [Observation: "Blood Glucose Tests"] O
+        where O.effective during "Measurement Period"
+        return O.value
 
 // Return tuples
 define GlucoseSummary:
-    from O in [Observation: "Blood Glucose Tests"]
-    where O.effective during "Measurement Period"
-    return Tuple {
-        date: O.effective,
-        value: O.value,
-        code: O.code.coding[0].code
-    }
-
-// Return all (preserve duplicates)
-define AllGlucoseValues:
-    from O in [Observation: "Blood Glucose Tests"]
-    return all O.value
-
-// Return distinct
-define DistinctGlucoseDates:
-    distinct (
-        from O in [Observation: "Blood Glucose Tests"]
-        return date from O.effective
-    )
+    [Observation: "Blood Glucose Tests"] O
+        where O.effective during "Measurement Period"
+        return Tuple {
+            date: O.effective,
+            value: O.value,
+            code: O.code.coding[0].code
+        }
 
 // =====================================================
 // Sorting
@@ -155,34 +143,6 @@ define GlucoseByDateDesc:
 define GlucoseSorted:
     [Observation: "Blood Glucose Tests"] O
         sort by status, effective desc
-
-// =====================================================
-// Multi-Source Queries
-// =====================================================
-
-// Join conditions with medications
-define DiabetesWithMedication:
-    from C in [Condition: "Diabetes Diagnosis"],
-         M in [MedicationRequest: "Antidiabetic Medications"]
-    where C.clinicalStatus ~ 'active'
-        and M.status = 'active'
-    return Tuple {
-        conditionCode: C.code,
-        medication: M.medication,
-        authoredOn: M.authoredOn
-    }
-
-// Observations with encounter context
-define GlucoseWithEncounter:
-    from O in [Observation: "Blood Glucose Tests"],
-         E in [Encounter]
-    where O.encounter = E.id
-        and O.effective during "Measurement Period"
-    return Tuple {
-        glucoseValue: O.value,
-        encounterType: E.type,
-        encounterDate: E.period.start
-    }
 
 // =====================================================
 // With/Without Clauses
@@ -211,27 +171,6 @@ define GlucoseTestCount:
     Count([Observation: "Blood Glucose Tests"] O
         where O.effective during "Measurement Period")
 
-// Average value
-define AverageGlucose:
-    Avg(
-        from O in [Observation: "Blood Glucose Tests"]
-        where O.effective during "Measurement Period"
-        return O.value.value
-    )
-
-// Min/Max values
-define MinGlucose:
-    Min(
-        from O in [Observation: "Blood Glucose Tests"]
-        return O.value.value
-    )
-
-define MaxGlucose:
-    Max(
-        from O in [Observation: "Blood Glucose Tests"]
-        return O.value.value
-    )
-
 // =====================================================
 // First/Last with Sort
 // =====================================================
@@ -249,44 +188,39 @@ define FirstGlucoseInPeriod:
         sort by effective)
 
 // =====================================================
-// Complex Clinical Patterns
+// Existence Checks
 // =====================================================
 
-// Find lab trend (improving/worsening)
-define GlucoseTrend:
-    let recentValues:
-        from O in [Observation: "Blood Glucose Tests"]
+// Has any glucose test
+define HasGlucoseTest:
+    exists([Observation: "Blood Glucose Tests"] O
+        where O.effective during "Measurement Period")
+
+// Has high glucose
+define HasHighGlucose:
+    exists([Observation: "Blood Glucose Tests"] O
         where O.effective during "Measurement Period"
-        sort by effective
-        return O.value.value
-    return if Count(recentValues) < 2 then 'Insufficient data'
-           else if Last(recentValues) < First(recentValues) then 'Improving'
-           else if Last(recentValues) > First(recentValues) then 'Worsening'
-           else 'Stable'
+            and O.value >= 126 'mg/dL')
 
-// Find gaps in care (no tests for 90+ days)
-define HasTestingGap:
-    exists(
-        from O1 in [Observation: "Blood Glucose Tests"],
-             O2 in [Observation: "Blood Glucose Tests"]
-        where O1.effective < O2.effective
-            and days between O1.effective and O2.effective > 90
-            and not exists(
-                [Observation: "Blood Glucose Tests"] O3
-                    where O3.effective > O1.effective
-                        and O3.effective < O2.effective
-            )
-        return true
-    )
+// Has active diabetes
+define HasActiveDiabetes:
+    exists([Condition: "Diabetes Diagnosis"] C
+        where C.clinicalStatus ~ 'active')
 
-// Calculate medication adherence (simplified)
-define MedicationAdherence:
-    let totalDays: days between start of "Measurement Period" and end of "Measurement Period",
-        daysWithMed: Count(
-            distinct (
-                from M in [MedicationStatement: "Antidiabetic Medications"]
-                where M.effective overlaps "Measurement Period"
-                return date from M.effective
-            )
-        )
-    return if totalDays > 0 then (daysWithMed / totalDays) * 100 else null
+// =====================================================
+// Practical Examples
+// =====================================================
+
+// Check if patient needs screening
+define NeedsGlucoseScreening:
+    AgeInYears() >= 45
+        and not exists([Observation: "Blood Glucose Tests"] O
+            where O.effective during "Measurement Period")
+
+// Calculate days since last test
+define DaysSinceLastGlucoseTest:
+    days between
+        (Last([Observation: "Blood Glucose Tests"] O
+            where O.effective during "Measurement Period"
+            sort by effective)).effective
+        and Today()
