@@ -1248,7 +1248,7 @@ class CQLEvaluatorVisitor(cqlVisitor):
             unique_results = []
             for row in results:
                 # Get a hashable representation
-                row_key = tuple(sorted(row.items())) if isinstance(row, dict) else row
+                row_key = tuple(sorted(row.items()))
                 if row_key not in seen:
                     seen.append(row_key)
                     unique_results.append(row)
@@ -3169,7 +3169,7 @@ class CQLEvaluatorVisitor(cqlVisitor):
         if isinstance(value, Decimal):
             # Get the scale and add the smallest increment
             sign, digits, exp = value.as_tuple()
-            if exp < 0:
+            if isinstance(exp, int) and exp < 0:
                 increment = Decimal(10) ** exp
             else:
                 increment = Decimal(1)
@@ -3194,7 +3194,7 @@ class CQLEvaluatorVisitor(cqlVisitor):
                     hour=next_ms.hour,
                     minute=next_ms.minute,
                     second=next_ms.second,
-                    microsecond=next_ms.microsecond,
+                    millisecond=next_ms.microsecond // 1000,
                 )
 
         # Time successor
@@ -3228,7 +3228,7 @@ class CQLEvaluatorVisitor(cqlVisitor):
         # Decimal predecessor
         if isinstance(value, Decimal):
             sign, digits, exp = value.as_tuple()
-            if exp < 0:
+            if isinstance(exp, int) and exp < 0:
                 decrement = Decimal(10) ** exp
             else:
                 decrement = Decimal(1)
@@ -3253,7 +3253,7 @@ class CQLEvaluatorVisitor(cqlVisitor):
                     hour=prev_ms.hour,
                     minute=prev_ms.minute,
                     second=prev_ms.second,
-                    microsecond=prev_ms.microsecond,
+                    millisecond=prev_ms.microsecond // 1000,
                 )
 
         # Time predecessor
@@ -3366,7 +3366,7 @@ class CQLEvaluatorVisitor(cqlVisitor):
                 hour=value.hour,
                 minute=value.minute,
                 second=value.second,
-                microsecond=value.microsecond,
+                millisecond=value.microsecond // 1000,
             )
         if isinstance(value, str):
             try:
@@ -3378,7 +3378,7 @@ class CQLEvaluatorVisitor(cqlVisitor):
                     hour=dt.hour,
                     minute=dt.minute,
                     second=dt.second,
-                    microsecond=dt.microsecond,
+                    millisecond=dt.microsecond // 1000,
                 )
             except ValueError:
                 return None
