@@ -449,5 +449,211 @@ def run(
         raise typer.Exit(1)
 
 
+@app.command()
+def check(
+    file: Annotated[Path, typer.Argument(help="CQL library file to check")],
+    verbose: Annotated[bool, typer.Option("--verbose", "-v", help="Show detailed information")] = False,
+) -> None:
+    """Check a CQL library for errors and show information.
+
+    Validates syntax, compiles the library, and reports any issues found.
+
+    Examples:
+        cql check library.cql
+        cql check library.cql --verbose
+    """
+    if not file.exists():
+        rprint(f"[red]Error:[/red] File not found: {file}")
+        raise typer.Exit(1)
+
+    # Step 1: Parse
+    text = file.read_text()
+    _, parse_errors = parse_cql(text)
+
+    if parse_errors:
+        rprint(f"[red]✗[/red] Syntax errors in {file}:")
+        for error in parse_errors:
+            rprint(f"  [red]•[/red] {error}")
+        raise typer.Exit(1)
+
+    rprint("[green]✓[/green] Syntax valid")
+
+    # Step 2: Compile
+    evaluator = CQLEvaluator()
+    try:
+        lib = evaluator.compile(text)
+    except CQLError as e:
+        rprint(f"[red]✗[/red] Compilation error: {e}")
+        raise typer.Exit(1)
+
+    rprint("[green]✓[/green] Compilation successful")
+
+    # Step 3: Show library info
+    rprint()
+    rprint(f"[bold blue]Library:[/bold blue] {lib.name}" + (f" v{lib.version}" if lib.version else ""))
+
+    # Show stats
+    stats = Table(show_header=False, box=None)
+    stats.add_column("Key", style="dim")
+    stats.add_column("Value")
+
+    stats.add_row("Definitions", str(len(lib.definitions)))
+    stats.add_row("Functions", str(len(lib.functions)))
+    stats.add_row("Value Sets", str(len(lib.valuesets)))
+    stats.add_row("Code Systems", str(len(lib.codesystems)))
+    stats.add_row("Codes", str(len(lib.codes)))
+    stats.add_row("Parameters", str(len(lib.parameters)))
+
+    console.print(stats)
+
+    # Step 4: Verbose output
+    if verbose:
+        rprint()
+
+        if lib.definitions:
+            rprint("[bold]Definitions:[/bold]")
+            for name in sorted(lib.definitions.keys()):
+                rprint(f"  [cyan]{name}[/cyan]")
+
+        if lib.functions:
+            rprint("\n[bold]Functions:[/bold]")
+            for name, func_list in sorted(lib.functions.items()):
+                for func in func_list:
+                    params = ", ".join(f"{p[0]}: {p[1]}" for p in func.parameters)
+                    ret = f" -> {func.return_type}" if func.return_type else ""
+                    rprint(f"  [cyan]{name}[/cyan]({params}){ret}")
+
+        if lib.valuesets:
+            rprint("\n[bold]Value Sets:[/bold]")
+            for name, vs in sorted(lib.valuesets.items()):
+                rprint(f"  [yellow]{name}[/yellow]: {vs.id}")
+
+        if lib.codesystems:
+            rprint("\n[bold]Code Systems:[/bold]")
+            for name, cs in sorted(lib.codesystems.items()):
+                rprint(f"  [magenta]{name}[/magenta]: {cs.id}")
+
+    rprint()
+    rprint("[green]✓[/green] [bold]All checks passed[/bold]")
+
+
+@app.command()
+def measure(
+    file: Annotated[Path, typer.Argument(help="CQL measure file")],
+    data: Annotated[Optional[Path], typer.Option("--data", "-d", help="JSON data file (patient or bundle)")] = None,
+    patients: Annotated[
+        Optional[Path], typer.Option("--patients", "-p", help="Directory with patient JSON files")
+    ] = None,
+    output: Annotated[Optional[Path], typer.Option("--output", "-o", help="Output file for measure report")] = None,
+    verbose: Annotated[bool, typer.Option("--verbose", "-v", help="Show detailed results")] = False,
+) -> None:
+    """Evaluate a CQL quality measure against patient data.
+
+    The measure file should define populations like:
+    - Initial Population
+    - Denominator
+    - Numerator
+    - etc.
+
+    Examples:
+        cql measure measure.cql --data patient.json
+        cql measure measure.cql --patients ./patients/
+        cql measure measure.cql --data bundle.json --output report.json
+    """
+    from fhir_cql.engine.cql.measure import MeasureEvaluator
+
+    if not file.exists():
+        rprint(f"[red]Error:[/red] File not found: {file}")
+        raise typer.Exit(1)
+
+    # Load patients
+    patient_list: list[dict[str, Any]] = []
+
+    if data:
+        if not data.exists():
+            rprint(f"[red]Error:[/red] Data file not found: {data}")
+            raise typer.Exit(1)
+
+        try:
+            data_content = json.loads(data.read_text())
+            if data_content.get("resourceType") == "Bundle":
+                # Extract patients from bundle
+                for entry in data_content.get("entry", []):
+                    resource = entry.get("resource", {})
+                    if resource.get("resourceType") == "Patient":
+                        patient_list.append(resource)
+            elif data_content.get("resourceType") == "Patient":
+                patient_list.append(data_content)
+            else:
+                rprint("[red]Error:[/red] Data must be a Patient or Bundle resource")
+                raise typer.Exit(1)
+        except json.JSONDecodeError as e:
+            rprint(f"[red]Error parsing JSON:[/red] {e}")
+            raise typer.Exit(1)
+
+    if patients:
+        if not patients.exists() or not patients.is_dir():
+            rprint(f"[red]Error:[/red] Patients directory not found: {patients}")
+            raise typer.Exit(1)
+
+        for patient_file in patients.glob("*.json"):
+            try:
+                patient_data = json.loads(patient_file.read_text())
+                if patient_data.get("resourceType") == "Patient":
+                    patient_list.append(patient_data)
+            except json.JSONDecodeError:
+                rprint(f"[yellow]Warning:[/yellow] Skipping invalid JSON: {patient_file}")
+
+    if not patient_list:
+        rprint("[yellow]Warning:[/yellow] No patients provided, using empty population")
+
+    # Load and run measure
+    try:
+        measure_eval = MeasureEvaluator()
+        measure_eval.load_measure_file(str(file))
+
+        rprint(f"[bold blue]Measure:[/bold blue] {file.name}")
+        rprint(f"[dim]Evaluating {len(patient_list)} patient(s)...[/dim]")
+        rprint()
+
+        report = measure_eval.evaluate_population(patient_list)
+
+        # Display results
+        for group in report.groups:
+            table = Table(title=f"Group: {group.id or 'default'}", show_header=True, header_style="bold")
+            table.add_column("Population", style="cyan")
+            table.add_column("Count", justify="right")
+
+            for pop_type, pop_count in group.populations.items():
+                table.add_row(pop_type, str(pop_count.count))
+
+            if group.measure_score is not None:
+                table.add_row("[bold]Score[/bold]", f"[bold]{group.measure_score:.2%}[/bold]")
+
+            console.print(table)
+
+            # Show stratifiers if verbose
+            if verbose and group.stratifiers:
+                rprint("\n[bold]Stratifiers:[/bold]")
+                for strat_name, strat_results in group.stratifiers.items():
+                    rprint(f"  [cyan]{strat_name}[/cyan]:")
+                    for strat in strat_results:
+                        rprint(f"    {strat.value}: {strat.populations}")
+
+        # Write output if requested
+        if output:
+            # Use the to_fhir() method for proper conversion
+            report_dict = report.to_fhir()
+            output.write_text(json.dumps(report_dict, indent=2, default=str))
+            rprint(f"\n[dim]Report written to {output}[/dim]")
+
+    except CQLError as e:
+        rprint(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+    except Exception as e:
+        rprint(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+
+
 if __name__ == "__main__":
     app()
