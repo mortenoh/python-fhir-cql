@@ -88,7 +88,7 @@ greeting = evaluator.evaluate_definition("Greeting")  # 'Hello, CQL!'
 | Phase 4: Functions | Complete | String, math, type conversion, user-defined |
 | Phase 5: FHIR Integration | Complete | Data sources, retrieve, patient context |
 | Phase 6: Quality Measures | Complete | Measure evaluation, populations, stratification |
-| Phase 7: Production | Planned | Type checking, optimization |
+| Phase 7: Production | Complete | CLI commands, expression/library caching |
 
 **Current test count: 1190+ passing tests**
 

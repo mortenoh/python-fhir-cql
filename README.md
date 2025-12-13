@@ -141,32 +141,43 @@ all_results = evaluator.evaluate_all_definitions()
 | Phase 4: Functions | Complete | String, math, type conversion, user-defined |
 | Phase 5: FHIR Integration | Complete | Data sources, retrieve operations, patient context |
 | Phase 6: Quality Measures | Complete | Measure evaluation, populations, stratification |
-| Phase 7: Production | Planned | Type checking, optimization |
+| Phase 7: Production | Complete | CLI commands, expression caching, library caching |
 
 ## CLI Commands
 
-### FHIRPath
+The unified `fhir` CLI provides access to both CQL and FHIRPath functionality:
 
-| Command | Description |
-|---------|-------------|
-| `fhirpath eval <expr> -r <file>` | Evaluate expression against resource |
-| `fhirpath eval-file <file> -r <resource>` | Evaluate expressions from file |
-| `fhirpath parse <expr>` | Validate expression syntax |
-| `fhirpath ast <expr>` | Display AST tree |
-| `fhirpath tokens <expr>` | Show token stream |
-| `fhirpath repl` | Interactive REPL |
+```bash
+fhir cql <command>      # CQL commands
+fhir fhirpath <command> # FHIRPath commands
+```
+
+Standalone commands are also available: `cql` and `fhirpath`.
 
 ### CQL
 
 | Command | Description |
 |---------|-------------|
-| `cql eval <expr>` | Evaluate CQL expression |
-| `cql run <file>` | Run library and evaluate definitions |
-| `cql parse <file>` | Parse and validate file |
-| `cql ast <file>` | Display AST tree |
-| `cql tokens <file>` | Show token stream |
-| `cql validate <files...>` | Validate multiple files |
-| `cql definitions <file>` | List library definitions |
+| `fhir cql eval <expr>` | Evaluate CQL expression |
+| `fhir cql run <file>` | Run library and evaluate definitions |
+| `fhir cql check <file>` | Validate and analyze library |
+| `fhir cql measure <file>` | Evaluate quality measure |
+| `fhir cql parse <file>` | Parse and validate file |
+| `fhir cql ast <file>` | Display AST tree |
+| `fhir cql tokens <file>` | Show token stream |
+| `fhir cql validate <files...>` | Validate multiple files |
+| `fhir cql definitions <file>` | List library definitions |
+
+### FHIRPath
+
+| Command | Description |
+|---------|-------------|
+| `fhir fhirpath eval <expr> -r <file>` | Evaluate expression against resource |
+| `fhir fhirpath eval-file <file> -r <resource>` | Evaluate expressions from file |
+| `fhir fhirpath parse <expr>` | Validate expression syntax |
+| `fhir fhirpath ast <expr>` | Display AST tree |
+| `fhir fhirpath tokens <expr>` | Show token stream |
+| `fhir fhirpath repl` | Interactive REPL |
 
 ## Examples
 
