@@ -655,5 +655,54 @@ def measure(
         raise typer.Exit(1)
 
 
+@app.command()
+def export(
+    file: Annotated[Path, typer.Argument(help="CQL file to export to ELM")],
+    output: Annotated[Optional[Path], typer.Option("--output", "-o", help="Output ELM JSON file")] = None,
+    indent: Annotated[int, typer.Option("--indent", "-i", help="JSON indentation level")] = 2,
+    quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Only output JSON (no status messages)")] = False,
+) -> None:
+    """Export a CQL library to ELM JSON format.
+
+    ELM (Expression Logical Model) is the standardized compiled representation
+    of CQL that can be executed by any ELM-compatible engine.
+
+    Examples:
+        cql export library.cql
+        cql export library.cql -o library.elm.json
+        cql export library.cql --quiet > library.elm.json
+    """
+    if not file.exists():
+        rprint(f"[red]Error:[/red] File not found: {file}")
+        raise typer.Exit(1)
+
+    try:
+        source = file.read_text()
+        evaluator = CQLEvaluator()
+        elm_json = evaluator.to_elm_json(source, indent=indent)
+
+        if output:
+            output.write_text(elm_json)
+            if not quiet:
+                rprint(f"[green]✓[/green] Exported {file} -> {output}")
+        else:
+            if quiet:
+                # Just print the JSON
+                print(elm_json)
+            else:
+                # Show with syntax highlighting
+                syntax = Syntax(elm_json, "json", theme="monokai", line_numbers=True)
+                console.print(Panel(syntax, title=f"ELM: {file}", border_style="blue"))
+
+    except CQLError as e:
+        if quiet:
+            import sys
+
+            print(f"Error: {e}", file=sys.stderr)
+        else:
+            rprint(f"[red]Error exporting to ELM:[/red] {e}")
+        raise typer.Exit(1)
+
+
 if __name__ == "__main__":
     app()

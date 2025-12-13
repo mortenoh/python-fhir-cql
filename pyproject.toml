@@ -104,6 +104,8 @@ reportMissingImports = false
 reportUntypedBaseClass = false
 reportUnusedVariable = false
 reportAttributeAccessIssue = false
+reportIncompatibleVariableOverride = false
+reportUnnecessaryIsInstance = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
