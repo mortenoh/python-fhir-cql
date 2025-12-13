@@ -1339,6 +1339,1202 @@ Edit `diabetic-patient.json` to change the HbA1c value:
 
 ---
 
+## Additional Examples
+
+This section provides extensive additional examples covering advanced CQL features.
+
+### Interval Examples
+
+Intervals are ranges of values - essential for date ranges, age ranges, and more.
+
+#### Creating Intervals
+
+```bash
+# Closed interval (includes endpoints)
+fhir cql eval "Interval[1, 10]"
+
+# Open interval (excludes endpoints)
+fhir cql eval "Interval(1, 10)"
+
+# Half-open intervals
+fhir cql eval "Interval[1, 10)"
+fhir cql eval "Interval(1, 10]"
+
+# Date intervals
+fhir cql eval "Interval[@2024-01-01, @2024-12-31]"
+
+# DateTime intervals
+fhir cql eval "Interval[@2024-01-01T00:00:00, @2024-12-31T23:59:59]"
+```
+
+#### Interval Properties
+
+```bash
+# Get start and end
+fhir cql eval "start of Interval[1, 10]"
+fhir cql eval "end of Interval[1, 10]"
+
+# Get width
+fhir cql eval "width of Interval[1, 10]"
+
+# Get low and high bounds
+fhir cql eval "low Interval[1, 10]"
+fhir cql eval "high Interval[1, 10]"
+
+# Point from single-value interval
+fhir cql eval "point from Interval[5, 5]"
+```
+
+#### Interval Membership
+
+```bash
+# Check if value is in interval
+fhir cql eval "5 in Interval[1, 10]"
+fhir cql eval "15 in Interval[1, 10]"
+
+# Check if interval contains value
+fhir cql eval "Interval[1, 10] contains 5"
+
+# Boundary cases
+fhir cql eval "1 in Interval[1, 10]"
+fhir cql eval "1 in Interval(1, 10)"
+fhir cql eval "10 in Interval[1, 10)"
+```
+
+#### Interval Relationships
+
+```bash
+# Overlaps
+fhir cql eval "Interval[1, 5] overlaps Interval[3, 8]"
+fhir cql eval "Interval[1, 3] overlaps Interval[5, 8]"
+
+# Includes
+fhir cql eval "Interval[1, 10] includes Interval[3, 7]"
+
+# Before/After
+fhir cql eval "Interval[1, 3] before Interval[5, 10]"
+fhir cql eval "Interval[5, 10] after Interval[1, 3]"
+
+# Meets (adjacent)
+fhir cql eval "Interval[1, 5] meets Interval[6, 10]"
+
+# Starts/Ends
+fhir cql eval "Interval[1, 5] starts Interval[1, 10]"
+fhir cql eval "Interval[5, 10] ends Interval[1, 10]"
+```
+
+#### Interval Operations
+
+```bash
+# Union
+fhir cql eval "Interval[1, 5] union Interval[3, 8]"
+
+# Intersect
+fhir cql eval "Interval[1, 5] intersect Interval[3, 8]"
+
+# Except
+fhir cql eval "Interval[1, 10] except Interval[4, 6]"
+
+# Collapse overlapping intervals
+fhir cql eval "collapse {Interval[1, 3], Interval[2, 5], Interval[7, 10]}"
+
+# Expand to list
+fhir cql eval "expand Interval[@2024-01-01, @2024-01-05] per day"
+```
+
+#### Interval Library Example
+
+Save as `intervals.cql`:
+
+```cql
+library IntervalExamples version '1.0'
+
+// Measurement period
+define MeasurementPeriod:
+    Interval[@2024-01-01T00:00:00, @2024-12-31T23:59:59]
+
+// Quarters
+define Q1: Interval[@2024-01-01, @2024-03-31]
+define Q2: Interval[@2024-04-01, @2024-06-30]
+define Q3: Interval[@2024-07-01, @2024-09-30]
+define Q4: Interval[@2024-10-01, @2024-12-31]
+
+// Check if date is in Q2
+define InQ2: @2024-05-15 during Q2
+
+// Age ranges
+define PediatricAge: Interval[0, 17]
+define AdultAge: Interval[18, 64]
+define GeriatricAge: Interval[65, 120]
+
+// Check age category
+define Age: 45
+define IsPediatric: Age in PediatricAge
+define IsAdult: Age in AdultAge
+define IsGeriatric: Age in GeriatricAge
+
+// Combine overlapping intervals
+define CoverageIntervals: {
+    Interval[@2024-01-01, @2024-03-15],
+    Interval[@2024-03-01, @2024-06-30],
+    Interval[@2024-08-01, @2024-12-31]
+}
+define CollapsedCoverage: collapse CoverageIntervals
+
+// Days in each month
+define JanuaryDays: expand Interval[@2024-01-01, @2024-01-31] per day
+define JanuaryDayCount: Count(JanuaryDays)
+```
+
+```bash
+fhir cql run intervals.cql
+```
+
+---
+
+### Aggregate Operations
+
+Powerful operations for summarizing collections.
+
+#### Basic Aggregates
+
+```bash
+# Sum
+fhir cql eval "Sum({1, 2, 3, 4, 5})"
+
+# Average
+fhir cql eval "Avg({10, 20, 30, 40, 50})"
+
+# Min and Max
+fhir cql eval "Min({5, 2, 8, 1, 9})"
+fhir cql eval "Max({5, 2, 8, 1, 9})"
+
+# Count
+fhir cql eval "Count({1, 2, 3, 4, 5})"
+
+# All elements true?
+fhir cql eval "AllTrue({true, true, true})"
+fhir cql eval "AllTrue({true, false, true})"
+
+# Any element true?
+fhir cql eval "AnyTrue({false, true, false})"
+fhir cql eval "AnyTrue({false, false, false})"
+```
+
+#### Population Statistics
+
+```bash
+# Population variance
+fhir cql eval "PopulationVariance({2, 4, 4, 4, 5, 5, 7, 9})"
+
+# Population standard deviation
+fhir cql eval "PopulationStdDev({2, 4, 4, 4, 5, 5, 7, 9})"
+
+# Sample variance
+fhir cql eval "Variance({2, 4, 4, 4, 5, 5, 7, 9})"
+
+# Sample standard deviation
+fhir cql eval "StdDev({2, 4, 4, 4, 5, 5, 7, 9})"
+
+# Median
+fhir cql eval "Median({1, 2, 3, 4, 5})"
+fhir cql eval "Median({1, 2, 3, 4, 5, 6})"
+
+# Mode
+fhir cql eval "Mode({1, 2, 2, 3, 3, 3, 4})"
+```
+
+#### Query Aggregates
+
+```bash
+# Sum with query
+fhir cql eval "Sum(from n in {1, 2, 3, 4, 5} return n * 2)"
+
+# Count with filter
+fhir cql eval "Count(from n in {1, 2, 3, 4, 5, 6, 7, 8, 9, 10} where n mod 2 = 0 return n)"
+
+# Average of squares
+fhir cql eval "Avg(from n in {1, 2, 3, 4, 5} return n * n)"
+```
+
+#### Aggregate Library Example
+
+Save as `aggregates.cql`:
+
+```cql
+library AggregateExamples version '1.0'
+
+define Scores: {85, 92, 78, 95, 88, 76, 90, 82, 94, 87}
+
+// Basic statistics
+define TotalScore: Sum(Scores)
+define AverageScore: Avg(Scores)
+define MinScore: Min(Scores)
+define MaxScore: Max(Scores)
+define MedianScore: Median(Scores)
+define ScoreCount: Count(Scores)
+
+// Calculated statistics
+define ScoreRange: MaxScore - MinScore
+define StdDeviation: StdDev(Scores)
+
+// Passing scores (>= 80)
+define PassingScores: from s in Scores where s >= 80 return s
+define PassingCount: Count(PassingScores)
+define PassingRate: Round(PassingCount / ScoreCount * 100, 1)
+
+// Grade distribution
+define ACount: Count(from s in Scores where s >= 90 return s)
+define BCount: Count(from s in Scores where s >= 80 and s < 90 return s)
+define CCount: Count(from s in Scores where s >= 70 and s < 80 return s)
+define FCount: Count(from s in Scores where s < 70 return s)
+
+// Normalized scores (0-100 scale to 0-1)
+define NormalizedScores: from s in Scores return s / 100.0
+
+// Top 3 scores
+define TopThree: Take(from s in Scores return s sort desc, 3)
+
+// Bottom 3 scores
+define BottomThree: Take(from s in Scores return s sort asc, 3)
+```
+
+```bash
+fhir cql run aggregates.cql
+```
+
+---
+
+### String Functions
+
+Extensive string manipulation capabilities.
+
+#### Basic String Operations
+
+```bash
+# Concatenation
+fhir cql eval "'Hello' + ' ' + 'World'"
+fhir cql eval "Concat('Hello', ' ', 'World')"
+
+# Length
+fhir cql eval "Length('Hello World')"
+
+# Case conversion
+fhir cql eval "Upper('hello')"
+fhir cql eval "Lower('HELLO')"
+```
+
+#### Substring and Position
+
+```bash
+# Substring (0-indexed)
+fhir cql eval "Substring('Hello World', 0, 5)"
+fhir cql eval "Substring('Hello World', 6)"
+
+# Position of character
+fhir cql eval "PositionOf('o', 'Hello World')"
+fhir cql eval "LastPositionOf('o', 'Hello World')"
+```
+
+#### String Matching
+
+```bash
+# StartsWith / EndsWith
+fhir cql eval "StartsWith('Hello World', 'Hello')"
+fhir cql eval "EndsWith('Hello World', 'World')"
+
+# Contains
+fhir cql eval "'Hello World' contains 'llo'"
+
+# Matches (regex)
+fhir cql eval "Matches('Hello123', '[A-Za-z]+[0-9]+')"
+fhir cql eval "Matches('test@email.com', '.*@.*\\..*')"
+```
+
+#### String Transformation
+
+```bash
+# Replace
+fhir cql eval "Replace('Hello World', 'World', 'CQL')"
+fhir cql eval "ReplaceMatches('Hello123', '[0-9]', 'X')"
+
+# Split
+fhir cql eval "Split('a,b,c,d', ',')"
+
+# Combine (join)
+fhir cql eval "Combine({'a', 'b', 'c'}, '-')"
+fhir cql eval "Combine({'apple', 'banana', 'cherry'}, ', ')"
+```
+
+#### String Library Example
+
+Save as `strings.cql`:
+
+```cql
+library StringExamples version '1.0'
+
+define FullName: 'John Robert Smith'
+define Email: 'john.smith@example.com'
+define Phone: '(555) 123-4567'
+
+// Name parsing
+define FirstName: Substring(FullName, 0, PositionOf(' ', FullName))
+define NameParts: Split(FullName, ' ')
+define LastName: Last(NameParts)
+define MiddleName: NameParts[1]
+
+// Email parsing
+define EmailUser: Substring(Email, 0, PositionOf('@', Email))
+define EmailDomain: Substring(Email, PositionOf('@', Email) + 1)
+define IsValidEmail: Matches(Email, '.*@.*\\..*')
+
+// Phone formatting
+define PhoneDigits: ReplaceMatches(Phone, '[^0-9]', '')
+define FormattedPhone:
+    '(' + Substring(PhoneDigits, 0, 3) + ') ' +
+    Substring(PhoneDigits, 3, 3) + '-' +
+    Substring(PhoneDigits, 6, 4)
+
+// Name formatting
+define FormalName: LastName + ', ' + FirstName
+define Initials:
+    Substring(FirstName, 0, 1) + '.' +
+    Substring(MiddleName, 0, 1) + '.' +
+    Substring(LastName, 0, 1) + '.'
+
+// String checks
+define IsLongName: Length(FullName) > 20
+define HasMiddleName: Count(NameParts) > 2
+
+// Case transformations
+define UpperName: Upper(FullName)
+define LowerEmail: Lower(Email)
+```
+
+```bash
+fhir cql run strings.cql
+```
+
+---
+
+### Math Functions
+
+Mathematical operations beyond basic arithmetic.
+
+#### Basic Math
+
+```bash
+# Absolute value
+fhir cql eval "Abs(-42)"
+
+# Ceiling and Floor
+fhir cql eval "Ceiling(4.2)"
+fhir cql eval "Floor(4.8)"
+
+# Round
+fhir cql eval "Round(3.14159, 2)"
+fhir cql eval "Round(3.5)"
+
+# Truncate
+fhir cql eval "Truncate(3.9)"
+fhir cql eval "Truncate(-3.9)"
+```
+
+#### Powers and Roots
+
+```bash
+# Power
+fhir cql eval "Power(2, 10)"
+fhir cql eval "Power(10, 3)"
+
+# Square root (using Power)
+fhir cql eval "Power(16, 0.5)"
+
+# Logarithm
+fhir cql eval "Ln(2.718281828)"
+fhir cql eval "Log(100, 10)"
+```
+
+#### Trigonometry
+
+```bash
+# Basic trig
+fhir cql eval "Sin(0)"
+fhir cql eval "Cos(0)"
+fhir cql eval "Tan(0)"
+
+# Inverse trig
+fhir cql eval "Asin(0)"
+fhir cql eval "Acos(1)"
+fhir cql eval "Atan(0)"
+```
+
+#### Math Library Example
+
+Save as `math.cql`:
+
+```cql
+library MathExamples version '1.0'
+
+// Constants
+define Pi: 3.14159265359
+define E: 2.71828182846
+
+// Circle calculations
+define Radius: 5.0
+define CircleArea: Pi * Power(Radius, 2)
+define Circumference: 2 * Pi * Radius
+define Diameter: 2 * Radius
+
+// Sphere calculations
+define SphereVolume: (4.0 / 3.0) * Pi * Power(Radius, 3)
+define SphereSurfaceArea: 4 * Pi * Power(Radius, 2)
+
+// Quadratic formula: ax^2 + bx + c = 0
+define a: 1.0
+define b: -5.0
+define c: 6.0
+define Discriminant: Power(b, 2) - 4 * a * c
+define HasRealRoots: Discriminant >= 0
+
+// Financial: Compound interest
+// A = P(1 + r/n)^(nt)
+define Principal: 1000.0
+define Rate: 0.05
+define CompoundsPerYear: 12
+define Years: 10
+define FutureValue: Round(
+    Principal * Power(1 + Rate / CompoundsPerYear, CompoundsPerYear * Years),
+    2
+)
+
+// Statistics helper functions
+define Numbers: {12, 15, 18, 22, 25, 30, 35}
+define Mean: Avg(Numbers)
+define SumOfSquaredDiffs: Sum(
+    from n in Numbers
+    return Power(n - Mean, 2)
+)
+define Variance: SumOfSquaredDiffs / Count(Numbers)
+define StandardDeviation: Round(Power(Variance, 0.5), 2)
+
+// Distance formula: sqrt((x2-x1)^2 + (y2-y1)^2)
+define function Distance(x1 Decimal, y1 Decimal, x2 Decimal, y2 Decimal) returns Decimal:
+    Round(Power(Power(x2 - x1, 2) + Power(y2 - y1, 2), 0.5), 2)
+
+define TestDistance: Distance(0.0, 0.0, 3.0, 4.0)
+```
+
+```bash
+fhir cql run math.cql
+```
+
+---
+
+### Clinical Calculations
+
+Real-world medical formulas.
+
+#### BMI Calculation
+
+Save as `bmi-calc.cql`:
+
+```cql
+library BMICalculation version '1.0'
+
+using FHIR version '4.0.1'
+
+context Patient
+
+// BMI = weight(kg) / height(m)^2
+define function CalculateBMI(weightKg Decimal, heightCm Decimal) returns Decimal:
+    if weightKg is null or heightCm is null or heightCm = 0 then null
+    else Round(weightKg / Power(heightCm / 100, 2), 1)
+
+define function BMICategory(bmi Decimal) returns String:
+    if bmi is null then 'Unknown'
+    else if bmi < 18.5 then 'Underweight'
+    else if bmi < 25.0 then 'Normal'
+    else if bmi < 30.0 then 'Overweight'
+    else if bmi < 35.0 then 'Obese Class I'
+    else if bmi < 40.0 then 'Obese Class II'
+    else 'Obese Class III'
+
+// Test values
+define TestWeight: 70.0
+define TestHeight: 175.0
+define TestBMI: CalculateBMI(TestWeight, TestHeight)
+define TestCategory: BMICategory(TestBMI)
+
+// Ideal body weight (Devine formula)
+define function IdealBodyWeight(heightCm Decimal, isFemale Boolean) returns Decimal:
+    if heightCm is null then null
+    else if isFemale then
+        Round(45.5 + (2.3 * ((heightCm / 2.54) - 60)), 1)
+    else
+        Round(50.0 + (2.3 * ((heightCm / 2.54) - 60)), 1)
+
+define TestIdealWeight: IdealBodyWeight(TestHeight, false)
+define WeightDifference: TestWeight - TestIdealWeight
+```
+
+#### eGFR Calculation
+
+Save as `egfr-calc.cql`:
+
+```cql
+library EGFRCalculation version '1.0'
+
+using FHIR version '4.0.1'
+
+context Patient
+
+// Simplified CKD-EPI formula
+define function CalculateEGFR(
+    creatinine Decimal,
+    age Integer,
+    isFemale Boolean,
+    isBlack Boolean
+) returns Integer:
+    if creatinine is null or age is null or creatinine = 0 then null
+    else
+        let baseEGFR: 175 * Power(creatinine, -1.154) * Power(age, -0.203)
+        let genderAdjusted: if isFemale then baseEGFR * 0.742 else baseEGFR
+        let raceAdjusted: if isBlack then genderAdjusted * 1.212 else genderAdjusted
+        return Truncate(raceAdjusted)
+
+define function CKDStage(egfr Integer) returns String:
+    if egfr is null then 'Unknown'
+    else if egfr >= 90 then 'Stage 1 (Normal)'
+    else if egfr >= 60 then 'Stage 2 (Mild)'
+    else if egfr >= 45 then 'Stage 3a (Mild-Moderate)'
+    else if egfr >= 30 then 'Stage 3b (Moderate-Severe)'
+    else if egfr >= 15 then 'Stage 4 (Severe)'
+    else 'Stage 5 (Kidney Failure)'
+
+define function NeedsDoseAdjustment(egfr Integer) returns Boolean:
+    egfr is not null and egfr < 60
+
+// Test values
+define TestCreatinine: 1.2
+define TestAge: 65
+define TestEGFR: CalculateEGFR(TestCreatinine, TestAge, false, false)
+define TestCKDStage: CKDStage(TestEGFR)
+define TestNeedsDoseAdj: NeedsDoseAdjustment(TestEGFR)
+```
+
+#### Temperature Conversion
+
+Save as `temperature.cql`:
+
+```cql
+library TemperatureConversion version '1.0'
+
+// Conversion functions
+define function CelsiusToFahrenheit(c Decimal) returns Decimal:
+    if c is null then null
+    else Round(c * 9.0 / 5.0 + 32, 1)
+
+define function FahrenheitToCelsius(f Decimal) returns Decimal:
+    if f is null then null
+    else Round((f - 32) * 5.0 / 9.0, 1)
+
+define function CelsiusToKelvin(c Decimal) returns Decimal:
+    if c is null then null
+    else Round(c + 273.15, 2)
+
+// Clinical interpretation
+define function FeverStatus(tempCelsius Decimal) returns String:
+    if tempCelsius is null then 'Unknown'
+    else if tempCelsius < 35.0 then 'Hypothermia'
+    else if tempCelsius < 36.1 then 'Low'
+    else if tempCelsius < 37.2 then 'Normal'
+    else if tempCelsius < 38.0 then 'Low-grade fever'
+    else if tempCelsius < 39.0 then 'Moderate fever'
+    else if tempCelsius < 40.0 then 'High fever'
+    else 'Hyperpyrexia'
+
+// Test values
+define BodyTempC: 37.5
+define BodyTempF: CelsiusToFahrenheit(BodyTempC)
+define FeverCheck: FeverStatus(BodyTempC)
+
+// Common reference temperatures
+define FreezingC: 0.0
+define FreezingF: CelsiusToFahrenheit(FreezingC)
+define BoilingC: 100.0
+define BoilingF: CelsiusToFahrenheit(BoilingC)
+define NormalBodyC: 37.0
+define NormalBodyF: CelsiusToFahrenheit(NormalBodyC)
+```
+
+---
+
+### Risk Score Calculations
+
+Clinical risk assessment algorithms.
+
+#### CHA2DS2-VASc Score
+
+Save as `chadsvasc.cql`:
+
+```cql
+library CHA2DS2VASc version '1.0'
+
+/*
+ * CHA2DS2-VASc Score for stroke risk in atrial fibrillation
+ *
+ * C - Congestive heart failure: 1 point
+ * H - Hypertension: 1 point
+ * A2 - Age >= 75: 2 points
+ * D - Diabetes: 1 point
+ * S2 - Stroke/TIA history: 2 points
+ * V - Vascular disease: 1 point
+ * A - Age 65-74: 1 point
+ * Sc - Sex category (female): 1 point
+ */
+
+define function CalculateCHA2DS2VASc(
+    hasHeartFailure Boolean,
+    hasHypertension Boolean,
+    age Integer,
+    hasDiabetes Boolean,
+    hasStrokeOrTIA Boolean,
+    hasVascularDisease Boolean,
+    isFemale Boolean
+) returns Integer:
+    (if hasHeartFailure then 1 else 0)
+    + (if hasHypertension then 1 else 0)
+    + (if age >= 75 then 2 else if age >= 65 then 1 else 0)
+    + (if hasDiabetes then 1 else 0)
+    + (if hasStrokeOrTIA then 2 else 0)
+    + (if hasVascularDisease then 1 else 0)
+    + (if isFemale then 1 else 0)
+
+define function StrokeRiskCategory(score Integer) returns String:
+    if score is null then 'Unknown'
+    else if score = 0 then 'Low (0.2% annual stroke risk)'
+    else if score = 1 then 'Low-Moderate (0.6% annual stroke risk)'
+    else if score = 2 then 'Moderate (2.2% annual stroke risk)'
+    else if score = 3 then 'Moderate-High (3.2% annual stroke risk)'
+    else if score = 4 then 'High (4.8% annual stroke risk)'
+    else 'Very High (>6% annual stroke risk)'
+
+define function AnticoagulationRecommended(score Integer, isFemale Boolean) returns String:
+    // For females, score of 1 (sex alone) doesn't warrant anticoag
+    let adjustedScore: if isFemale and score = 1 then 0 else score
+    return case
+        when adjustedScore = 0 then 'No anticoagulation recommended'
+        when adjustedScore = 1 then 'Consider anticoagulation'
+        else 'Anticoagulation recommended'
+    end
+
+// Test case: 70-year-old female with hypertension and diabetes
+define TestScore: CalculateCHA2DS2VASc(
+    false,  // heart failure
+    true,   // hypertension
+    70,     // age
+    true,   // diabetes
+    false,  // stroke/TIA
+    false,  // vascular disease
+    true    // female
+)
+
+define TestRiskCategory: StrokeRiskCategory(TestScore)
+define TestRecommendation: AnticoagulationRecommended(TestScore, true)
+```
+
+#### Framingham Risk Score (Simplified)
+
+Save as `framingham.cql`:
+
+```cql
+library FraminghamRisk version '1.0'
+
+/*
+ * Simplified Framingham Risk Score
+ * Estimates 10-year cardiovascular disease risk
+ */
+
+define function FraminghamAgePoints(age Integer, isFemale Boolean) returns Integer:
+    if isFemale then
+        case
+            when age < 35 then -9
+            when age < 40 then -4
+            when age < 45 then 0
+            when age < 50 then 3
+            when age < 55 then 6
+            when age < 60 then 7
+            when age < 65 then 8
+            when age < 70 then 8
+            when age < 75 then 8
+            else 8
+        end
+    else
+        case
+            when age < 35 then -1
+            when age < 40 then 0
+            when age < 45 then 1
+            when age < 50 then 2
+            when age < 55 then 3
+            when age < 60 then 4
+            when age < 65 then 5
+            when age < 70 then 6
+            when age < 75 then 7
+            else 8
+        end
+
+define function SmokingPoints(isSmoker Boolean, isFemale Boolean) returns Integer:
+    if not isSmoker then 0
+    else if isFemale then 3
+    else 4
+
+define function DiabetesPoints(hasDiabetes Boolean, isFemale Boolean) returns Integer:
+    if not hasDiabetes then 0
+    else if isFemale then 4
+    else 3
+
+define function CalculateFraminghamPoints(
+    age Integer,
+    isFemale Boolean,
+    isSmoker Boolean,
+    hasDiabetes Boolean,
+    totalCholesterol Integer,
+    hdlCholesterol Integer,
+    systolicBP Integer,
+    onBPMeds Boolean
+) returns Integer:
+    FraminghamAgePoints(age, isFemale)
+    + SmokingPoints(isSmoker, isFemale)
+    + DiabetesPoints(hasDiabetes, isFemale)
+    // Simplified - full calculation includes cholesterol and BP points
+
+define function TenYearRisk(points Integer, isFemale Boolean) returns String:
+    // Simplified risk categories
+    case
+        when points < 5 then 'Low (<5%)'
+        when points < 10 then 'Low-Moderate (5-10%)'
+        when points < 15 then 'Moderate (10-15%)'
+        when points < 20 then 'Moderate-High (15-20%)'
+        else 'High (>20%)'
+    end
+
+// Test case
+define TestPoints: CalculateFraminghamPoints(
+    55,     // age
+    false,  // female
+    true,   // smoker
+    false,  // diabetes
+    220,    // total cholesterol
+    45,     // HDL
+    140,    // systolic BP
+    false   // on BP meds
+)
+
+define TestRisk: TenYearRisk(TestPoints, false)
+```
+
+---
+
+### Advanced Query Examples
+
+Complex queries for real-world scenarios.
+
+#### Multi-Source Queries
+
+```cql
+library QueryExamples version '1.0'
+
+using FHIR version '4.0.1'
+
+context Patient
+
+// Single source query
+define ActiveConditions:
+    [Condition] C
+        where C.clinicalStatus.coding.code = 'active'
+
+// Multiple conditions
+define SeriousConditions:
+    [Condition] C
+        where C.clinicalStatus.coding.code = 'active'
+            and C.severity.coding.code = 'severe'
+
+// Query with let
+define ConditionsWithAge:
+    from C in [Condition]
+    let onsetAge: years between Patient.birthDate and C.onset
+    where onsetAge is not null
+    return Tuple {
+        condition: C.code.coding.first().display,
+        onsetAge: onsetAge
+    }
+
+// Multi-source query
+define ConditionMedications:
+    from C in [Condition],
+         M in [MedicationRequest]
+    where M.reasonReference.reference = 'Condition/' + C.id
+    return Tuple {
+        condition: C.code.coding.first().display,
+        medication: M.medication.coding.first().display
+    }
+
+// Aggregate query
+define ConditionCountByStatus:
+    from C in [Condition]
+    return all C.clinicalStatus.coding.first().code
+
+// Sort and limit
+define RecentConditions:
+    Take(
+        [Condition] C
+            sort by recorded desc,
+        5
+    )
+
+// First and Last
+define OldestCondition:
+    First([Condition] C sort by onset)
+
+define NewestCondition:
+    Last([Condition] C sort by onset)
+```
+
+#### Observation Queries
+
+```cql
+library ObservationQueries version '1.0'
+
+using FHIR version '4.0.1'
+
+context Patient
+
+// Most recent observation by type
+define function MostRecentObs(loincCode String):
+    Last(
+        [Observation] O
+            where O.code.coding.code contains loincCode
+                and O.status = 'final'
+            sort by effective
+    )
+
+// Blood pressure
+define MostRecentSystolic: MostRecentObs('8480-6')
+define MostRecentDiastolic: MostRecentObs('8462-4')
+
+define BloodPressure:
+    if MostRecentSystolic is not null and MostRecentDiastolic is not null then
+        Tuple {
+            systolic: MostRecentSystolic.value.value,
+            diastolic: MostRecentDiastolic.value.value
+        }
+    else null
+
+// Vital signs trend (last 5)
+define RecentBPReadings:
+    from O in Take(
+        [Observation] O
+            where O.code.coding.code contains '8480-6'
+                and O.status = 'final'
+            sort by effective desc,
+        5
+    )
+    return Tuple {
+        date: O.effective,
+        value: O.value.value
+    }
+
+// Labs in abnormal range
+define AbnormalLabs:
+    [Observation] O
+        where O.status = 'final'
+            and O.interpretation.coding.code != 'N'
+
+// Calculate average of recent values
+define RecentGlucoseValues:
+    from O in [Observation] O
+        where O.code.coding.code contains '2339-0'
+            and O.status = 'final'
+            and O.effective after Today() - 90 days
+    return O.value.value
+
+define AverageGlucose:
+    if Count(RecentGlucoseValues) > 0 then
+        Round(Avg(RecentGlucoseValues), 1)
+    else null
+```
+
+---
+
+### Terminology Examples
+
+Working with codes, valuesets, and concepts.
+
+```cql
+library TerminologyExamples version '1.0'
+
+using FHIR version '4.0.1'
+
+// Define code systems
+codesystem "SNOMED": 'http://snomed.info/sct'
+codesystem "LOINC": 'http://loinc.org'
+codesystem "ICD10": 'http://hl7.org/fhir/sid/icd-10-cm'
+codesystem "RxNorm": 'http://www.nlm.nih.gov/research/umls/rxnorm'
+
+// Define individual codes
+code "Type 2 Diabetes": '44054006' from "SNOMED" display 'Type 2 diabetes mellitus'
+code "HbA1c": '4548-4' from "LOINC" display 'Hemoglobin A1c'
+code "Metformin": '6809' from "RxNorm" display 'metformin'
+
+// Define valuesets (would be expanded from external source)
+valueset "Diabetes Conditions": 'http://example.org/ValueSet/diabetes'
+valueset "Diabetes Medications": 'http://example.org/ValueSet/diabetes-meds'
+valueset "Glucose Labs": 'http://example.org/ValueSet/glucose-labs'
+
+// Define concepts (groups of equivalent codes)
+concept "Diabetes Concept":
+    {"Type 2 Diabetes"}
+    display 'Diabetes Mellitus'
+
+context Patient
+
+// Check for specific condition code
+define HasDiabetesCode:
+    exists(
+        [Condition: "Type 2 Diabetes"]
+    )
+
+// Check for condition in valueset
+define HasDiabetesValueSet:
+    exists(
+        [Condition: "Diabetes Conditions"]
+    )
+
+// Get medications from valueset
+define DiabetesMedications:
+    [MedicationRequest: "Diabetes Medications"]
+
+// Get specific lab results
+define HbA1cResults:
+    [Observation: "HbA1c"] O
+        where O.status = 'final'
+
+// Most recent HbA1c
+define MostRecentHbA1c:
+    Last(HbA1cResults O sort by effective)
+
+// Code equivalence checking
+define function CodeEquals(code1 Code, code2 Code) returns Boolean:
+    code1.code = code2.code
+        and code1.system = code2.system
+
+// Check if observation matches a specific code
+define IsHbA1cObservation:
+    exists(
+        [Observation] O
+            where O.code.coding.code = '4548-4'
+                and O.code.coding.system = 'http://loinc.org'
+    )
+```
+
+---
+
+### Complete Clinical Library
+
+A comprehensive example combining multiple concepts.
+
+Save as `diabetes-management.cql`:
+
+```cql
+library DiabetesManagement version '1.0.0'
+
+using FHIR version '4.0.1'
+
+// Code Systems
+codesystem "SNOMED": 'http://snomed.info/sct'
+codesystem "LOINC": 'http://loinc.org'
+
+// Codes
+code "Type2DM": '44054006' from "SNOMED"
+code "HbA1c": '4548-4' from "LOINC"
+code "FastingGlucose": '1558-6' from "LOINC"
+code "RandomGlucose": '2339-0' from "LOINC"
+
+// Parameters
+parameter "Measurement Period" Interval<DateTime>
+    default Interval[@2024-01-01T00:00:00, @2024-12-31T23:59:59]
+
+context Patient
+
+// =============================================
+// Patient Demographics
+// =============================================
+
+define PatientAge: years between Patient.birthDate and Today()
+define PatientGender: Patient.gender
+
+// =============================================
+// Diabetes Status
+// =============================================
+
+define DiabetesConditions:
+    [Condition] C
+        where C.clinicalStatus.coding.code = 'active'
+            and C.code.coding.code = '44054006'
+
+define HasDiabetes: exists(DiabetesConditions)
+
+// =============================================
+// Lab Results
+// =============================================
+
+define HbA1cTests:
+    [Observation: "HbA1c"] O
+        where O.status = 'final'
+            and O.effective during "Measurement Period"
+
+define MostRecentHbA1c:
+    Last(HbA1cTests O sort by effective)
+
+define MostRecentHbA1cValue:
+    MostRecentHbA1c.value.value
+
+define MostRecentHbA1cDate:
+    MostRecentHbA1c.effective
+
+define AllHbA1cValues:
+    from O in HbA1cTests
+    return O.value.value
+
+define AverageHbA1c:
+    if Count(AllHbA1cValues) > 0 then
+        Round(Avg(AllHbA1cValues), 1)
+    else null
+
+define HbA1cTrend:
+    case
+        when Count(AllHbA1cValues) < 2 then 'Insufficient data'
+        when Last(AllHbA1cValues) < First(AllHbA1cValues) - 0.5 then 'Improving'
+        when Last(AllHbA1cValues) > First(AllHbA1cValues) + 0.5 then 'Worsening'
+        else 'Stable'
+    end
+
+// =============================================
+// Control Status
+// =============================================
+
+define HbA1cControlStatus:
+    case
+        when MostRecentHbA1cValue is null then 'No recent test'
+        when MostRecentHbA1cValue < 5.7 then 'Normal'
+        when MostRecentHbA1cValue < 6.5 then 'Prediabetes range'
+        when MostRecentHbA1cValue < 7.0 then 'Well controlled'
+        when MostRecentHbA1cValue < 8.0 then 'Moderately controlled'
+        when MostRecentHbA1cValue < 9.0 then 'Poorly controlled'
+        else 'Very poorly controlled'
+    end
+
+define MeetsControlTarget:
+    MostRecentHbA1cValue is not null and MostRecentHbA1cValue < 7.0
+
+// =============================================
+// Testing Compliance
+// =============================================
+
+define HbA1cTestCount:
+    Count(HbA1cTests)
+
+define DaysUntilTestDue:
+    if MostRecentHbA1cDate is null then 0
+    else
+        let daysSinceTest: days between MostRecentHbA1cDate and Today()
+        return Maximum(0, 90 - daysSinceTest)
+
+define TestingCompliant:
+    HbA1cTestCount >= 2
+
+// =============================================
+// Age-Adjusted Targets
+// =============================================
+
+define HbA1cTarget:
+    case
+        when PatientAge < 40 then 6.5
+        when PatientAge < 65 then 7.0
+        when PatientAge < 75 then 7.5
+        else 8.0
+    end
+
+define MeetsAgeAdjustedTarget:
+    MostRecentHbA1cValue is not null
+        and MostRecentHbA1cValue <= HbA1cTarget
+
+// =============================================
+// Alerts and Recommendations
+// =============================================
+
+define Alerts:
+    List<String> {
+        if MostRecentHbA1cValue is null then 'No HbA1c on file - order test' else null,
+        if MostRecentHbA1cValue >= 9.0 then 'URGENT: HbA1c critically elevated' else null,
+        if DaysUntilTestDue = 0 then 'HbA1c test overdue' else null,
+        if not TestingCompliant then 'Below recommended testing frequency' else null,
+        if HbA1cTrend = 'Worsening' then 'HbA1c trend worsening - review treatment' else null
+    }
+
+define ActiveAlerts:
+    from A in Alerts where A is not null return A
+
+// =============================================
+// Quality Measure Populations
+// =============================================
+
+define "Initial Population":
+    HasDiabetes and PatientAge >= 18 and PatientAge <= 75
+
+define "Denominator":
+    "Initial Population"
+
+define "Denominator Exclusion":
+    PatientAge > 75
+
+define "Numerator":
+    "Initial Population" and MeetsControlTarget
+
+define "Stratifier Age Group":
+    case
+        when PatientAge < 40 then '18-39'
+        when PatientAge < 65 then '40-64'
+        else '65-75'
+    end
+
+// =============================================
+// Summary Report
+// =============================================
+
+define PatientSummary:
+    Tuple {
+        age: PatientAge,
+        gender: PatientGender,
+        hasDiabetes: HasDiabetes,
+        mostRecentHbA1c: MostRecentHbA1cValue,
+        hbA1cDate: MostRecentHbA1cDate,
+        controlStatus: HbA1cControlStatus,
+        meetsTarget: MeetsAgeAdjustedTarget,
+        target: HbA1cTarget,
+        trend: HbA1cTrend,
+        testCount: HbA1cTestCount,
+        alerts: ActiveAlerts
+    }
+```
+
+```bash
+fhir cql run diabetes-management.cql --data patient-bundle.json
+```
+
+---
+
 ## Quick Reference
 
 ### Library Structure

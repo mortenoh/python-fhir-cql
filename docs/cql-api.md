@@ -581,6 +581,421 @@ ds.add_valueset(
 # Now [Condition: code in "Diabetes"] will filter appropriately
 ```
 
+## Advanced Examples
+
+### Batch Patient Processing
+
+```python
+from fhir_cql.engine.cql import CQLEvaluator, InMemoryDataSource
+import json
+from pathlib import Path
+
+def process_patient_population(
+    cql_source: str,
+    patient_bundles: list[Path],
+    definitions: list[str]
+) -> list[dict]:
+    """Process multiple patients through CQL logic."""
+    evaluator = CQLEvaluator()
+    evaluator.compile(cql_source)
+
+    results = []
+
+    for bundle_path in patient_bundles:
+        with open(bundle_path) as f:
+            bundle = json.load(f)
+
+        # Create data source for this patient
+        ds = PatientBundleDataSource(bundle)
+        evaluator._data_source = ds
+
+        # Evaluate requested definitions
+        patient_result = {
+            "patient_id": ds.patient.get("id"),
+            "file": str(bundle_path),
+        }
+
+        for defn in definitions:
+            try:
+                value = evaluator.evaluate_definition(defn, resource=ds.patient)
+                patient_result[defn] = value
+            except Exception as e:
+                patient_result[defn] = f"Error: {e}"
+
+        results.append(patient_result)
+
+    return results
+
+# Example usage
+cql = """
+    library PatientAnalysis version '1.0'
+    using FHIR version '4.0.1'
+    context Patient
+
+    define PatientAge: years between Patient.birthDate and Today()
+    define ConditionCount: Count([Condition])
+    define HasDiabetes: exists([Condition] C where C.code.coding.code = '44054006')
+"""
+
+patient_files = list(Path("patients/").glob("*.json"))
+results = process_patient_population(
+    cql,
+    patient_files,
+    ["PatientAge", "ConditionCount", "HasDiabetes"]
+)
+
+for r in results:
+    print(f"Patient {r['patient_id']}: Age={r['PatientAge']}, Conditions={r['ConditionCount']}")
+```
+
+### Dynamic CQL Generation
+
+```python
+from fhir_cql.engine.cql import CQLEvaluator
+
+def create_age_filter_cql(min_age: int, max_age: int, condition_codes: list[str]) -> str:
+    """Dynamically generate CQL for custom filtering."""
+    code_checks = " or ".join([
+        f"C.code.coding.code = '{code}'" for code in condition_codes
+    ])
+
+    return f"""
+        library DynamicFilter version '1.0'
+        using FHIR version '4.0.1'
+        context Patient
+
+        define PatientAge: years between Patient.birthDate and Today()
+
+        define MeetsAgeCriteria:
+            PatientAge >= {min_age} and PatientAge <= {max_age}
+
+        define HasTargetCondition:
+            exists([Condition] C where {code_checks})
+
+        define IncludePatient:
+            MeetsAgeCriteria and HasTargetCondition
+    """
+
+# Generate and evaluate
+evaluator = CQLEvaluator()
+cql = create_age_filter_cql(
+    min_age=40,
+    max_age=75,
+    condition_codes=["44054006", "73211009"]  # Diabetes codes
+)
+evaluator.compile(cql)
+
+patient = {"resourceType": "Patient", "id": "p1", "birthDate": "1970-01-01"}
+include = evaluator.evaluate_definition("IncludePatient", resource=patient)
+```
+
+### Caching and Performance
+
+```python
+from fhir_cql.engine.cql import CQLEvaluator, compile_library
+from functools import lru_cache
+import hashlib
+
+class CachedCQLEvaluator:
+    """CQL evaluator with compiled library caching."""
+
+    def __init__(self):
+        self._evaluator = CQLEvaluator()
+        self._compiled_cache = {}
+
+    def _hash_source(self, source: str) -> str:
+        return hashlib.md5(source.encode()).hexdigest()
+
+    def compile(self, source: str):
+        """Compile CQL with caching."""
+        cache_key = self._hash_source(source)
+
+        if cache_key not in self._compiled_cache:
+            lib = self._evaluator.compile(source)
+            self._compiled_cache[cache_key] = lib
+        else:
+            # Load from cache
+            self._evaluator._current_library = self._compiled_cache[cache_key]
+
+        return self._compiled_cache[cache_key]
+
+    def evaluate(self, definition: str, resource=None):
+        return self._evaluator.evaluate_definition(definition, resource=resource)
+
+# Usage
+cached_evaluator = CachedCQLEvaluator()
+
+# First call compiles
+cached_evaluator.compile(cql_source)
+result1 = cached_evaluator.evaluate("SomeDefinition", resource=patient1)
+
+# Second call uses cache
+cached_evaluator.compile(cql_source)  # Same source, uses cache
+result2 = cached_evaluator.evaluate("SomeDefinition", resource=patient2)
+```
+
+### Error Handling Patterns
+
+```python
+from fhir_cql.engine.cql import CQLEvaluator
+from fhir_cql.engine.exceptions import CQLError
+
+class SafeCQLEvaluator:
+    """CQL evaluator with comprehensive error handling."""
+
+    def __init__(self):
+        self._evaluator = CQLEvaluator()
+        self._compiled = False
+
+    def compile_safe(self, source: str) -> tuple[bool, str | None]:
+        """Compile with error handling."""
+        try:
+            self._evaluator.compile(source)
+            self._compiled = True
+            return True, None
+        except SyntaxError as e:
+            return False, f"Syntax error: {e}"
+        except CQLError as e:
+            return False, f"CQL error: {e}"
+        except Exception as e:
+            return False, f"Unexpected error: {e}"
+
+    def evaluate_safe(
+        self,
+        definition: str,
+        resource=None,
+        default=None
+    ) -> tuple[any, str | None]:
+        """Evaluate with error handling."""
+        if not self._compiled:
+            return default, "No library compiled"
+
+        try:
+            result = self._evaluator.evaluate_definition(definition, resource=resource)
+            return result, None
+        except KeyError:
+            return default, f"Definition not found: {definition}"
+        except CQLError as e:
+            return default, f"Evaluation error: {e}"
+        except Exception as e:
+            return default, f"Unexpected error: {e}"
+
+# Usage
+evaluator = SafeCQLEvaluator()
+
+success, error = evaluator.compile_safe(cql_source)
+if not success:
+    print(f"Compilation failed: {error}")
+else:
+    result, error = evaluator.evaluate_safe("PatientAge", resource=patient, default=0)
+    if error:
+        print(f"Evaluation warning: {error}")
+    print(f"Result: {result}")
+```
+
+### Working with Complex Data
+
+```python
+from fhir_cql.engine.cql import CQLEvaluator, InMemoryDataSource
+from datetime import datetime, timedelta
+import random
+
+def generate_test_data(num_patients: int, seed: int = 42) -> InMemoryDataSource:
+    """Generate synthetic test data for CQL evaluation."""
+    random.seed(seed)
+    ds = InMemoryDataSource()
+
+    condition_codes = [
+        ("44054006", "Type 2 diabetes"),
+        ("38341003", "Hypertension"),
+        ("84114007", "Heart failure"),
+    ]
+
+    for i in range(num_patients):
+        # Generate patient
+        birth_year = random.randint(1940, 2000)
+        patient = {
+            "resourceType": "Patient",
+            "id": f"patient-{i}",
+            "birthDate": f"{birth_year}-{random.randint(1,12):02d}-{random.randint(1,28):02d}",
+            "gender": random.choice(["male", "female"]),
+        }
+        ds.add_resource(patient)
+
+        # Add random conditions
+        num_conditions = random.randint(0, 3)
+        for j in range(num_conditions):
+            code, display = random.choice(condition_codes)
+            condition = {
+                "resourceType": "Condition",
+                "id": f"condition-{i}-{j}",
+                "subject": {"reference": f"Patient/patient-{i}"},
+                "clinicalStatus": {
+                    "coding": [{"code": "active"}]
+                },
+                "code": {
+                    "coding": [{"system": "http://snomed.info/sct", "code": code, "display": display}]
+                },
+            }
+            ds.add_resource(condition)
+
+        # Add random observations
+        for j in range(random.randint(1, 5)):
+            obs_date = datetime.now() - timedelta(days=random.randint(1, 365))
+            observation = {
+                "resourceType": "Observation",
+                "id": f"obs-{i}-{j}",
+                "subject": {"reference": f"Patient/patient-{i}"},
+                "status": "final",
+                "effectiveDateTime": obs_date.isoformat(),
+                "code": {
+                    "coding": [{"system": "http://loinc.org", "code": "4548-4", "display": "HbA1c"}]
+                },
+                "valueQuantity": {"value": round(random.uniform(5.0, 12.0), 1), "unit": "%"},
+            }
+            ds.add_resource(observation)
+
+    return ds
+
+# Generate test data
+ds = generate_test_data(100)
+
+# Evaluate CQL against test population
+evaluator = CQLEvaluator(data_source=ds)
+evaluator.compile("""
+    library TestAnalysis version '1.0'
+    using FHIR version '4.0.1'
+    context Patient
+
+    define HasDiabetes: exists([Condition] C where C.code.coding.code = '44054006')
+    define LatestHbA1c: Last([Observation] O where O.code.coding.code = '4548-4' sort by effective).value.value
+""")
+
+# Analyze population
+patients = ds.retrieve("Patient")
+diabetes_count = 0
+hba1c_values = []
+
+for patient in patients:
+    has_diabetes = evaluator.evaluate_definition("HasDiabetes", resource=patient)
+    hba1c = evaluator.evaluate_definition("LatestHbA1c", resource=patient)
+
+    if has_diabetes:
+        diabetes_count += 1
+    if hba1c is not None:
+        hba1c_values.append(hba1c)
+
+print(f"Total patients: {len(patients)}")
+print(f"Diabetes prevalence: {diabetes_count/len(patients)*100:.1f}%")
+print(f"Average HbA1c: {sum(hba1c_values)/len(hba1c_values):.1f}%")
+```
+
+### Library Dependencies and Includes
+
+```python
+from fhir_cql.engine.cql import CQLEvaluator
+from fhir_cql.engine.cql.library import InMemoryLibraryResolver
+
+# Create library resolver for dependencies
+resolver = InMemoryLibraryResolver()
+
+# Add base library
+resolver.add_library("CommonFunctions", "1.0", """
+    library CommonFunctions version '1.0'
+
+    define function IsAdult(birthDate Date) returns Boolean:
+        years between birthDate and Today() >= 18
+
+    define function FormatAge(birthDate Date) returns String:
+        ToString(years between birthDate and Today()) + ' years'
+""")
+
+# Add library that depends on CommonFunctions
+resolver.add_library("PatientAnalysis", "1.0", """
+    library PatientAnalysis version '1.0'
+    using FHIR version '4.0.1'
+
+    include CommonFunctions version '1.0'
+
+    context Patient
+
+    define PatientIsAdult: CommonFunctions.IsAdult(Patient.birthDate)
+    define PatientAgeFormatted: CommonFunctions.FormatAge(Patient.birthDate)
+""")
+
+# Create evaluator with resolver
+evaluator = CQLEvaluator(library_resolver=resolver)
+
+# Load and evaluate
+evaluator.load_library("PatientAnalysis", "1.0")
+result = evaluator.evaluate_definition("PatientIsAdult", resource=patient)
+```
+
+### Custom Type Conversions
+
+```python
+from fhir_cql.engine.cql import CQLEvaluator
+from fhir_cql.engine.types import FHIRDate, FHIRDateTime, FHIRTime
+from datetime import date, datetime, time
+
+def convert_cql_result(value):
+    """Convert CQL results to Python native types."""
+    if value is None:
+        return None
+
+    # Handle FHIR date/time types
+    if isinstance(value, FHIRDate):
+        return value.to_date()
+    if isinstance(value, FHIRDateTime):
+        return value.to_datetime()
+    if isinstance(value, FHIRTime):
+        return time(
+            hour=value.hour or 0,
+            minute=value.minute or 0,
+            second=value.second or 0
+        )
+
+    # Handle CQL types
+    if hasattr(value, 'elements'):  # CQLTuple
+        return {k: convert_cql_result(v) for k, v in value.elements.items()}
+
+    if hasattr(value, 'low') and hasattr(value, 'high'):  # CQLInterval
+        return {
+            "low": convert_cql_result(value.low),
+            "high": convert_cql_result(value.high),
+            "low_closed": value.low_closed,
+            "high_closed": value.high_closed,
+        }
+
+    # Handle lists
+    if isinstance(value, list):
+        return [convert_cql_result(v) for v in value]
+
+    # Return as-is for basic types
+    return value
+
+# Usage
+evaluator = CQLEvaluator()
+evaluator.compile("""
+    library TypeDemo version '1.0'
+    define DateResult: @2024-06-15
+    define IntervalResult: Interval[1, 10]
+    define TupleResult: Tuple { name: 'John', age: 30 }
+""")
+
+# Evaluate and convert
+date_val = convert_cql_result(evaluator.evaluate_definition("DateResult"))
+print(f"Date: {date_val}")  # datetime.date object
+
+interval_val = convert_cql_result(evaluator.evaluate_definition("IntervalResult"))
+print(f"Interval: {interval_val}")  # dict with low, high, etc.
+
+tuple_val = convert_cql_result(evaluator.evaluate_definition("TupleResult"))
+print(f"Tuple: {tuple_val}")  # dict with name, age
+```
+
+---
+
 ## Integration Patterns
 
 ### With FastAPI
