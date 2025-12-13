@@ -450,24 +450,42 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
             )
 
         # Get search params from query string
+        # Include chained params (contain :) and _has params
         params: dict[str, Any] = {}
+        chained_params: dict[str, Any] = {}
         for key, value in request.query_params.multi_items():
-            if not key.startswith("_") or key in ("_id", "_lastUpdated"):
-                if key in params:
-                    if isinstance(params[key], list):
-                        params[key].append(value)
-                    else:
-                        params[key] = [params[key], value]
-                else:
-                    params[key] = value
+            # Skip special params except _id, _lastUpdated, and _has
+            if key.startswith("_") and key not in ("_id", "_lastUpdated") and not key.startswith("_has:"):
+                continue
 
-        # Search with pagination
+            # Separate chained/has params from regular params
+            is_chained = ":" in key and "." in key and not key.startswith("_")
+            is_has = key.startswith("_has:")
+
+            target_dict = chained_params if (is_chained or is_has) else params
+
+            if key in target_dict:
+                if isinstance(target_dict[key], list):
+                    target_dict[key].append(value)
+                else:
+                    target_dict[key] = [target_dict[key], value]
+            else:
+                target_dict[key] = value
+
+        # Search with pagination (basic params only)
         resources, total = store.search(
             resource_type=resource_type,
             params=params,
             _count=_count,
             _offset=_offset,
         )
+
+        # Apply advanced search filtering (chained and _has parameters)
+        if chained_params:
+            from .search import filter_resources_advanced
+
+            resources = filter_resources_advanced(resources, resource_type, chained_params, store)
+            total = len(resources)  # Update total after filtering
 
         # Apply sorting if specified
         if _sort:

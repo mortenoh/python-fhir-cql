@@ -739,6 +739,94 @@
             "header": [],
             "url": "{{baseUrl}}/Observation?patient=Patient/{{patientId}}&date=ge2024-01-01&date=le2024-12-31"
           }
+        },
+        {
+          "name": "Chained Search - Conditions by Patient Name",
+          "description": "Find Conditions where the referenced Patient has name containing 'Smith'",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/Condition?subject:Patient.name=Smith"
+          }
+        },
+        {
+          "name": "Chained Search - Observations by Patient",
+          "description": "Find Observations for Patients with specific identifier",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/Observation?subject:Patient.identifier=12345"
+          }
+        },
+        {
+          "name": "Chained Search - MedicationRequests by Practitioner",
+          "description": "Find MedicationRequests written by practitioners named 'Johnson'",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/MedicationRequest?requester:Practitioner.name=Johnson"
+          }
+        },
+        {
+          "name": "Reverse Chained (_has) - Patients with Diabetes",
+          "description": "Find Patients who have a Condition with diabetes code",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/Patient?_has:Condition:subject:code=44054006"
+          }
+        },
+        {
+          "name": "Reverse Chained (_has) - Patients with Specific Observation",
+          "description": "Find Patients who have an Observation with LOINC code 8480-6 (Systolic BP)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/Patient?_has:Observation:subject:code=8480-6"
+          }
+        },
+        {
+          "name": "Reverse Chained (_has) - Patients with Allergies",
+          "description": "Find Patients who have an AllergyIntolerance record",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/Patient?_has:AllergyIntolerance:patient:clinical-status=active"
+          }
+        },
+        {
+          "name": "Combined - Chained with Regular Params",
+          "description": "Find active Conditions for Patients named Smith",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/Condition?subject:Patient.name=Smith&clinical-status=active"
+          }
+        },
+        {
+          "name": "Combined - _has with _revinclude",
+          "description": "Find Patients with diabetes and include their Conditions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/Patient?_has:Condition:subject:code=44054006&_revinclude=Condition:subject"
+          }
         }
       ]
     }
