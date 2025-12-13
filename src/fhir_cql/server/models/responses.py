@@ -180,9 +180,12 @@ class CapabilityStatementRestResource(BaseModel):
     type: str
     interaction: list[dict[str, str]] = Field(default_factory=list)
     searchParam: list[dict[str, str]] = Field(default_factory=list)
+    searchInclude: list[str] = Field(default_factory=list)
+    searchRevInclude: list[str] = Field(default_factory=list)
     versioning: str = "versioned"
     readHistory: bool = True
     updateCreate: bool = True
+    operation: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class CapabilityStatementRest(BaseModel):
@@ -217,7 +220,9 @@ class CapabilityStatement(BaseModel):
         """Create a default CapabilityStatement."""
         from datetime import datetime, timezone
 
-        # Define supported resources
+        from ..api.include_handler import get_search_includes, get_search_rev_includes
+
+        # Define supported resources with search parameters
         supported_resources = [
             ("Patient", ["_id", "identifier", "name", "family", "given", "gender", "birthdate"]),
             ("Condition", ["_id", "patient", "subject", "code", "clinical-status", "onset-date"]),
@@ -234,6 +239,20 @@ class CapabilityStatement(BaseModel):
 
         resources = []
         for rtype, search_params in supported_resources:
+            # Get _include and _revinclude capabilities
+            search_include = get_search_includes(rtype)
+            search_rev_include = get_search_rev_includes(rtype)
+
+            # Define resource-specific operations
+            resource_operations: list[dict[str, Any]] = []
+            if rtype == "Patient":
+                resource_operations.append(
+                    {
+                        "name": "everything",
+                        "definition": "http://hl7.org/fhir/OperationDefinition/Patient-everything",
+                    }
+                )
+
             resources.append(
                 CapabilityStatementRestResource(
                     type=rtype,
@@ -247,29 +266,27 @@ class CapabilityStatement(BaseModel):
                         {"code": "search-type"},
                     ],
                     searchParam=[{"name": p, "type": "string"} for p in search_params],
+                    searchInclude=search_include,
+                    searchRevInclude=search_rev_include,
+                    operation=resource_operations,
                 )
             )
 
-        # Add terminology operations
-        operations = []
-        operations.append(
+        # Add server-level terminology operations
+        operations = [
             {
                 "name": "validate-code",
                 "definition": "http://hl7.org/fhir/OperationDefinition/ValueSet-validate-code",
-            }
-        )
-        operations.append(
+            },
             {
                 "name": "expand",
                 "definition": "http://hl7.org/fhir/OperationDefinition/ValueSet-expand",
-            }
-        )
-        operations.append(
+            },
             {
                 "name": "lookup",
                 "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-lookup",
-            }
-        )
+            },
+        ]
 
         return cls(
             url=f"{base_url}/metadata" if base_url else None,

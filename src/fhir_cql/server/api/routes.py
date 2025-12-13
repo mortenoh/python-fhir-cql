@@ -7,7 +7,14 @@ from typing import Any
 from fastapi import APIRouter, Query, Request, Response
 from fastapi.responses import JSONResponse
 
-from ..models.responses import Bundle, BundleEntry, BundleEntryRequest, CapabilityStatement, OperationOutcome
+from ..models.responses import (
+    Bundle,
+    BundleEntry,
+    BundleEntryRequest,
+    BundleLink,
+    CapabilityStatement,
+    OperationOutcome,
+)
 from ..storage.fhir_store import FHIRStore
 
 # FHIR content type
@@ -89,6 +96,316 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
         return JSONResponse(content=config, media_type="application/json")
 
     # =========================================================================
+    # Patient Operations
+    # =========================================================================
+
+    @router.get("/Patient/{patient_id}/$everything", tags=["Operations"])
+    async def patient_everything(
+        request: Request,
+        patient_id: str,
+        _count: int = Query(default=100, ge=1, le=1000, alias="_count"),
+        _offset: int = Query(default=0, ge=0, alias="_offset"),
+    ) -> Response:
+        """Return all resources related to a patient.
+
+        Returns a searchset Bundle containing the Patient and all related
+        resources (Conditions, Observations, MedicationRequests, Encounters,
+        Procedures, etc.) that reference the patient.
+
+        Parameters:
+            patient_id: The patient ID
+            _count: Maximum number of resources per page (default 100)
+            _offset: Pagination offset (default 0)
+        """
+        from .compartments import PATIENT_COMPARTMENT, get_patient_reference_paths, get_reference_from_path
+
+        # Get the patient
+        patient = store.read("Patient", patient_id)
+        if patient is None:
+            outcome = OperationOutcome.not_found("Patient", patient_id)
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=404,
+                media_type=FHIR_JSON,
+            )
+
+        # Collect all related resources
+        all_resources: list[dict[str, Any]] = [patient]
+        patient_ref = f"Patient/{patient_id}"
+
+        for resource_type in PATIENT_COMPARTMENT:
+            if resource_type not in SUPPORTED_TYPES:
+                continue
+
+            ref_paths = get_patient_reference_paths(resource_type)
+            type_resources = store.get_all_resources(resource_type)
+
+            for resource in type_resources:
+                for path in ref_paths:
+                    ref_value = get_reference_from_path(resource, path)
+                    if ref_value == patient_ref:
+                        all_resources.append(resource)
+                        break
+
+        # Apply pagination
+        total = len(all_resources)
+        paginated = all_resources[_offset : _offset + _count]
+
+        # Build bundle
+        entries = []
+        for i, r in enumerate(paginated):
+            rtype = r.get("resourceType", "Unknown")
+            rid = r.get("id", "")
+            # First entry (patient) is match, rest are include
+            mode = "match" if i == 0 and rtype == "Patient" else "include"
+            entries.append(
+                BundleEntry(
+                    fullUrl=f"{get_base_url(request)}/{rtype}/{rid}",
+                    resource=r,
+                    search={"mode": mode},
+                )
+            )
+
+        base = get_base_url(request)
+        links = [
+            BundleLink(relation="self", url=f"{base}/Patient/{patient_id}/$everything"),
+        ]
+
+        # Add pagination links
+        if _offset > 0:
+            prev_offset = max(0, _offset - _count)
+            links.append(
+                BundleLink(
+                    relation="previous",
+                    url=f"{base}/Patient/{patient_id}/$everything?_offset={prev_offset}&_count={_count}",
+                )
+            )
+        if _offset + _count < total:
+            next_offset = _offset + _count
+            links.append(
+                BundleLink(
+                    relation="next",
+                    url=f"{base}/Patient/{patient_id}/$everything?_offset={next_offset}&_count={_count}",
+                )
+            )
+
+        bundle = Bundle(
+            resourceType="Bundle",
+            id=str(uuid.uuid4()),
+            type="searchset",
+            total=total,
+            entry=entries,
+            link=links,
+        )
+
+        return JSONResponse(
+            content=bundle.model_dump(exclude_none=True),
+            media_type=FHIR_JSON,
+        )
+
+    # Patient-specific history routes (must come before compartment search)
+    @router.get("/Patient/{patient_id}/_history", tags=["History"])
+    async def patient_history_instance(
+        request: Request,
+        patient_id: str,
+    ) -> Response:
+        """Get the history of a specific Patient.
+
+        Returns all versions of the patient as a Bundle.
+        """
+        versions = store.history("Patient", patient_id)
+        if not versions:
+            outcome = OperationOutcome.not_found("Patient", patient_id)
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=404,
+                media_type=FHIR_JSON,
+            )
+
+        bundle = Bundle(
+            resourceType="Bundle",
+            id=str(uuid.uuid4()),
+            type="history",
+            total=len(versions),
+            entry=[
+                BundleEntry(
+                    fullUrl=f"{get_base_url(request)}/Patient/{patient_id}",
+                    resource=v,
+                    request=BundleEntryRequest(
+                        method="GET",
+                        url=f"Patient/{patient_id}/_history/{v.get('meta', {}).get('versionId', '1')}",
+                    ),
+                )
+                for v in versions
+            ],
+        )
+
+        return JSONResponse(
+            content=bundle.model_dump(exclude_none=True),
+            media_type=FHIR_JSON,
+        )
+
+    @router.get("/Patient/{patient_id}/_history/{version_id}", tags=["History"])
+    async def patient_vread(
+        request: Request,
+        patient_id: str,
+        version_id: str,
+    ) -> Response:
+        """Read a specific version of a Patient."""
+        versions = store.history("Patient", patient_id)
+        for v in versions:
+            if v.get("meta", {}).get("versionId") == version_id:
+                return JSONResponse(
+                    content=v,
+                    media_type=FHIR_JSON,
+                    headers={"ETag": f'W/"{version_id}"'},
+                )
+
+        outcome = OperationOutcome.not_found("Patient", f"{patient_id}/_history/{version_id}")
+        return JSONResponse(
+            content=outcome.model_dump(exclude_none=True),
+            status_code=404,
+            media_type=FHIR_JSON,
+        )
+
+    @router.get("/Patient/{patient_id}/{resource_type}", tags=["Compartment"])
+    async def compartment_search(
+        request: Request,
+        patient_id: str,
+        resource_type: str,
+        _count: int = Query(default=100, ge=1, le=1000, alias="_count"),
+        _offset: int = Query(default=0, ge=0, alias="_offset"),
+        _sort: str | None = Query(default=None, alias="_sort"),
+    ) -> Response:
+        """Search for resources within a patient compartment.
+
+        Returns resources of the specified type that are associated with
+        the given patient.
+
+        Example: GET /Patient/123/Condition returns all Conditions for patient 123.
+
+        Parameters:
+            patient_id: The patient ID
+            resource_type: The resource type to search for
+            _count: Maximum number of results per page
+            _offset: Pagination offset
+            _sort: Sort order (prefix with - for descending)
+        """
+        from .compartments import PATIENT_COMPARTMENT, get_patient_reference_paths, get_reference_from_path
+        from .search import filter_resources
+
+        # Validate resource type is supported
+        if resource_type not in SUPPORTED_TYPES:
+            outcome = OperationOutcome.error(
+                f"Resource type '{resource_type}' is not supported",
+                code="not-supported",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        # Validate resource type is in Patient compartment or is Patient
+        if resource_type != "Patient" and resource_type not in PATIENT_COMPARTMENT:
+            outcome = OperationOutcome.error(
+                f"Resource type '{resource_type}' is not part of Patient compartment",
+                code="not-supported",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        # Verify patient exists
+        patient = store.read("Patient", patient_id)
+        if patient is None:
+            outcome = OperationOutcome.not_found("Patient", patient_id)
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=404,
+                media_type=FHIR_JSON,
+            )
+
+        # Get additional search params from query string
+        params: dict[str, Any] = {}
+        for key, value in request.query_params.multi_items():
+            if not key.startswith("_") or key in ("_id", "_lastUpdated"):
+                if key in params:
+                    if isinstance(params[key], list):
+                        params[key].append(value)
+                    else:
+                        params[key] = [params[key], value]
+                else:
+                    params[key] = value
+
+        # Handle special case: requesting Patient returns just the patient
+        if resource_type == "Patient":
+            bundle = Bundle.searchset(
+                resources=[patient],
+                total=1,
+                base_url=get_base_url(request),
+                resource_type="Patient",
+                params=params,
+            )
+            return JSONResponse(
+                content=bundle.model_dump(exclude_none=True),
+                media_type=FHIR_JSON,
+            )
+
+        # Search for resources in compartment
+        patient_ref = f"Patient/{patient_id}"
+        ref_paths = get_patient_reference_paths(resource_type)
+
+        all_resources = store.get_all_resources(resource_type)
+        compartment_resources = []
+
+        for resource in all_resources:
+            for path in ref_paths:
+                ref_value = get_reference_from_path(resource, path)
+                if ref_value == patient_ref:
+                    compartment_resources.append(resource)
+                    break
+
+        # Apply additional search params
+        if params:
+            compartment_resources = filter_resources(compartment_resources, resource_type, params)
+
+        # Apply sorting
+        if _sort:
+            reverse = _sort.startswith("-")
+            sort_field = _sort.lstrip("-")
+            try:
+                compartment_resources = sorted(
+                    compartment_resources,
+                    key=lambda r: r.get(sort_field, "") or "",
+                    reverse=reverse,
+                )
+            except (TypeError, KeyError):
+                pass
+
+        # Apply pagination
+        total = len(compartment_resources)
+        paginated = compartment_resources[_offset : _offset + _count]
+
+        # Build bundle
+        bundle = Bundle.searchset(
+            resources=paginated,
+            total=total,
+            base_url=get_base_url(request),
+            resource_type=resource_type,
+            params=params,
+            offset=_offset,
+            count=_count,
+        )
+
+        return JSONResponse(
+            content=bundle.model_dump(exclude_none=True),
+            media_type=FHIR_JSON,
+        )
+
+    # =========================================================================
     # Resource Operations
     # =========================================================================
 
@@ -155,15 +472,77 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
             except (TypeError, KeyError):
                 pass  # Ignore sort errors
 
+        # Process _include and _revinclude
+        included_resources: list[dict[str, Any]] = []
+
+        if _include or _revinclude:
+            from .include_handler import IncludeHandler
+
+            handler = IncludeHandler(store)
+
+            if _include:
+                included_resources.extend(handler.process_include(resources, _include))
+
+            if _revinclude:
+                included_resources.extend(handler.process_revinclude(resources, _revinclude))
+
+        # Build bundle with both match and include entries
+        entries = []
+
+        # Add primary search results with mode="match"
+        for resource in resources:
+            rid = resource.get("id", "")
+            rtype = resource.get("resourceType", resource_type)
+            entries.append(
+                BundleEntry(
+                    fullUrl=f"{get_base_url(request)}/{rtype}/{rid}",
+                    resource=resource,
+                    search={"mode": "match"},
+                )
+            )
+
+        # Add included resources with mode="include" (deduplicated)
+        seen_refs: set[str] = {f"{r.get('resourceType')}/{r.get('id')}" for r in resources}
+        for resource in included_resources:
+            ref = f"{resource.get('resourceType')}/{resource.get('id')}"
+            if ref not in seen_refs:
+                entries.append(
+                    BundleEntry(
+                        fullUrl=f"{get_base_url(request)}/{resource.get('resourceType')}/{resource.get('id')}",
+                        resource=resource,
+                        search={"mode": "include"},
+                    )
+                )
+                seen_refs.add(ref)
+
+        # Build pagination links
+        links = [
+            BundleLink(relation="self", url=f"{get_base_url(request)}/{resource_type}"),
+        ]
+
+        if _offset > 0:
+            links.append(
+                BundleLink(
+                    relation="previous",
+                    url=f"{get_base_url(request)}/{resource_type}?_offset={max(0, _offset - _count)}&_count={_count}",
+                )
+            )
+        if _offset + _count < total:
+            links.append(
+                BundleLink(
+                    relation="next",
+                    url=f"{get_base_url(request)}/{resource_type}?_offset={_offset + _count}&_count={_count}",
+                )
+            )
+
         # Build bundle
-        bundle = Bundle.searchset(
-            resources=resources,
-            total=total,
-            base_url=get_base_url(request),
-            resource_type=resource_type,
-            params=params,
-            offset=_offset,
-            count=_count,
+        bundle = Bundle(
+            resourceType="Bundle",
+            id=str(uuid.uuid4()),
+            type="searchset",
+            total=total,  # Total is primary results only
+            entry=entries,
+            link=links,
         )
 
         return JSONResponse(
