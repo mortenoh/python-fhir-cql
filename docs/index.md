@@ -156,6 +156,15 @@ greeting = evaluator.evaluate_definition("Greeting")  # 'Hello, CQL!'
 - [CDS Hooks Guide](cds-hooks-guide.md) - Building clinical decision support services
 - [FHIRPath & CQL Reference](fhirpath-cql-tutorial.md) - Deep dive reference with examples
 
+### Server & Services
+- [FHIR Server Guide](fhir-server-guide.md) - Built-in FHIR server with synthetic data generation
+- [Terminology Guide](terminology-guide.md) - Terminology service for code validation
+
+### Advanced Topics
+- [Measure Evaluation Guide](measure-guide.md) - Clinical quality measure evaluation
+- [Data Sources Guide](datasources-guide.md) - FHIR data sources for CQL evaluation
+- [Plugins Guide](plugins-guide.md) - Extending CQL with custom functions
+
 ## Examples
 
 The `examples/` directory contains:

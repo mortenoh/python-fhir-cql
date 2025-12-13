@@ -1,0 +1,351 @@
+"""Tests for FHIR synthetic data generators."""
+
+from fhir_cql.server.generator import (
+    ConditionGenerator,
+    EncounterGenerator,
+    MedicationRequestGenerator,
+    ObservationGenerator,
+    OrganizationGenerator,
+    PatientGenerator,
+    PatientRecordGenerator,
+    PractitionerGenerator,
+    ProcedureGenerator,
+)
+from fhir_cql.server.generator.clinical_codes import (
+    CONDITIONS_SNOMED,
+    LAB_TESTS,
+    MEDICATIONS_RXNORM,
+    VITAL_SIGNS,
+)
+
+
+class TestPatientGenerator:
+    """Tests for PatientGenerator."""
+
+    def test_generate_patient(self):
+        """Test generating a single patient."""
+        gen = PatientGenerator(seed=42)
+        patient = gen.generate()
+
+        assert patient["resourceType"] == "Patient"
+        assert "id" in patient
+        assert "meta" in patient
+        assert "name" in patient
+        assert "gender" in patient
+        assert "birthDate" in patient
+
+    def test_generate_patient_with_id(self):
+        """Test generating a patient with specific ID."""
+        gen = PatientGenerator(seed=42)
+        patient = gen.generate(patient_id="test-patient-123")
+
+        assert patient["id"] == "test-patient-123"
+
+    def test_generate_patient_has_identifier(self):
+        """Test that patient has identifiers (MRN, SSN)."""
+        gen = PatientGenerator(seed=42)
+        patient = gen.generate()
+
+        assert "identifier" in patient
+        assert len(patient["identifier"]) >= 1
+
+    def test_generate_patient_has_contact(self):
+        """Test that patient has contact information."""
+        gen = PatientGenerator(seed=42)
+        patient = gen.generate()
+
+        assert "telecom" in patient
+        assert "address" in patient
+
+    def test_generate_batch(self):
+        """Test generating multiple patients."""
+        gen = PatientGenerator(seed=42)
+        patients = gen.generate_batch(5)
+
+        assert len(patients) == 5
+        ids = {p["id"] for p in patients}
+        assert len(ids) == 5  # All unique IDs
+
+    def test_reproducible_with_seed(self):
+        """Test that seed produces reproducible demographic patterns."""
+        # Note: UUIDs are generated via uuid4() which is not seeded,
+        # so we test reproducibility of demographic data instead
+        gen1 = PatientGenerator(seed=42)
+        gen2 = PatientGenerator(seed=42)
+
+        patient1 = gen1.generate(patient_id="test-1")
+        patient2 = gen2.generate(patient_id="test-2")
+
+        # Same seed should produce same gender and similar demographic patterns
+        assert patient1["gender"] == patient2["gender"]
+        # Both should have same structure
+        assert "name" in patient1 and "name" in patient2
+        assert "birthDate" in patient1 and "birthDate" in patient2
+
+
+class TestPractitionerGenerator:
+    """Tests for PractitionerGenerator."""
+
+    def test_generate_practitioner(self):
+        """Test generating a practitioner."""
+        gen = PractitionerGenerator(seed=42)
+        practitioner = gen.generate()
+
+        assert practitioner["resourceType"] == "Practitioner"
+        assert "id" in practitioner
+        assert "name" in practitioner
+        assert "identifier" in practitioner  # NPI
+
+    def test_practitioner_has_npi(self):
+        """Test that practitioner has NPI identifier."""
+        gen = PractitionerGenerator(seed=42)
+        practitioner = gen.generate()
+
+        npi_identifier = next(
+            (i for i in practitioner["identifier"] if "npi" in i.get("system", "").lower()),
+            None,
+        )
+        assert npi_identifier is not None
+
+
+class TestOrganizationGenerator:
+    """Tests for OrganizationGenerator."""
+
+    def test_generate_organization(self):
+        """Test generating an organization."""
+        gen = OrganizationGenerator(seed=42)
+        org = gen.generate()
+
+        assert org["resourceType"] == "Organization"
+        assert "id" in org
+        assert "name" in org
+        assert "type" in org
+
+
+class TestEncounterGenerator:
+    """Tests for EncounterGenerator."""
+
+    def test_generate_encounter(self):
+        """Test generating an encounter."""
+        gen = EncounterGenerator(seed=42)
+        encounter = gen.generate(patient_ref="Patient/123")
+
+        assert encounter["resourceType"] == "Encounter"
+        assert "id" in encounter
+        assert "status" in encounter
+        assert "class" in encounter
+        assert "period" in encounter
+        assert encounter["subject"]["reference"] == "Patient/123"
+
+    def test_encounter_has_valid_class(self):
+        """Test that encounter has valid class code."""
+        gen = EncounterGenerator(seed=42)
+        encounter = gen.generate()
+
+        valid_classes = ["AMB", "EMER", "IMP", "ACUTE", "OBSENC"]
+        assert encounter["class"]["code"] in valid_classes
+
+
+class TestConditionGenerator:
+    """Tests for ConditionGenerator."""
+
+    def test_generate_condition(self):
+        """Test generating a condition."""
+        gen = ConditionGenerator(seed=42)
+        condition = gen.generate(patient_ref="Patient/123")
+
+        assert condition["resourceType"] == "Condition"
+        assert "id" in condition
+        assert "clinicalStatus" in condition
+        assert "verificationStatus" in condition
+        assert "code" in condition
+        assert condition["subject"]["reference"] == "Patient/123"
+
+    def test_condition_has_snomed_code(self):
+        """Test that condition has SNOMED code."""
+        gen = ConditionGenerator(seed=42)
+        condition = gen.generate()
+
+        coding = condition["code"]["coding"][0]
+        assert "http://snomed.info/sct" in coding["system"]
+
+
+class TestObservationGenerator:
+    """Tests for ObservationGenerator."""
+
+    def test_generate_vital_sign(self):
+        """Test generating a vital sign observation."""
+        gen = ObservationGenerator(seed=42)
+        obs = gen.generate(
+            patient_ref="Patient/123",
+            observation_type="vital-signs",
+        )
+
+        assert obs["resourceType"] == "Observation"
+        assert "id" in obs
+        assert "valueQuantity" in obs
+        assert obs["category"][0]["coding"][0]["code"] == "vital-signs"
+
+    def test_generate_lab_result(self):
+        """Test generating a lab observation."""
+        gen = ObservationGenerator(seed=42)
+        obs = gen.generate(
+            patient_ref="Patient/123",
+            observation_type="laboratory",
+        )
+
+        assert obs["resourceType"] == "Observation"
+        assert obs["category"][0]["coding"][0]["code"] == "laboratory"
+
+    def test_observation_has_reference_range(self):
+        """Test that observation has reference range."""
+        gen = ObservationGenerator(seed=42)
+        obs = gen.generate()
+
+        assert "referenceRange" in obs
+        assert "low" in obs["referenceRange"][0]
+        assert "high" in obs["referenceRange"][0]
+
+    def test_observation_has_interpretation(self):
+        """Test that observation has interpretation."""
+        gen = ObservationGenerator(seed=42)
+        obs = gen.generate()
+
+        assert "interpretation" in obs
+        interp_code = obs["interpretation"][0]["coding"][0]["code"]
+        assert interp_code in ["L", "N", "H"]
+
+
+class TestMedicationRequestGenerator:
+    """Tests for MedicationRequestGenerator."""
+
+    def test_generate_medication_request(self):
+        """Test generating a medication request."""
+        gen = MedicationRequestGenerator(seed=42)
+        med = gen.generate(patient_ref="Patient/123")
+
+        assert med["resourceType"] == "MedicationRequest"
+        assert "id" in med
+        assert "status" in med
+        assert "intent" in med
+        assert "medicationCodeableConcept" in med
+        assert med["subject"]["reference"] == "Patient/123"
+
+    def test_medication_has_dosage(self):
+        """Test that medication request has dosage instructions."""
+        gen = MedicationRequestGenerator(seed=42)
+        med = gen.generate()
+
+        assert "dosageInstruction" in med
+        assert len(med["dosageInstruction"]) > 0
+        assert "text" in med["dosageInstruction"][0]
+
+
+class TestProcedureGenerator:
+    """Tests for ProcedureGenerator."""
+
+    def test_generate_procedure(self):
+        """Test generating a procedure."""
+        gen = ProcedureGenerator(seed=42)
+        proc = gen.generate(patient_ref="Patient/123")
+
+        assert proc["resourceType"] == "Procedure"
+        assert "id" in proc
+        assert "status" in proc
+        assert "code" in proc
+        assert proc["subject"]["reference"] == "Patient/123"
+
+
+class TestPatientRecordGenerator:
+    """Tests for PatientRecordGenerator (orchestrator)."""
+
+    def test_generate_patient_record(self):
+        """Test generating a complete patient record."""
+        gen = PatientRecordGenerator(seed=42)
+        resources = gen.generate_patient_record(
+            num_conditions=(1, 2),
+            num_encounters=(1, 2),
+            num_observations_per_encounter=(1, 2),
+            num_medications=(1, 2),
+            num_procedures=(0, 1),
+        )
+
+        assert len(resources) > 0
+
+        # Check we have required resource types
+        types = {r["resourceType"] for r in resources}
+        assert "Patient" in types
+        assert "Practitioner" in types
+        assert "Organization" in types
+
+    def test_generate_population(self):
+        """Test generating a population of patients."""
+        gen = PatientRecordGenerator(seed=42)
+        resources = gen.generate_population(
+            num_patients=3,
+            num_conditions=(1, 1),
+            num_encounters=(1, 1),
+            num_observations_per_encounter=(1, 1),
+            num_medications=(0, 0),
+            num_procedures=(0, 0),
+        )
+
+        # Count patients
+        patients = [r for r in resources if r["resourceType"] == "Patient"]
+        assert len(patients) == 3
+
+    def test_references_are_valid(self):
+        """Test that resource references are valid."""
+        gen = PatientRecordGenerator(seed=42)
+        resources = gen.generate_patient_record()
+
+        # Build index of resources
+        resource_ids = {f"{r['resourceType']}/{r['id']}" for r in resources}
+
+        # Check references in conditions
+        conditions = [r for r in resources if r["resourceType"] == "Condition"]
+        for condition in conditions:
+            patient_ref = condition.get("subject", {}).get("reference")
+            if patient_ref:
+                assert patient_ref in resource_ids
+
+
+class TestClinicalCodes:
+    """Tests for clinical code templates."""
+
+    def test_conditions_snomed_valid(self):
+        """Test that condition codes are valid."""
+        assert len(CONDITIONS_SNOMED) > 0
+        for code in CONDITIONS_SNOMED:
+            assert "code" in code
+            assert "display" in code
+            assert "system" in code
+
+    def test_vital_signs_valid(self):
+        """Test that vital sign templates are valid."""
+        assert len(VITAL_SIGNS) > 0
+        for vital in VITAL_SIGNS:
+            assert "code" in vital
+            assert "display" in vital
+            assert "unit" in vital
+            assert "normal_low" in vital
+            assert "normal_high" in vital
+            assert vital["normal_low"] < vital["normal_high"]
+
+    def test_lab_tests_valid(self):
+        """Test that lab test templates are valid."""
+        assert len(LAB_TESTS) > 0
+        for lab in LAB_TESTS:
+            assert "code" in lab
+            assert "display" in lab
+            assert "unit" in lab
+            assert "normal_low" in lab
+            assert "normal_high" in lab
+
+    def test_medications_rxnorm_valid(self):
+        """Test that medication codes are valid."""
+        assert len(MEDICATIONS_RXNORM) > 0
+        for med in MEDICATIONS_RXNORM:
+            assert "code" in med
+            assert "display" in med
+            assert "system" in med

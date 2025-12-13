@@ -8,14 +8,10 @@ Tests for:
 - MaxValue(type) - get maximum representable value
 """
 
-import sys
 from decimal import Decimal
-
-import pytest
 
 from fhir_cql.engine.cql import evaluate
 from fhir_cql.engine.types import FHIRDate, FHIRDateTime, FHIRTime, Quantity
-
 
 # =============================================================================
 # Precision Tests

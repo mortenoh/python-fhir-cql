@@ -316,7 +316,8 @@ def _precision(args: list[Any]) -> int | None:
     # Decimal precision - count digits after decimal point
     if isinstance(val, Decimal):
         sign, digits, exponent = val.as_tuple()
-        if exponent < 0:
+        # exponent can be 'n', 'N', 'F' for special values (NaN, infinity)
+        if isinstance(exponent, int) and exponent < 0:
             return -exponent
         return 0
 

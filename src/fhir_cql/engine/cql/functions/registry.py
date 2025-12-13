@@ -110,10 +110,11 @@ def get_registry() -> FunctionRegistry:
 
 def _register_all_functions(registry: FunctionRegistry) -> None:
     """Register all built-in functions."""
+    # Imported inside function to avoid circular imports
     from . import aggregate, conversion, datetime_funcs, list_funcs, string_funcs
 
     aggregate.register(registry)
     list_funcs.register(registry)
     string_funcs.register(registry)
     datetime_funcs.register(registry)
-    conversion.register(registry)
+    conversion.register(registry)  # type: ignore[attr-defined]

@@ -204,7 +204,24 @@ def _duration_between(args: list[Any]) -> int | None:
         if low is None or high is None:
             return None
 
-        delta = high - low
+        # Convert to datetime for uniform handling
+        low_dt: datetime
+        high_dt: datetime
+        if isinstance(low, datetime):
+            low_dt = low
+        elif isinstance(low, date):
+            low_dt = datetime.combine(low, datetime.min.time())
+        else:
+            return None
+
+        if isinstance(high, datetime):
+            high_dt = high
+        elif isinstance(high, date):
+            high_dt = datetime.combine(high, datetime.min.time())
+        else:
+            return None
+
+        delta = high_dt - low_dt
         if isinstance(delta, timedelta):
             if precision in ("day", "days"):
                 return delta.days

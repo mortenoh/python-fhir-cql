@@ -51,5 +51,13 @@ nav:
       - Reference: fhirpath-cql-tutorial.md
   - ELM:
       - Guide: elm-guide.md
+  - FHIR Server:
+      - Guide: fhir-server-guide.md
+  - Terminology:
+      - Guide: terminology-guide.md
   - CDS Hooks:
       - Guide: cds-hooks-guide.md
+  - Advanced:
+      - Measure Evaluation: measure-guide.md
+      - Data Sources: datasources-guide.md
+      - Plugins: plugins-guide.md
