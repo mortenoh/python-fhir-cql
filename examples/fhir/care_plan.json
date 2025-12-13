@@ -1,0 +1,221 @@
+{
+  "resourceType": "CarePlan",
+  "id": "careplan-diabetes",
+  "meta": {
+    "profile": ["http://hl7.org/fhir/us/core/StructureDefinition/us-core-careplan"]
+  },
+  "text": {
+    "status": "additional",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\">Diabetes management care plan for John Smith</div>"
+  },
+  "identifier": [{
+    "system": "http://hospital.example.org/careplans",
+    "value": "CP-2024-00456"
+  }],
+  "status": "active",
+  "intent": "plan",
+  "category": [{
+    "coding": [{
+      "system": "http://hl7.org/fhir/us/core/CodeSystem/careplan-category",
+      "code": "assess-plan",
+      "display": "Assessment and Plan of Treatment"
+    }]
+  }],
+  "title": "Diabetes Management Plan",
+  "description": "Comprehensive care plan for Type 2 Diabetes management including medication, diet, exercise, and monitoring goals.",
+  "subject": {
+    "reference": "Patient/patient-diabetic",
+    "display": "John Smith"
+  },
+  "encounter": {
+    "reference": "Encounter/encounter-outpatient"
+  },
+  "period": {
+    "start": "2024-01-15",
+    "end": "2025-01-15"
+  },
+  "created": "2024-01-15",
+  "author": {
+    "reference": "Practitioner/practitioner-primary",
+    "display": "Dr. Sarah Johnson"
+  },
+  "careTeam": [{
+    "reference": "CareTeam/careteam-diabetes"
+  }],
+  "addresses": [{
+    "reference": "Condition/condition-diabetes",
+    "display": "Type 2 Diabetes Mellitus"
+  }],
+  "goal": [
+    {
+      "reference": "Goal/goal-hba1c"
+    },
+    {
+      "reference": "Goal/goal-weight"
+    },
+    {
+      "reference": "Goal/goal-bp"
+    }
+  ],
+  "activity": [
+    {
+      "outcomeCodeableConcept": [{
+        "coding": [{
+          "system": "http://snomed.info/sct",
+          "code": "390801001",
+          "display": "Intent of treatment"
+        }]
+      }],
+      "detail": {
+        "kind": "MedicationRequest",
+        "code": {
+          "coding": [{
+            "system": "http://snomed.info/sct",
+            "code": "430193006",
+            "display": "Medication management"
+          }],
+          "text": "Continue metformin therapy"
+        },
+        "status": "in-progress",
+        "statusReason": {
+          "text": "Patient tolerating medication well"
+        },
+        "doNotPerform": false,
+        "scheduledTiming": {
+          "repeat": {
+            "frequency": 2,
+            "period": 1,
+            "periodUnit": "d"
+          }
+        },
+        "description": "Take metformin 500mg twice daily with meals"
+      }
+    },
+    {
+      "detail": {
+        "kind": "Appointment",
+        "code": {
+          "coding": [{
+            "system": "http://snomed.info/sct",
+            "code": "390906007",
+            "display": "Follow-up encounter"
+          }],
+          "text": "HbA1c monitoring"
+        },
+        "status": "scheduled",
+        "scheduledTiming": {
+          "repeat": {
+            "frequency": 1,
+            "period": 3,
+            "periodUnit": "mo"
+          }
+        },
+        "description": "Schedule HbA1c test every 3 months to monitor glycemic control"
+      }
+    },
+    {
+      "detail": {
+        "kind": "ServiceRequest",
+        "code": {
+          "coding": [{
+            "system": "http://snomed.info/sct",
+            "code": "36228006",
+            "display": "Ophthalmological examination"
+          }],
+          "text": "Annual diabetic eye exam"
+        },
+        "status": "scheduled",
+        "scheduledTiming": {
+          "repeat": {
+            "frequency": 1,
+            "period": 1,
+            "periodUnit": "a"
+          }
+        },
+        "description": "Annual dilated eye examination to screen for diabetic retinopathy"
+      }
+    },
+    {
+      "detail": {
+        "kind": "ServiceRequest",
+        "code": {
+          "coding": [{
+            "system": "http://snomed.info/sct",
+            "code": "401191002",
+            "display": "Diabetic foot examination"
+          }],
+          "text": "Foot examination"
+        },
+        "status": "scheduled",
+        "scheduledTiming": {
+          "repeat": {
+            "frequency": 1,
+            "period": 1,
+            "periodUnit": "a"
+          }
+        },
+        "description": "Annual comprehensive foot examination"
+      }
+    },
+    {
+      "detail": {
+        "kind": "NutritionOrder",
+        "code": {
+          "coding": [{
+            "system": "http://snomed.info/sct",
+            "code": "11816003",
+            "display": "Diet education"
+          }],
+          "text": "Diabetic diet"
+        },
+        "status": "in-progress",
+        "description": "Follow low-carbohydrate diet with emphasis on whole grains, vegetables, and lean proteins. Limit added sugars and processed foods."
+      }
+    },
+    {
+      "detail": {
+        "kind": "ServiceRequest",
+        "code": {
+          "coding": [{
+            "system": "http://snomed.info/sct",
+            "code": "229065009",
+            "display": "Exercise therapy"
+          }],
+          "text": "Physical activity"
+        },
+        "status": "in-progress",
+        "description": "Moderate intensity exercise for 150 minutes per week (e.g., brisk walking, swimming)"
+      }
+    },
+    {
+      "detail": {
+        "kind": "DeviceRequest",
+        "code": {
+          "coding": [{
+            "system": "http://snomed.info/sct",
+            "code": "308113006",
+            "display": "Self-monitoring of blood glucose"
+          }],
+          "text": "Blood glucose monitoring"
+        },
+        "status": "in-progress",
+        "scheduledTiming": {
+          "repeat": {
+            "frequency": 2,
+            "period": 1,
+            "periodUnit": "d"
+          }
+        },
+        "description": "Check fasting blood glucose daily and post-meal glucose as needed"
+      }
+    }
+  ],
+  "note": [{
+    "authorReference": {
+      "reference": "Practitioner/practitioner-primary",
+      "display": "Dr. Sarah Johnson"
+    },
+    "time": "2024-01-15T10:30:00-05:00",
+    "text": "Patient demonstrates good understanding of diabetes management. HbA1c target is <7%. Encourage continued adherence to medication and lifestyle modifications."
+  }]
+}

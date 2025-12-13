@@ -1,0 +1,225 @@
+// FHIRPath Example 15: Working with References
+// Demonstrates reference navigation and resolution patterns
+
+// =====================================================
+// Basic Reference Access
+// =====================================================
+
+// Get reference string
+subject.reference
+
+// Get reference display
+subject.display
+
+// Get reference type
+subject.type
+
+// Get reference identifier
+subject.identifier
+
+// =====================================================
+// Reference Patterns
+// =====================================================
+
+// Literal reference (Patient/123)
+subject.reference
+
+// Logical reference (identifier-based)
+subject.identifier.value
+
+// Contained resource reference (#contained-id)
+subject.reference.startsWith('#')
+
+// =====================================================
+// Extracting Reference Components
+// =====================================================
+
+// Get resource type from reference
+subject.reference.substring(0, subject.reference.indexOf('/'))
+
+// Get resource ID from reference (after the /)
+subject.reference.substring(subject.reference.indexOf('/') + 1)
+
+// Check if reference is to a specific resource type
+subject.reference.startsWith('Patient/')
+
+// =====================================================
+// Common Reference Elements
+// =====================================================
+
+// Patient reference in Observation
+subject
+
+// Performer reference
+performer
+
+// Encounter reference
+encounter
+
+// Author reference
+author
+
+// Requester reference
+requester
+
+// Organization reference
+managingOrganization
+
+// =====================================================
+// Multiple References
+// =====================================================
+
+// All performer references
+performer.reference
+
+// First performer
+performer.first().reference
+
+// Count of performers
+performer.count()
+
+// All performer displays
+performer.display
+
+// =====================================================
+// Reference in Different Resources
+// =====================================================
+
+// MedicationRequest - medication reference
+medicationReference.reference
+
+// DiagnosticReport - result references
+result.reference
+
+// CarePlan - goal references
+goal.reference
+
+// Encounter - participant references
+participant.individual.reference
+
+// =====================================================
+// Checking Reference Existence
+// =====================================================
+
+// Check if subject exists
+subject.exists()
+
+// Check if subject has a reference
+subject.reference.exists()
+
+// Check if reference is empty
+subject.reference.empty()
+
+// =====================================================
+// Working with Contained Resources
+// =====================================================
+
+// Get all contained resources
+contained
+
+// Get contained resource by ID
+contained.where(id = 'med1')
+
+// Get contained medication
+contained.ofType(Medication)
+
+// Get contained resource type
+contained.resourceType
+
+// =====================================================
+// Reference with Identifier
+// =====================================================
+
+// Get identifier from reference
+subject.identifier
+
+// Get identifier system
+subject.identifier.system
+
+// Get identifier value
+subject.identifier.value
+
+// Check if identifier matches
+subject.identifier.where(system = 'http://hospital.example.org/patients').value
+
+// =====================================================
+// Conditional Reference Patterns
+// =====================================================
+
+// Use display if reference is missing
+iif(subject.reference.exists(), subject.reference, subject.display)
+
+// Get display or fallback to reference
+subject.display | subject.reference
+
+// =====================================================
+// Reference Lists
+// =====================================================
+
+// Get all references from a list
+hasMember.reference
+
+// Filter references by type
+hasMember.where(reference.startsWith('Observation/'))
+
+// Get all reference IDs
+hasMember.reference.substring(hasMember.reference.indexOf('/') + 1)
+
+// =====================================================
+// Practitioner References
+// =====================================================
+
+// General practitioner (Patient resource)
+generalPractitioner.reference
+
+// Practitioner from performer
+performer.actor.reference
+
+// Practitioner display
+performer.actor.display
+
+// =====================================================
+// Organization References
+// =====================================================
+
+// Managing organization
+managingOrganization.reference
+
+// Custodian organization
+custodian.reference
+
+// Performer organization
+performer.where(actor.type = 'Organization').actor.reference
+
+// =====================================================
+// Location References
+// =====================================================
+
+// Location reference
+location.reference
+
+// Location in encounter
+location.location.reference
+
+// =====================================================
+// Device References
+// =====================================================
+
+// Device reference in observation
+device.reference
+
+// Device display
+device.display
+
+// =====================================================
+// Reference Validation Patterns
+// =====================================================
+
+// Check reference format (type/id)
+subject.reference.matches('^[A-Za-z]+/[A-Za-z0-9\\-\\.]+$')
+
+// Check for UUID reference
+subject.reference.matches('^urn:uuid:[0-9a-f\\-]+$')
+
+// Check for URL reference
+subject.reference.startsWith('http')

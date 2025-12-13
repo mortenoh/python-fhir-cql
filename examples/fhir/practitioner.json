@@ -1,0 +1,123 @@
+{
+  "resourceType": "Practitioner",
+  "id": "practitioner-primary",
+  "meta": {
+    "profile": ["http://hl7.org/fhir/us/core/StructureDefinition/us-core-practitioner"]
+  },
+  "identifier": [
+    {
+      "system": "http://hl7.org/fhir/sid/us-npi",
+      "value": "1234567890"
+    },
+    {
+      "system": "http://hospital.example.org/practitioners",
+      "value": "PRAC-001"
+    }
+  ],
+  "active": true,
+  "name": [{
+    "use": "official",
+    "family": "Johnson",
+    "given": ["Sarah", "Elizabeth"],
+    "prefix": ["Dr."],
+    "suffix": ["MD", "FACP"]
+  }],
+  "telecom": [
+    {
+      "system": "phone",
+      "value": "555-123-4567",
+      "use": "work"
+    },
+    {
+      "system": "email",
+      "value": "sarah.johnson@hospital.example.org",
+      "use": "work"
+    },
+    {
+      "system": "pager",
+      "value": "555-PAGE-001",
+      "use": "work"
+    }
+  ],
+  "address": [{
+    "use": "work",
+    "type": "physical",
+    "line": ["123 Medical Center Drive", "Suite 400"],
+    "city": "Springfield",
+    "state": "IL",
+    "postalCode": "62701",
+    "country": "USA"
+  }],
+  "gender": "female",
+  "birthDate": "1975-03-15",
+  "qualification": [
+    {
+      "identifier": [{
+        "system": "http://example.org/medical-licenses",
+        "value": "IL-MD-123456"
+      }],
+      "code": {
+        "coding": [{
+          "system": "http://terminology.hl7.org/CodeSystem/v2-0360",
+          "code": "MD",
+          "display": "Doctor of Medicine"
+        }],
+        "text": "Medical Doctor"
+      },
+      "period": {
+        "start": "2003-06-15"
+      },
+      "issuer": {
+        "display": "Illinois Department of Financial and Professional Regulation"
+      }
+    },
+    {
+      "code": {
+        "coding": [{
+          "system": "http://snomed.info/sct",
+          "code": "419772000",
+          "display": "Family medicine"
+        }],
+        "text": "Board Certified in Internal Medicine"
+      },
+      "period": {
+        "start": "2006-09-01"
+      },
+      "issuer": {
+        "display": "American Board of Internal Medicine"
+      }
+    },
+    {
+      "code": {
+        "coding": [{
+          "system": "http://snomed.info/sct",
+          "code": "394583002",
+          "display": "Endocrinology"
+        }],
+        "text": "Board Certified in Endocrinology"
+      },
+      "period": {
+        "start": "2008-11-15"
+      },
+      "issuer": {
+        "display": "American Board of Internal Medicine"
+      }
+    }
+  ],
+  "communication": [
+    {
+      "coding": [{
+        "system": "urn:ietf:bcp:47",
+        "code": "en",
+        "display": "English"
+      }]
+    },
+    {
+      "coding": [{
+        "system": "urn:ietf:bcp:47",
+        "code": "es",
+        "display": "Spanish"
+      }]
+    }
+  ]
+}

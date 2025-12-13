@@ -1,0 +1,137 @@
+// FHIRPath Example 14: Working with Extensions
+// Demonstrates accessing standard and US Core extensions
+
+// =====================================================
+// Basic Extension Access
+// =====================================================
+
+// Get all extensions on a resource
+extension
+
+// Get extension by URL
+extension.where(url = 'http://hl7.org/fhir/StructureDefinition/patient-birthPlace')
+
+// Get extension value
+extension.where(url = 'http://hl7.org/fhir/StructureDefinition/patient-birthPlace').value
+
+// =====================================================
+// US Core Extensions
+// =====================================================
+
+// US Core Race extension
+extension.where(url = 'http://hl7.org/fhir/us/core/StructureDefinition/us-core-race')
+
+// Get race category from ombCategory sub-extension
+extension.where(url = 'http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'ombCategory').value.coding.display
+
+// Get race text from text sub-extension
+extension.where(url = 'http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'text').value
+
+// US Core Ethnicity extension
+extension.where(url = 'http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity')
+
+// Get ethnicity category
+extension.where(url = 'http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity').extension.where(url = 'ombCategory').value.coding.display
+
+// US Core Birth Sex extension
+extension.where(url = 'http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex').value
+
+// =====================================================
+// Nested Extensions
+// =====================================================
+
+// Access nested extension structure
+extension.extension
+
+// Get all sub-extension URLs
+extension.extension.url
+
+// Get specific nested extension
+extension.where(url = 'http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'detailed').value
+
+// =====================================================
+// Extension on Elements (modifierExtension)
+// =====================================================
+
+// Modifier extensions (change meaning of element)
+modifierExtension
+
+// Check for specific modifier extension
+modifierExtension.where(url = 'http://example.org/fhir/StructureDefinition/someModifier').exists()
+
+// =====================================================
+// Extensions on Nested Elements
+// =====================================================
+
+// Extensions on name element
+name.extension
+
+// Extensions on address element
+address.extension
+
+// Data absent reason extension on element
+value.extension.where(url = 'http://hl7.org/fhir/StructureDefinition/data-absent-reason').value
+
+// =====================================================
+// Common FHIR Extensions
+// =====================================================
+
+// Patient birth place
+extension.where(url = 'http://hl7.org/fhir/StructureDefinition/patient-birthPlace').value.as(Address)
+
+// Patient nationality
+extension.where(url = 'http://hl7.org/fhir/StructureDefinition/patient-nationality').extension.where(url = 'code').value
+
+// Preferred language
+communication.where(preferred = true).language
+
+// =====================================================
+// Extension Value Types
+// =====================================================
+
+// String extension value
+extension.value.as(string)
+
+// Code extension value
+extension.value.as(code)
+
+// Coding extension value
+extension.value.as(Coding)
+
+// CodeableConcept extension value
+extension.value.as(CodeableConcept)
+
+// Boolean extension value
+extension.value.as(boolean)
+
+// Integer extension value
+extension.value.as(integer)
+
+// DateTime extension value
+extension.value.as(dateTime)
+
+// =====================================================
+// Checking Extension Existence
+// =====================================================
+
+// Check if extension exists
+extension.where(url = 'http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').exists()
+
+// Check if extension has value
+extension.where(url = 'http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').value.exists()
+
+// Count extensions
+extension.count()
+
+// =====================================================
+// Complex Extension Patterns
+// =====================================================
+
+// Get all race categories (multiple ombCategory extensions possible)
+extension.where(url = 'http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'ombCategory').value.coding
+
+// Combine race categories into display string
+extension.where(url = 'http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'ombCategory').value.coding.display.join(', ')
+
+// Get detailed race if ombCategory is not specific enough
+extension.where(url = 'http://hl7.org/fhir/us/core/StructureDefinition/us-core-race').extension.where(url = 'detailed').value.coding.display

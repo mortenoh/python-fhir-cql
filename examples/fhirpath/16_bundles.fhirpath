@@ -1,0 +1,253 @@
+// FHIRPath Example 16: Working with Bundles
+// Demonstrates bundle entry traversal and extraction patterns
+
+// =====================================================
+// Basic Bundle Access
+// =====================================================
+
+// Bundle type
+type
+
+// Bundle total (for search results)
+total
+
+// Bundle timestamp
+timestamp
+
+// Bundle identifier
+identifier.value
+
+// =====================================================
+// Accessing Bundle Entries
+// =====================================================
+
+// Get all entries
+entry
+
+// Count of entries
+entry.count()
+
+// Get all resources from entries
+entry.resource
+
+// Get first entry
+entry.first()
+
+// Get first resource
+entry.first().resource
+
+// =====================================================
+// Filtering Entries by Resource Type
+// =====================================================
+
+// Get all Patient resources
+entry.resource.where(resourceType = 'Patient')
+
+// Get all Observation resources
+entry.resource.where(resourceType = 'Observation')
+
+// Get all Condition resources
+entry.resource.where(resourceType = 'Condition')
+
+// Get all MedicationRequest resources
+entry.resource.where(resourceType = 'MedicationRequest')
+
+// Using ofType()
+entry.resource.ofType(Patient)
+
+// =====================================================
+// Entry Metadata
+// =====================================================
+
+// Full URL for each entry
+entry.fullUrl
+
+// Entry request details (for transaction bundles)
+entry.request
+
+// Entry request method
+entry.request.method
+
+// Entry request URL
+entry.request.url
+
+// Entry response details
+entry.response
+
+// Entry response status
+entry.response.status
+
+// Entry search mode (for search bundles)
+entry.search.mode
+
+// Entry search score
+entry.search.score
+
+// =====================================================
+// Search Result Bundles
+// =====================================================
+
+// Get match entries only
+entry.where(search.mode = 'match')
+
+// Get include entries only
+entry.where(search.mode = 'include')
+
+// Get outcome entries only
+entry.where(search.mode = 'outcome')
+
+// Resources from match entries
+entry.where(search.mode = 'match').resource
+
+// =====================================================
+// Transaction/Batch Bundles
+// =====================================================
+
+// POST entries
+entry.where(request.method = 'POST')
+
+// PUT entries
+entry.where(request.method = 'PUT')
+
+// DELETE entries
+entry.where(request.method = 'DELETE')
+
+// GET entries
+entry.where(request.method = 'GET')
+
+// =====================================================
+// Navigating Related Resources
+// =====================================================
+
+// Get Patient resource
+entry.resource.where(resourceType = 'Patient').first()
+
+// Get observations for that patient
+entry.resource.where(resourceType = 'Observation')
+
+// Get patient ID
+entry.resource.where(resourceType = 'Patient').first().id
+
+// Filter observations by patient reference
+entry.resource.where(resourceType = 'Observation').where(subject.reference = 'Patient/patient-diabetic')
+
+// =====================================================
+// Extracting Specific Data from Bundles
+// =====================================================
+
+// Get all observation codes
+entry.resource.where(resourceType = 'Observation').code.coding.code
+
+// Get all observation values
+entry.resource.where(resourceType = 'Observation').value
+
+// Get all condition codes
+entry.resource.where(resourceType = 'Condition').code.coding.code
+
+// Get all medication names
+entry.resource.where(resourceType = 'MedicationRequest').medication.coding.display
+
+// =====================================================
+// Bundle Links (Pagination)
+// =====================================================
+
+// Get all links
+link
+
+// Self link
+link.where(relation = 'self').url
+
+// Next page link
+link.where(relation = 'next').url
+
+// Previous page link
+link.where(relation = 'previous').url
+
+// First page link
+link.where(relation = 'first').url
+
+// Last page link
+link.where(relation = 'last').url
+
+// =====================================================
+// Document Bundles
+// =====================================================
+
+// Get composition (first entry in document bundle)
+entry.first().resource.where(resourceType = 'Composition')
+
+// Get document title
+entry.resource.where(resourceType = 'Composition').title
+
+// Get document sections
+entry.resource.where(resourceType = 'Composition').section
+
+// Get section titles
+entry.resource.where(resourceType = 'Composition').section.title
+
+// =====================================================
+// Collection Bundles
+// =====================================================
+
+// Simple collection of resources
+entry.resource
+
+// Group by resource type
+entry.resource.select(resourceType).distinct()
+
+// Count by resource type
+entry.resource.where(resourceType = 'Observation').count()
+
+// =====================================================
+// Complex Bundle Queries
+// =====================================================
+
+// Get HbA1c observations from bundle
+entry.resource.where(resourceType = 'Observation').where(code.coding.code = '4548-4')
+
+// Get latest observation by date
+entry.resource.where(resourceType = 'Observation').orderBy(effective).last()
+
+// Get active medications
+entry.resource.where(resourceType = 'MedicationRequest').where(status = 'active')
+
+// Get active conditions
+entry.resource.where(resourceType = 'Condition').where(clinicalStatus.coding.code = 'active')
+
+// =====================================================
+// Bundle Validation Patterns
+// =====================================================
+
+// Check bundle type
+type = 'searchset'
+
+// Check if bundle has entries
+entry.exists()
+
+// Check if bundle is empty
+entry.empty()
+
+// Verify all entries have fullUrl
+entry.all(fullUrl.exists())
+
+// Verify all entries have resources
+entry.all(resource.exists())
+
+// =====================================================
+// Aggregate Operations on Bundle
+// =====================================================
+
+// Count resources by type
+entry.resource.resourceType.distinct()
+
+// Sum of observation values (numeric)
+entry.resource.where(resourceType = 'Observation').value.as(Quantity).value.sum()
+
+// Average observation value
+entry.resource.where(resourceType = 'Observation').value.as(Quantity).value.avg()
+
+// Min observation value
+entry.resource.where(resourceType = 'Observation').value.as(Quantity).value.min()
+
+// Max observation value
+entry.resource.where(resourceType = 'Observation').value.as(Quantity).value.max()
