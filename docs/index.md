@@ -90,7 +90,7 @@ greeting = evaluator.evaluate_definition("Greeting")  # 'Hello, CQL!'
 | Phase 6: Quality Measures | Complete | Measure evaluation, populations, stratification |
 | Phase 7: Production | Complete | CLI commands, expression/library caching |
 
-**Current test count: 1190+ passing tests**
+**Current test count: 1225+ passing tests**
 
 ## Requirements
 

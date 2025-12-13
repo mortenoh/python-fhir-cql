@@ -237,7 +237,7 @@ python-fhir-cql/
 │   ├── cli.py            # Unified CLI
 │   ├── cql_cli.py        # CQL CLI
 │   └── fhirpath_cli.py   # FHIRPath CLI
-├── tests/                 # Test suite (1190+ tests)
+├── tests/                 # Test suite (1225+ tests)
 └── docs/                  # Documentation
 ```
 

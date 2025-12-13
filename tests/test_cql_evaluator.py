@@ -3123,3 +3123,27 @@ class TestAggregateClause:
     def test_aggregate_count(self) -> None:
         """Test aggregate clause for counting."""
         pass
+
+
+class TestInstanceSelector:
+    """Test instance selector for creating typed instances."""
+
+    def test_instance_selector_basic(self) -> None:
+        """Test basic instance selector creates dictionary."""
+        result = evaluate("Patient { id: '123', active: true }")
+        assert result == {"resourceType": "Patient", "id": "123", "active": True}
+
+    def test_instance_selector_nested(self) -> None:
+        """Test instance selector with nested values."""
+        result = evaluate("Observation { status: 'final', value: 42 }")
+        assert result == {"resourceType": "Observation", "status": "final", "value": 42}
+
+    def test_instance_selector_with_list(self) -> None:
+        """Test instance selector with list value."""
+        result = evaluate("Patient { given: {'John', 'Doe'} }")
+        assert result == {"resourceType": "Patient", "given": ["John", "Doe"]}
+
+    def test_instance_selector_empty(self) -> None:
+        """Test empty instance selector."""
+        result = evaluate("Patient { : }")
+        assert result == {"resourceType": "Patient"}

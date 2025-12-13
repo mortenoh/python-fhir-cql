@@ -421,6 +421,33 @@ class CQLEvaluatorVisitor(cqlVisitor):
             elements[name] = value
         return CQLTuple(elements=elements)
 
+    def visitInstanceSelectorTerm(self, ctx: cqlParser.InstanceSelectorTermContext) -> dict[str, Any]:
+        """Visit instance selector term."""
+        return self.visit(ctx.instanceSelector())
+
+    def visitInstanceSelector(self, ctx: cqlParser.InstanceSelectorContext) -> dict[str, Any]:
+        """Visit instance selector (TypeName { field1: value1, ... }).
+
+        Creates a dictionary representing a FHIR resource or other typed instance.
+        The type name is stored in 'resourceType' for FHIR resources.
+        """
+        # Get the type name
+        type_spec = ctx.namedTypeSpecifier()
+        type_name = type_spec.getText() if type_spec else "Unknown"
+
+        # Build the instance as a dictionary
+        instance: dict[str, Any] = {"resourceType": type_name}
+
+        # Process element selectors (if any)
+        elements = ctx.instanceElementSelector()
+        if elements:
+            for element in elements:
+                name = self._get_identifier_text(element.referentialIdentifier())
+                value = self.visit(element.expression())
+                instance[name] = value
+
+        return instance
+
     def visitCodeSelectorTerm(self, ctx: cqlParser.CodeSelectorTermContext) -> CQLCode:
         """Visit code selector term."""
         return self.visit(ctx.codeSelector())
