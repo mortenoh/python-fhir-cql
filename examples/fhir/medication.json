@@ -1,0 +1,50 @@
+{
+  "resourceType": "Medication",
+  "id": "medication-001",
+  "status": "active",
+  "code": {
+    "coding": [{
+      "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+      "code": "860975",
+      "display": "Metformin 500 MG Oral Tablet"
+    }],
+    "text": "Metformin 500 mg tablet"
+  },
+  "form": {
+    "coding": [{
+      "system": "http://snomed.info/sct",
+      "code": "385055001",
+      "display": "Tablet"
+    }],
+    "text": "Tablet"
+  },
+  "manufacturer": {
+    "reference": "Organization/pharma-001"
+  },
+  "ingredient": [{
+    "itemCodeableConcept": {
+      "coding": [{
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "code": "6809",
+        "display": "Metformin"
+      }]
+    },
+    "isActive": true,
+    "strength": {
+      "numerator": {
+        "value": 500,
+        "unit": "mg",
+        "system": "http://unitsofmeasure.org",
+        "code": "mg"
+      },
+      "denominator": {
+        "value": 1,
+        "unit": "tablet"
+      }
+    }
+  }],
+  "batch": {
+    "lotNumber": "AB1234-56",
+    "expirationDate": "2026-06-30"
+  }
+}

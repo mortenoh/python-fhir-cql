@@ -1,0 +1,76 @@
+{
+  "vaccines": {
+    "system": "http://hl7.org/fhir/sid/cvx",
+    "codes": [
+      {"code": "197", "display": "Influenza, high-dose, quadrivalent"},
+      {"code": "158", "display": "Influenza, injectable, quadrivalent"},
+      {"code": "141", "display": "Influenza, injectable, quadrivalent, preservative free"},
+      {"code": "208", "display": "COVID-19, mRNA, Pfizer-BioNTech"},
+      {"code": "207", "display": "COVID-19, mRNA, Moderna"},
+      {"code": "212", "display": "COVID-19, viral vector, Janssen"},
+      {"code": "33", "display": "Pneumococcal polysaccharide PPV23"},
+      {"code": "133", "display": "Pneumococcal conjugate PCV13"},
+      {"code": "216", "display": "Pneumococcal conjugate PCV20"},
+      {"code": "03", "display": "MMR (Measles, Mumps, Rubella)"},
+      {"code": "94", "display": "MMRV (Measles, Mumps, Rubella, Varicella)"},
+      {"code": "21", "display": "Varicella (Chickenpox)"},
+      {"code": "121", "display": "Zoster (Shingrix)"},
+      {"code": "45", "display": "Hepatitis B, adult"},
+      {"code": "08", "display": "Hepatitis B, pediatric"},
+      {"code": "52", "display": "Hepatitis A, adult"},
+      {"code": "83", "display": "Hepatitis A, pediatric"},
+      {"code": "104", "display": "Hepatitis A-Hepatitis B combined"},
+      {"code": "62", "display": "HPV, quadrivalent"},
+      {"code": "165", "display": "HPV, 9-valent (Gardasil 9)"},
+      {"code": "115", "display": "Tdap (Tetanus, Diphtheria, Pertussis)"},
+      {"code": "113", "display": "Td (Tetanus, Diphtheria)"},
+      {"code": "20", "display": "DTaP (Diphtheria, Tetanus, Pertussis)"},
+      {"code": "10", "display": "IPV (Inactivated Poliovirus)"},
+      {"code": "114", "display": "Meningococcal MCV4"},
+      {"code": "136", "display": "Meningococcal MenB"},
+      {"code": "140", "display": "Influenza, intranasal, live"},
+      {"code": "187", "display": "Zoster recombinant (Shingrix)"},
+      {"code": "189", "display": "Hepatitis B, CpG adjuvanted (Heplisav-B)"}
+    ]
+  },
+  "sites": {
+    "system": "http://snomed.info/sct",
+    "codes": [
+      {"code": "368208006", "display": "Left upper arm structure"},
+      {"code": "368209003", "display": "Right upper arm structure"},
+      {"code": "61396006", "display": "Left thigh structure"},
+      {"code": "11207009", "display": "Right thigh structure"},
+      {"code": "74964007", "display": "Other body site"}
+    ]
+  },
+  "routes": {
+    "system": "http://terminology.hl7.org/CodeSystem/v3-RouteOfAdministration",
+    "codes": [
+      {"code": "IM", "display": "Injection, intramuscular"},
+      {"code": "SC", "display": "Injection, subcutaneous"},
+      {"code": "ID", "display": "Injection, intradermal"},
+      {"code": "NASINHL", "display": "Inhalation, nasal"}
+    ]
+  },
+  "status_codes": ["completed", "entered-in-error", "not-done"],
+  "status_reasons": {
+    "system": "http://terminology.hl7.org/CodeSystem/v3-ActReason",
+    "codes": [
+      {"code": "IMMUNE", "display": "immunity"},
+      {"code": "MEDPREC", "display": "medical precaution"},
+      {"code": "OSTOCK", "display": "product out of stock"},
+      {"code": "PATOBJ", "display": "patient objection"},
+      {"code": "PHILISOP", "display": "philosophical objection"},
+      {"code": "RELIG", "display": "religious objection"},
+      {"code": "VACEFF", "display": "vaccine efficacy concerns"},
+      {"code": "VACSAF", "display": "vaccine safety concerns"}
+    ]
+  },
+  "funding_sources": {
+    "system": "http://terminology.hl7.org/CodeSystem/immunization-funding-source",
+    "codes": [
+      {"code": "private", "display": "Private"},
+      {"code": "public", "display": "Public"}
+    ]
+  }
+}

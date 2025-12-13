@@ -83,3 +83,29 @@ fhirpath repl
    - `examples/cql/` - CQL library examples
    - `examples/fhir/` - FHIR resource examples
    - `examples/fhirpath/` - FHIRPath expression examples
+   - `examples/postman/` - Postman collection updates
+
+## FHIR Server Requirements
+
+When adding new FHIR server features:
+
+1. **Update Postman Collection**: Always update `examples/postman/fhir-server.postman_collection.json`:
+   - Add requests for new resource types (CRUD operations)
+   - Add requests for new search parameters
+   - Add requests for new operations
+   - Include example request bodies with realistic data
+
+2. **Update Documentation**: Add/update docs in `docs/fhir-server/`:
+   - Resource documentation in `docs/fhir-server/resources/`
+   - Search feature documentation in `docs/fhir-server/search/`
+
+3. **Add Example Resources**: Add JSON examples in `examples/fhir/` for new resource types
+
+4. **Update Generators**: If adding a new resource type:
+   - Create generator in `src/fhir_cql/server/generator/`
+   - Create fixture in `src/fhir_cql/server/generator/fixtures/`
+   - Update `clinical_codes.py` to load fixture
+   - Update `generator/__init__.py` exports
+   - Add to `SUPPORTED_TYPES` in `routes.py`
+   - Add search params in `search.py`
+   - Add to compartments in `compartments.py` if applicable

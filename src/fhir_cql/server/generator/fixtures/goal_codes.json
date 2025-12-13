@@ -1,0 +1,51 @@
+{
+  "goal_descriptions": {
+    "system": "http://snomed.info/sct",
+    "codes": [
+      {"code": "289169006", "display": "Weight loss"},
+      {"code": "135840009", "display": "Blood pressure control"},
+      {"code": "698472009", "display": "Blood glucose control"},
+      {"code": "229065009", "display": "Regular exercise"},
+      {"code": "225323000", "display": "Smoking cessation"},
+      {"code": "226029000", "display": "Healthy diet"},
+      {"code": "182998004", "display": "Stress reduction"},
+      {"code": "418235000", "display": "Cholesterol management"},
+      {"code": "228557008", "display": "Daily activity level"},
+      {"code": "165077006", "display": "HbA1c target"},
+      {"code": "275893003", "display": "Pain management"},
+      {"code": "282309006", "display": "Sleep improvement"},
+      {"code": "392039005", "display": "Medication adherence"},
+      {"code": "698362008", "display": "Self-monitoring of blood glucose"}
+    ]
+  },
+  "achievement_status": {
+    "system": "http://terminology.hl7.org/CodeSystem/goal-achievement",
+    "codes": [
+      {"code": "in-progress", "display": "In Progress"},
+      {"code": "improving", "display": "Improving"},
+      {"code": "worsening", "display": "Worsening"},
+      {"code": "no-change", "display": "No Change"},
+      {"code": "achieved", "display": "Achieved"},
+      {"code": "sustaining", "display": "Sustaining"},
+      {"code": "not-achieved", "display": "Not Achieved"},
+      {"code": "no-progress", "display": "No Progress"},
+      {"code": "not-attainable", "display": "Not Attainable"}
+    ]
+  },
+  "priority": {
+    "system": "http://terminology.hl7.org/CodeSystem/goal-priority",
+    "codes": [
+      {"code": "high-priority", "display": "High Priority"},
+      {"code": "medium-priority", "display": "Medium Priority"},
+      {"code": "low-priority", "display": "Low Priority"}
+    ]
+  },
+  "lifecycle_status": ["proposed", "planned", "accepted", "active", "on-hold", "completed", "cancelled", "entered-in-error", "rejected"],
+  "target_measures": [
+    {"code": "27113001", "display": "Body weight", "unit": "kg", "target_low": 60, "target_high": 80},
+    {"code": "271649006", "display": "Systolic blood pressure", "unit": "mmHg", "target_low": 100, "target_high": 130},
+    {"code": "271650006", "display": "Diastolic blood pressure", "unit": "mmHg", "target_low": 60, "target_high": 80},
+    {"code": "43396009", "display": "Hemoglobin A1c", "unit": "%", "target_low": 5.0, "target_high": 7.0},
+    {"code": "102659003", "display": "Fasting blood glucose", "unit": "mg/dL", "target_low": 70, "target_high": 100}
+  ]
+}

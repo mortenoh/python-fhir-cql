@@ -1,0 +1,109 @@
+{
+  "resourceType": "Measure",
+  "id": "measure-001",
+  "url": "http://example.org/fhir/Measure/DiabetesHbA1c",
+  "identifier": [{
+    "system": "http://example.org/fhir/measure-identifier",
+    "value": "CMS122"
+  }],
+  "version": "1.0.0",
+  "name": "DiabetesHbA1cControl",
+  "title": "Diabetes: Hemoglobin A1c Poor Control",
+  "status": "active",
+  "experimental": false,
+  "date": "2024-01-01",
+  "publisher": "Example Healthcare Organization",
+  "description": "Percentage of patients 18-75 years of age with diabetes who had hemoglobin A1c > 9.0% during the measurement period.",
+  "purpose": "This measure identifies patients with poor glycemic control who may need additional intervention.",
+  "effectivePeriod": {
+    "start": "2024-01-01",
+    "end": "2024-12-31"
+  },
+  "library": [
+    "http://example.org/fhir/Library/DiabetesHbA1c"
+  ],
+  "scoring": {
+    "coding": [{
+      "system": "http://terminology.hl7.org/CodeSystem/measure-scoring",
+      "code": "proportion",
+      "display": "Proportion"
+    }]
+  },
+  "type": [{
+    "coding": [{
+      "system": "http://terminology.hl7.org/CodeSystem/measure-type",
+      "code": "outcome",
+      "display": "Outcome"
+    }]
+  }],
+  "improvementNotation": {
+    "coding": [{
+      "system": "http://terminology.hl7.org/CodeSystem/measure-improvement-notation",
+      "code": "decrease",
+      "display": "Decreased score indicates improvement"
+    }]
+  },
+  "group": [{
+    "code": {
+      "coding": [{
+        "system": "http://example.org/fhir/measure-group",
+        "code": "main-group",
+        "display": "Main Population Group"
+      }]
+    },
+    "population": [
+      {
+        "code": {
+          "coding": [{
+            "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+            "code": "initial-population",
+            "display": "Initial Population"
+          }]
+        },
+        "criteria": {
+          "language": "text/cql-identifier",
+          "expression": "InitialPopulation"
+        }
+      },
+      {
+        "code": {
+          "coding": [{
+            "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+            "code": "denominator",
+            "display": "Denominator"
+          }]
+        },
+        "criteria": {
+          "language": "text/cql-identifier",
+          "expression": "Denominator"
+        }
+      },
+      {
+        "code": {
+          "coding": [{
+            "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+            "code": "denominator-exclusion",
+            "display": "Denominator Exclusion"
+          }]
+        },
+        "criteria": {
+          "language": "text/cql-identifier",
+          "expression": "DenominatorExclusion"
+        }
+      },
+      {
+        "code": {
+          "coding": [{
+            "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+            "code": "numerator",
+            "display": "Numerator"
+          }]
+        },
+        "criteria": {
+          "language": "text/cql-identifier",
+          "expression": "Numerator"
+        }
+      }
+    ]
+  }]
+}

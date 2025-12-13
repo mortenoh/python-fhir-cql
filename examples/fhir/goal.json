@@ -1,0 +1,53 @@
+{
+  "resourceType": "Goal",
+  "id": "goal-001",
+  "lifecycleStatus": "active",
+  "achievementStatus": {
+    "coding": [{
+      "system": "http://terminology.hl7.org/CodeSystem/goal-achievement",
+      "code": "in-progress",
+      "display": "In Progress"
+    }]
+  },
+  "priority": {
+    "coding": [{
+      "system": "http://terminology.hl7.org/CodeSystem/goal-priority",
+      "code": "high-priority",
+      "display": "High Priority"
+    }]
+  },
+  "description": {
+    "coding": [{
+      "system": "http://snomed.info/sct",
+      "code": "698472009",
+      "display": "Blood glucose control"
+    }],
+    "text": "Maintain HbA1c below 7%"
+  },
+  "subject": {
+    "reference": "Patient/patient-001"
+  },
+  "startDate": "2024-01-01",
+  "target": [{
+    "measure": {
+      "coding": [{
+        "system": "http://loinc.org",
+        "code": "4548-4",
+        "display": "Hemoglobin A1c"
+      }]
+    },
+    "detailQuantity": {
+      "value": 7,
+      "unit": "%",
+      "system": "http://unitsofmeasure.org",
+      "code": "%"
+    },
+    "dueDate": "2024-12-31"
+  }],
+  "expressedBy": {
+    "reference": "Practitioner/practitioner-001"
+  },
+  "note": [{
+    "text": "Patient is motivated and engaged in diabetes management"
+  }]
+}

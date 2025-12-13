@@ -8,15 +8,25 @@ from typing import Any
 
 from faker import Faker
 
+from .allergy_intolerance import AllergyIntoleranceGenerator
 from .base import FHIRResourceGenerator
+from .careplan import CarePlanGenerator
 from .condition import ConditionGenerator
+from .diagnostic_report import DiagnosticReportGenerator
+from .document_reference import DocumentReferenceGenerator
 from .encounter import EncounterGenerator
+from .goal import GoalGenerator
+from .immunization import ImmunizationGenerator
+from .measure import MeasureGenerator
+from .measure_report import MeasureReportGenerator
+from .medication import MedicationGenerator
 from .medication_request import MedicationRequestGenerator
 from .observation import ObservationGenerator
 from .organization import OrganizationGenerator
 from .patient import PatientGenerator
 from .practitioner import PractitionerGenerator
 from .procedure import ProcedureGenerator
+from .service_request import ServiceRequestGenerator
 
 
 class PatientRecordGenerator:
@@ -168,5 +178,15 @@ __all__ = [
     "ObservationGenerator",
     "MedicationRequestGenerator",
     "ProcedureGenerator",
+    "DiagnosticReportGenerator",
+    "AllergyIntoleranceGenerator",
+    "ImmunizationGenerator",
+    "CarePlanGenerator",
+    "GoalGenerator",
+    "ServiceRequestGenerator",
+    "DocumentReferenceGenerator",
+    "MedicationGenerator",
+    "MeasureGenerator",
+    "MeasureReportGenerator",
     "PatientRecordGenerator",
 ]

@@ -1,0 +1,89 @@
+{
+  "allergens": {
+    "medication": {
+      "system": "http://snomed.info/sct",
+      "codes": [
+        {"code": "91936005", "display": "Penicillin allergy"},
+        {"code": "294505008", "display": "Amoxicillin allergy"},
+        {"code": "294532003", "display": "Sulfonamide allergy"},
+        {"code": "293586001", "display": "Aspirin allergy"},
+        {"code": "294306009", "display": "Ibuprofen allergy"},
+        {"code": "419511003", "display": "Propensity to adverse reactions to drug"},
+        {"code": "418634005", "display": "Allergic reaction to substance"},
+        {"code": "293104008", "display": "Adverse reaction to penicillin"},
+        {"code": "419199007", "display": "Allergy to substance"},
+        {"code": "416098002", "display": "Drug allergy"}
+      ]
+    },
+    "food": {
+      "system": "http://snomed.info/sct",
+      "codes": [
+        {"code": "91935009", "display": "Allergy to peanuts"},
+        {"code": "91934008", "display": "Allergy to tree nuts"},
+        {"code": "91930004", "display": "Allergy to eggs"},
+        {"code": "91931000", "display": "Allergy to fish"},
+        {"code": "91932007", "display": "Allergy to shellfish"},
+        {"code": "91933002", "display": "Allergy to wheat"},
+        {"code": "91937001", "display": "Allergy to soy"},
+        {"code": "425525006", "display": "Allergy to dairy products"},
+        {"code": "417532002", "display": "Allergy to lactose"},
+        {"code": "300913006", "display": "Allergy to sesame"}
+      ]
+    },
+    "environment": {
+      "system": "http://snomed.info/sct",
+      "codes": [
+        {"code": "418689008", "display": "Allergy to grass pollen"},
+        {"code": "419474003", "display": "Allergy to tree pollen"},
+        {"code": "232350006", "display": "House dust mite allergy"},
+        {"code": "232346004", "display": "Cat dander allergy"},
+        {"code": "232347008", "display": "Dog dander allergy"},
+        {"code": "300911008", "display": "Allergy to mold"},
+        {"code": "300910009", "display": "Allergy to insect venom"},
+        {"code": "418038007", "display": "Propensity to adverse reactions to bee venom"},
+        {"code": "441634002", "display": "Allergy to latex"}
+      ]
+    }
+  },
+  "reactions": {
+    "system": "http://snomed.info/sct",
+    "codes": [
+      {"code": "39579001", "display": "Anaphylaxis", "severity": "severe"},
+      {"code": "271807003", "display": "Skin rash", "severity": "mild"},
+      {"code": "126485001", "display": "Urticaria", "severity": "mild"},
+      {"code": "267036007", "display": "Dyspnea", "severity": "moderate"},
+      {"code": "62315008", "display": "Diarrhea", "severity": "mild"},
+      {"code": "422587007", "display": "Nausea", "severity": "mild"},
+      {"code": "422400008", "display": "Vomiting", "severity": "moderate"},
+      {"code": "49727002", "display": "Cough", "severity": "mild"},
+      {"code": "247472004", "display": "Wheezing", "severity": "moderate"},
+      {"code": "703630003", "display": "Red eye", "severity": "mild"},
+      {"code": "418290006", "display": "Itching", "severity": "mild"},
+      {"code": "23924001", "display": "Swelling", "severity": "moderate"},
+      {"code": "271757001", "display": "Facial swelling", "severity": "severe"},
+      {"code": "25064002", "display": "Headache", "severity": "mild"},
+      {"code": "418363000", "display": "Throat tightness", "severity": "severe"}
+    ]
+  },
+  "categories": ["food", "medication", "environment", "biologic"],
+  "criticalities": ["low", "high", "unable-to-assess"],
+  "clinical_status": {
+    "system": "http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical",
+    "codes": [
+      {"code": "active", "display": "Active"},
+      {"code": "inactive", "display": "Inactive"},
+      {"code": "resolved", "display": "Resolved"}
+    ]
+  },
+  "verification_status": {
+    "system": "http://terminology.hl7.org/CodeSystem/allergyintolerance-verification",
+    "codes": [
+      {"code": "unconfirmed", "display": "Unconfirmed"},
+      {"code": "presumed", "display": "Presumed"},
+      {"code": "confirmed", "display": "Confirmed"},
+      {"code": "refuted", "display": "Refuted"},
+      {"code": "entered-in-error", "display": "Entered in Error"}
+    ]
+  },
+  "types": ["allergy", "intolerance"]
+}

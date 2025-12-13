@@ -29,6 +29,7 @@ PATIENT_COMPARTMENT: dict[str, list[str]] = {
     "RiskAssessment": ["patient", "subject"],
     "FamilyMemberHistory": ["patient"],
     "DocumentReference": ["patient", "subject"],
+    "MeasureReport": ["patient", "subject"],
     "Consent": ["patient"],
 }
 
@@ -100,6 +101,13 @@ REFERENCE_PATHS: dict[str, dict[str, list[str]]] = {
         "patient": ["subject.reference"],
         "subject": ["subject.reference"],
     },
+    "DocumentReference": {
+        "patient": ["subject.reference"],
+        "subject": ["subject.reference"],
+        "author": ["author.reference"],
+        "encounter": ["context.encounter.reference"],
+        "custodian": ["custodian.reference"],
+    },
     "Patient": {
         "general-practitioner": ["generalPractitioner.reference"],
         "organization": ["managingOrganization.reference"],
@@ -110,6 +118,15 @@ REFERENCE_PATHS: dict[str, dict[str, list[str]]] = {
     },
     "Organization": {
         "partof": ["partOf.reference"],
+    },
+    "MeasureReport": {
+        "patient": ["subject.reference"],
+        "subject": ["subject.reference"],
+        "reporter": ["reporter.reference"],
+        "evaluated-resource": ["evaluatedResource.reference"],
+    },
+    "Measure": {
+        # Measure is a definitional resource, no patient references
     },
 }
 

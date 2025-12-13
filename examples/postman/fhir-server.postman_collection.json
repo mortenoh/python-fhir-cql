@@ -1,0 +1,746 @@
+{
+  "info": {
+    "name": "FHIR Server API",
+    "description": "Comprehensive Postman collection for the python-fhir-cql FHIR R4 server.\n\nSupports all resource types, search parameters, and advanced operations.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "patientId",
+      "value": "patient-001",
+      "type": "string"
+    },
+    {
+      "key": "practitionerId",
+      "value": "practitioner-001",
+      "type": "string"
+    },
+    {
+      "key": "organizationId",
+      "value": "org-001",
+      "type": "string"
+    },
+    {
+      "key": "encounterId",
+      "value": "encounter-001",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Capability",
+      "item": [
+        {
+          "name": "Get Capability Statement",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/metadata"
+          }
+        },
+        {
+          "name": "Get SMART Configuration",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/.well-known/smart-configuration"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patient",
+      "item": [
+        {
+          "name": "Create Patient",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Patient\",\n  \"id\": \"{{patientId}}\",\n  \"active\": true,\n  \"name\": [{\n    \"use\": \"official\",\n    \"family\": \"Smith\",\n    \"given\": [\"John\", \"Robert\"]\n  }],\n  \"gender\": \"male\",\n  \"birthDate\": \"1970-01-15\",\n  \"address\": [{\n    \"use\": \"home\",\n    \"line\": [\"123 Main St\"],\n    \"city\": \"Springfield\",\n    \"state\": \"IL\",\n    \"postalCode\": \"62701\"\n  }],\n  \"telecom\": [{\n    \"system\": \"phone\",\n    \"value\": \"555-123-4567\",\n    \"use\": \"home\"\n  }]\n}"
+            },
+            "url": "{{baseUrl}}/Patient"
+          }
+        },
+        {
+          "name": "Read Patient",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/Patient/{{patientId}}"
+          }
+        },
+        {
+          "name": "Search Patients",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Patient?name=Smith&gender=male",
+              "host": ["{{baseUrl}}"],
+              "path": ["Patient"],
+              "query": [
+                {"key": "name", "value": "Smith"},
+                {"key": "gender", "value": "male"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Patient $everything",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/Patient/{{patientId}}/$everything"
+          }
+        },
+        {
+          "name": "Patient History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/Patient/{{patientId}}/_history"
+          }
+        },
+        {
+          "name": "Update Patient",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Patient\",\n  \"id\": \"{{patientId}}\",\n  \"active\": true,\n  \"name\": [{\n    \"use\": \"official\",\n    \"family\": \"Smith\",\n    \"given\": [\"John\", \"Robert\"]\n  }],\n  \"gender\": \"male\",\n  \"birthDate\": \"1970-01-15\",\n  \"telecom\": [{\n    \"system\": \"phone\",\n    \"value\": \"555-999-8888\",\n    \"use\": \"mobile\"\n  }]\n}"
+            },
+            "url": "{{baseUrl}}/Patient/{{patientId}}"
+          }
+        },
+        {
+          "name": "Delete Patient",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/Patient/{{patientId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Practitioner",
+      "item": [
+        {
+          "name": "Create Practitioner",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Practitioner\",\n  \"id\": \"{{practitionerId}}\",\n  \"active\": true,\n  \"name\": [{\n    \"use\": \"official\",\n    \"family\": \"Wilson\",\n    \"given\": [\"Sarah\"],\n    \"prefix\": [\"Dr.\"]\n  }],\n  \"qualification\": [{\n    \"code\": {\n      \"coding\": [{\n        \"system\": \"http://terminology.hl7.org/CodeSystem/v2-0360\",\n        \"code\": \"MD\",\n        \"display\": \"Doctor of Medicine\"\n      }]\n    }\n  }]\n}"
+            },
+            "url": "{{baseUrl}}/Practitioner"
+          }
+        },
+        {
+          "name": "Search Practitioners",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/Practitioner?name=Wilson"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Organization",
+      "item": [
+        {
+          "name": "Create Organization",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Organization\",\n  \"id\": \"{{organizationId}}\",\n  \"active\": true,\n  \"name\": \"Springfield General Hospital\",\n  \"type\": [{\n    \"coding\": [{\n      \"system\": \"http://terminology.hl7.org/CodeSystem/organization-type\",\n      \"code\": \"prov\",\n      \"display\": \"Healthcare Provider\"\n    }]\n  }],\n  \"address\": [{\n    \"line\": [\"100 Hospital Drive\"],\n    \"city\": \"Springfield\",\n    \"state\": \"IL\",\n    \"postalCode\": \"62702\"\n  }]\n}"
+            },
+            "url": "{{baseUrl}}/Organization"
+          }
+        },
+        {
+          "name": "Search Organizations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/Organization?name=Springfield"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Encounter",
+      "item": [
+        {
+          "name": "Create Encounter",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Encounter\",\n  \"id\": \"{{encounterId}}\",\n  \"status\": \"finished\",\n  \"class\": {\n    \"system\": \"http://terminology.hl7.org/CodeSystem/v3-ActCode\",\n    \"code\": \"AMB\",\n    \"display\": \"ambulatory\"\n  },\n  \"type\": [{\n    \"coding\": [{\n      \"system\": \"http://snomed.info/sct\",\n      \"code\": \"308335008\",\n      \"display\": \"Patient encounter procedure\"\n    }]\n  }],\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"participant\": [{\n    \"individual\": {\"reference\": \"Practitioner/{{practitionerId}}\"}\n  }],\n  \"period\": {\n    \"start\": \"2024-06-15T09:00:00Z\",\n    \"end\": \"2024-06-15T10:00:00Z\"\n  },\n  \"serviceProvider\": {\"reference\": \"Organization/{{organizationId}}\"}\n}"
+            },
+            "url": "{{baseUrl}}/Encounter"
+          }
+        },
+        {
+          "name": "Search Encounters by Patient",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/Encounter?patient=Patient/{{patientId}}"
+          }
+        },
+        {
+          "name": "Patient Compartment - Encounters",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/Patient/{{patientId}}/Encounter"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Condition",
+      "item": [
+        {
+          "name": "Create Condition",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Condition\",\n  \"clinicalStatus\": {\n    \"coding\": [{\n      \"system\": \"http://terminology.hl7.org/CodeSystem/condition-clinical\",\n      \"code\": \"active\"\n    }]\n  },\n  \"verificationStatus\": {\n    \"coding\": [{\n      \"system\": \"http://terminology.hl7.org/CodeSystem/condition-ver-status\",\n      \"code\": \"confirmed\"\n    }]\n  },\n  \"code\": {\n    \"coding\": [{\n      \"system\": \"http://snomed.info/sct\",\n      \"code\": \"44054006\",\n      \"display\": \"Type 2 diabetes mellitus\"\n    }],\n    \"text\": \"Type 2 diabetes mellitus\"\n  },\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"onsetDateTime\": \"2020-01-15\"\n}"
+            },
+            "url": "{{baseUrl}}/Condition"
+          }
+        },
+        {
+          "name": "Search Conditions by Code",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/Condition?code=http://snomed.info/sct|44054006"
+          }
+        },
+        {
+          "name": "Search with _include",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/Condition?patient=Patient/{{patientId}}&_include=Condition:subject"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Observation",
+      "item": [
+        {
+          "name": "Create Blood Pressure",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Observation\",\n  \"status\": \"final\",\n  \"category\": [{\n    \"coding\": [{\n      \"system\": \"http://terminology.hl7.org/CodeSystem/observation-category\",\n      \"code\": \"vital-signs\"\n    }]\n  }],\n  \"code\": {\n    \"coding\": [{\n      \"system\": \"http://loinc.org\",\n      \"code\": \"85354-9\",\n      \"display\": \"Blood pressure panel\"\n    }]\n  },\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"effectiveDateTime\": \"2024-06-15T09:30:00Z\",\n  \"component\": [\n    {\n      \"code\": {\n        \"coding\": [{\n          \"system\": \"http://loinc.org\",\n          \"code\": \"8480-6\",\n          \"display\": \"Systolic blood pressure\"\n        }]\n      },\n      \"valueQuantity\": {\n        \"value\": 120,\n        \"unit\": \"mmHg\",\n        \"system\": \"http://unitsofmeasure.org\",\n        \"code\": \"mm[Hg]\"\n      }\n    },\n    {\n      \"code\": {\n        \"coding\": [{\n          \"system\": \"http://loinc.org\",\n          \"code\": \"8462-4\",\n          \"display\": \"Diastolic blood pressure\"\n        }]\n      },\n      \"valueQuantity\": {\n        \"value\": 80,\n        \"unit\": \"mmHg\",\n        \"system\": \"http://unitsofmeasure.org\",\n        \"code\": \"mm[Hg]\"\n      }\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/Observation"
+          }
+        },
+        {
+          "name": "Create Lab Result (HbA1c)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Observation\",\n  \"status\": \"final\",\n  \"category\": [{\n    \"coding\": [{\n      \"system\": \"http://terminology.hl7.org/CodeSystem/observation-category\",\n      \"code\": \"laboratory\"\n    }]\n  }],\n  \"code\": {\n    \"coding\": [{\n      \"system\": \"http://loinc.org\",\n      \"code\": \"4548-4\",\n      \"display\": \"Hemoglobin A1c\"\n    }]\n  },\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"effectiveDateTime\": \"2024-06-15T09:30:00Z\",\n  \"valueQuantity\": {\n    \"value\": 7.2,\n    \"unit\": \"%\",\n    \"system\": \"http://unitsofmeasure.org\",\n    \"code\": \"%\"\n  }\n}"
+            },
+            "url": "{{baseUrl}}/Observation"
+          }
+        },
+        {
+          "name": "Search Observations by Category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/Observation?category=vital-signs&patient=Patient/{{patientId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "MedicationRequest",
+      "item": [
+        {
+          "name": "Create MedicationRequest",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"MedicationRequest\",\n  \"status\": \"active\",\n  \"intent\": \"order\",\n  \"medicationCodeableConcept\": {\n    \"coding\": [{\n      \"system\": \"http://www.nlm.nih.gov/research/umls/rxnorm\",\n      \"code\": \"860975\",\n      \"display\": \"Metformin 500 MG Oral Tablet\"\n    }]\n  },\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"requester\": {\"reference\": \"Practitioner/{{practitionerId}}\"},\n  \"authoredOn\": \"2024-06-15\",\n  \"dosageInstruction\": [{\n    \"text\": \"Take 1 tablet twice daily with meals\",\n    \"timing\": {\n      \"repeat\": {\n        \"frequency\": 2,\n        \"period\": 1,\n        \"periodUnit\": \"d\"\n      }\n    },\n    \"doseAndRate\": [{\n      \"doseQuantity\": {\n        \"value\": 500,\n        \"unit\": \"mg\"\n      }\n    }]\n  }]\n}"
+            },
+            "url": "{{baseUrl}}/MedicationRequest"
+          }
+        },
+        {
+          "name": "Search Active Medications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/MedicationRequest?patient=Patient/{{patientId}}&status=active"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Procedure",
+      "item": [
+        {
+          "name": "Create Procedure",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Procedure\",\n  \"status\": \"completed\",\n  \"code\": {\n    \"coding\": [{\n      \"system\": \"http://snomed.info/sct\",\n      \"code\": \"387713003\",\n      \"display\": \"Appendectomy\"\n    }]\n  },\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"encounter\": {\"reference\": \"Encounter/{{encounterId}}\"},\n  \"performedDateTime\": \"2024-06-15T10:00:00Z\",\n  \"performer\": [{\n    \"actor\": {\"reference\": \"Practitioner/{{practitionerId}}\"}\n  }]\n}"
+            },
+            "url": "{{baseUrl}}/Procedure"
+          }
+        },
+        {
+          "name": "Search Procedures",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/Procedure?patient=Patient/{{patientId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "DiagnosticReport",
+      "item": [
+        {
+          "name": "Create DiagnosticReport",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"DiagnosticReport\",\n  \"status\": \"final\",\n  \"category\": [{\n    \"coding\": [{\n      \"system\": \"http://terminology.hl7.org/CodeSystem/v2-0074\",\n      \"code\": \"LAB\",\n      \"display\": \"Laboratory\"\n    }]\n  }],\n  \"code\": {\n    \"coding\": [{\n      \"system\": \"http://loinc.org\",\n      \"code\": \"58410-2\",\n      \"display\": \"CBC panel\"\n    }]\n  },\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"effectiveDateTime\": \"2024-06-15T09:30:00Z\",\n  \"issued\": \"2024-06-15T11:00:00Z\",\n  \"conclusion\": \"All values within normal limits\"\n}"
+            },
+            "url": "{{baseUrl}}/DiagnosticReport"
+          }
+        },
+        {
+          "name": "Search DiagnosticReports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/DiagnosticReport?patient=Patient/{{patientId}}&category=LAB"
+          }
+        }
+      ]
+    },
+    {
+      "name": "AllergyIntolerance",
+      "item": [
+        {
+          "name": "Create Allergy",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"AllergyIntolerance\",\n  \"clinicalStatus\": {\n    \"coding\": [{\n      \"system\": \"http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical\",\n      \"code\": \"active\"\n    }]\n  },\n  \"verificationStatus\": {\n    \"coding\": [{\n      \"system\": \"http://terminology.hl7.org/CodeSystem/allergyintolerance-verification\",\n      \"code\": \"confirmed\"\n    }]\n  },\n  \"type\": \"allergy\",\n  \"category\": [\"medication\"],\n  \"criticality\": \"high\",\n  \"code\": {\n    \"coding\": [{\n      \"system\": \"http://snomed.info/sct\",\n      \"code\": \"764146007\",\n      \"display\": \"Penicillin\"\n    }]\n  },\n  \"patient\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"reaction\": [{\n    \"manifestation\": [{\n      \"coding\": [{\n        \"system\": \"http://snomed.info/sct\",\n        \"code\": \"39579001\",\n        \"display\": \"Anaphylaxis\"\n      }]\n    }],\n    \"severity\": \"severe\"\n  }]\n}"
+            },
+            "url": "{{baseUrl}}/AllergyIntolerance"
+          }
+        },
+        {
+          "name": "Search Allergies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/AllergyIntolerance?patient=Patient/{{patientId}}&criticality=high"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Immunization",
+      "item": [
+        {
+          "name": "Create Immunization",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Immunization\",\n  \"status\": \"completed\",\n  \"vaccineCode\": {\n    \"coding\": [{\n      \"system\": \"http://hl7.org/fhir/sid/cvx\",\n      \"code\": \"197\",\n      \"display\": \"Influenza, high-dose, quadrivalent\"\n    }]\n  },\n  \"patient\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"occurrenceDateTime\": \"2024-10-15T10:00:00Z\",\n  \"lotNumber\": \"AAJN11K\",\n  \"site\": {\n    \"coding\": [{\n      \"system\": \"http://snomed.info/sct\",\n      \"code\": \"368208006\",\n      \"display\": \"Left upper arm\"\n    }]\n  },\n  \"route\": {\n    \"coding\": [{\n      \"system\": \"http://terminology.hl7.org/CodeSystem/v3-RouteOfAdministration\",\n      \"code\": \"IM\",\n      \"display\": \"Intramuscular\"\n    }]\n  }\n}"
+            },
+            "url": "{{baseUrl}}/Immunization"
+          }
+        },
+        {
+          "name": "Search Immunizations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/Immunization?patient=Patient/{{patientId}}&status=completed"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CarePlan",
+      "item": [
+        {
+          "name": "Create CarePlan",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"CarePlan\",\n  \"status\": \"active\",\n  \"intent\": \"plan\",\n  \"title\": \"Diabetes Management Plan\",\n  \"description\": \"Comprehensive care plan for diabetes management\",\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"period\": {\n    \"start\": \"2024-01-01\"\n  },\n  \"category\": [{\n    \"coding\": [{\n      \"system\": \"http://hl7.org/fhir/us/core/CodeSystem/careplan-category\",\n      \"code\": \"assess-plan\"\n    }]\n  }],\n  \"activity\": [{\n    \"detail\": {\n      \"status\": \"in-progress\",\n      \"code\": {\n        \"coding\": [{\n          \"system\": \"http://snomed.info/sct\",\n          \"code\": \"698358001\",\n          \"display\": \"Blood glucose monitoring\"\n        }]\n      }\n    }\n  }]\n}"
+            },
+            "url": "{{baseUrl}}/CarePlan"
+          }
+        },
+        {
+          "name": "Search CarePlans",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/CarePlan?patient=Patient/{{patientId}}&status=active"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Goal",
+      "item": [
+        {
+          "name": "Create Goal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Goal\",\n  \"lifecycleStatus\": \"active\",\n  \"achievementStatus\": {\n    \"coding\": [{\n      \"system\": \"http://terminology.hl7.org/CodeSystem/goal-achievement\",\n      \"code\": \"in-progress\"\n    }]\n  },\n  \"description\": {\n    \"coding\": [{\n      \"system\": \"http://snomed.info/sct\",\n      \"code\": \"698472009\",\n      \"display\": \"Blood glucose control\"\n    }],\n    \"text\": \"Maintain HbA1c below 7%\"\n  },\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"startDate\": \"2024-01-01\",\n  \"target\": [{\n    \"measure\": {\n      \"coding\": [{\n        \"system\": \"http://loinc.org\",\n        \"code\": \"4548-4\",\n        \"display\": \"Hemoglobin A1c\"\n      }]\n    },\n    \"detailQuantity\": {\n      \"value\": 7,\n      \"unit\": \"%\",\n      \"comparator\": \"<\"\n    },\n    \"dueDate\": \"2024-12-31\"\n  }]\n}"
+            },
+            "url": "{{baseUrl}}/Goal"
+          }
+        },
+        {
+          "name": "Search Goals",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/Goal?patient=Patient/{{patientId}}&lifecycle-status=active"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ServiceRequest",
+      "item": [
+        {
+          "name": "Create Lab Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"ServiceRequest\",\n  \"status\": \"active\",\n  \"intent\": \"order\",\n  \"priority\": \"routine\",\n  \"category\": [{\n    \"coding\": [{\n      \"system\": \"http://snomed.info/sct\",\n      \"code\": \"108252007\",\n      \"display\": \"Laboratory procedure\"\n    }]\n  }],\n  \"code\": {\n    \"coding\": [{\n      \"system\": \"http://snomed.info/sct\",\n      \"code\": \"26604007\",\n      \"display\": \"Complete blood count\"\n    }]\n  },\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"requester\": {\"reference\": \"Practitioner/{{practitionerId}}\"},\n  \"authoredOn\": \"2024-06-15\"\n}"
+            },
+            "url": "{{baseUrl}}/ServiceRequest"
+          }
+        },
+        {
+          "name": "Search ServiceRequests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/ServiceRequest?patient=Patient/{{patientId}}&status=active"
+          }
+        }
+      ]
+    },
+    {
+      "name": "DocumentReference",
+      "item": [
+        {
+          "name": "Create DocumentReference",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"DocumentReference\",\n  \"status\": \"current\",\n  \"docStatus\": \"final\",\n  \"type\": {\n    \"coding\": [{\n      \"system\": \"http://loinc.org\",\n      \"code\": \"34117-2\",\n      \"display\": \"History and physical note\"\n    }]\n  },\n  \"category\": [{\n    \"coding\": [{\n      \"system\": \"http://hl7.org/fhir/us/core/CodeSystem/us-core-documentreference-category\",\n      \"code\": \"clinical-note\"\n    }]\n  }],\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"date\": \"2024-06-15T10:30:00Z\",\n  \"author\": [{\"reference\": \"Practitioner/{{practitionerId}}\"}],\n  \"content\": [{\n    \"attachment\": {\n      \"contentType\": \"text/plain\",\n      \"title\": \"History and Physical\"\n    }\n  }]\n}"
+            },
+            "url": "{{baseUrl}}/DocumentReference"
+          }
+        },
+        {
+          "name": "Search Documents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/DocumentReference?patient=Patient/{{patientId}}&category=clinical-note"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Medication",
+      "item": [
+        {
+          "name": "Create Medication",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Medication\",\n  \"status\": \"active\",\n  \"code\": {\n    \"coding\": [{\n      \"system\": \"http://www.nlm.nih.gov/research/umls/rxnorm\",\n      \"code\": \"860975\",\n      \"display\": \"Metformin 500 MG Oral Tablet\"\n    }]\n  },\n  \"form\": {\n    \"coding\": [{\n      \"system\": \"http://snomed.info/sct\",\n      \"code\": \"385055001\",\n      \"display\": \"Tablet\"\n    }]\n  },\n  \"ingredient\": [{\n    \"itemCodeableConcept\": {\n      \"coding\": [{\n        \"system\": \"http://www.nlm.nih.gov/research/umls/rxnorm\",\n        \"code\": \"6809\",\n        \"display\": \"Metformin\"\n      }]\n    },\n    \"isActive\": true,\n    \"strength\": {\n      \"numerator\": {\n        \"value\": 500,\n        \"unit\": \"mg\"\n      },\n      \"denominator\": {\n        \"value\": 1,\n        \"unit\": \"tablet\"\n      }\n    }\n  }]\n}"
+            },
+            "url": "{{baseUrl}}/Medication"
+          }
+        },
+        {
+          "name": "Search Medications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/Medication?status=active"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Measure",
+      "item": [
+        {
+          "name": "Create Measure",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Measure\",\n  \"url\": \"http://example.org/fhir/Measure/DiabetesHbA1c\",\n  \"name\": \"DiabetesHbA1cControl\",\n  \"title\": \"Diabetes: Hemoglobin A1c Poor Control\",\n  \"status\": \"active\",\n  \"date\": \"2024-01-01\",\n  \"publisher\": \"Example Healthcare\",\n  \"description\": \"Percentage of patients with diabetes who had HbA1c > 9%\",\n  \"scoring\": {\n    \"coding\": [{\n      \"system\": \"http://terminology.hl7.org/CodeSystem/measure-scoring\",\n      \"code\": \"proportion\"\n    }]\n  },\n  \"type\": [{\n    \"coding\": [{\n      \"system\": \"http://terminology.hl7.org/CodeSystem/measure-type\",\n      \"code\": \"outcome\"\n    }]\n  }],\n  \"improvementNotation\": {\n    \"coding\": [{\n      \"system\": \"http://terminology.hl7.org/CodeSystem/measure-improvement-notation\",\n      \"code\": \"decrease\"\n    }]\n  },\n  \"group\": [{\n    \"population\": [\n      {\n        \"code\": {\n          \"coding\": [{\n            \"system\": \"http://terminology.hl7.org/CodeSystem/measure-population\",\n            \"code\": \"initial-population\"\n          }]\n        },\n        \"criteria\": {\n          \"language\": \"text/cql-identifier\",\n          \"expression\": \"InitialPopulation\"\n        }\n      },\n      {\n        \"code\": {\n          \"coding\": [{\n            \"system\": \"http://terminology.hl7.org/CodeSystem/measure-population\",\n            \"code\": \"denominator\"\n          }]\n        },\n        \"criteria\": {\n          \"language\": \"text/cql-identifier\",\n          \"expression\": \"Denominator\"\n        }\n      },\n      {\n        \"code\": {\n          \"coding\": [{\n            \"system\": \"http://terminology.hl7.org/CodeSystem/measure-population\",\n            \"code\": \"numerator\"\n          }]\n        },\n        \"criteria\": {\n          \"language\": \"text/cql-identifier\",\n          \"expression\": \"Numerator\"\n        }\n      }\n    ]\n  }]\n}"
+            },
+            "url": "{{baseUrl}}/Measure"
+          }
+        },
+        {
+          "name": "Search Measures",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/Measure?status=active"
+          }
+        }
+      ]
+    },
+    {
+      "name": "MeasureReport",
+      "item": [
+        {
+          "name": "Create Individual Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"MeasureReport\",\n  \"status\": \"complete\",\n  \"type\": \"individual\",\n  \"measure\": \"http://example.org/fhir/Measure/DiabetesHbA1c\",\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"date\": \"2024-06-15T10:30:00Z\",\n  \"period\": {\n    \"start\": \"2024-01-01\",\n    \"end\": \"2024-06-30\"\n  },\n  \"group\": [{\n    \"population\": [\n      {\n        \"code\": {\n          \"coding\": [{\n            \"system\": \"http://terminology.hl7.org/CodeSystem/measure-population\",\n            \"code\": \"initial-population\"\n          }]\n        },\n        \"count\": 1\n      },\n      {\n        \"code\": {\n          \"coding\": [{\n            \"system\": \"http://terminology.hl7.org/CodeSystem/measure-population\",\n            \"code\": \"denominator\"\n          }]\n        },\n        \"count\": 1\n      },\n      {\n        \"code\": {\n          \"coding\": [{\n            \"system\": \"http://terminology.hl7.org/CodeSystem/measure-population\",\n            \"code\": \"numerator\"\n          }]\n        },\n        \"count\": 0\n      }\n    ],\n    \"measureScore\": {\n      \"value\": 0.0\n    }\n  }]\n}"
+            },
+            "url": "{{baseUrl}}/MeasureReport"
+          }
+        },
+        {
+          "name": "Create Summary Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"MeasureReport\",\n  \"status\": \"complete\",\n  \"type\": \"summary\",\n  \"measure\": \"http://example.org/fhir/Measure/DiabetesHbA1c\",\n  \"date\": \"2024-06-15T10:30:00Z\",\n  \"reporter\": {\"reference\": \"Organization/{{organizationId}}\"},\n  \"period\": {\n    \"start\": \"2024-01-01\",\n    \"end\": \"2024-06-30\"\n  },\n  \"group\": [{\n    \"population\": [\n      {\n        \"code\": {\n          \"coding\": [{\n            \"system\": \"http://terminology.hl7.org/CodeSystem/measure-population\",\n            \"code\": \"initial-population\"\n          }]\n        },\n        \"count\": 500\n      },\n      {\n        \"code\": {\n          \"coding\": [{\n            \"system\": \"http://terminology.hl7.org/CodeSystem/measure-population\",\n            \"code\": \"denominator\"\n          }]\n        },\n        \"count\": 450\n      },\n      {\n        \"code\": {\n          \"coding\": [{\n            \"system\": \"http://terminology.hl7.org/CodeSystem/measure-population\",\n            \"code\": \"numerator\"\n          }]\n        },\n        \"count\": 380\n      }\n    ],\n    \"measureScore\": {\n      \"value\": 0.8444\n    }\n  }]\n}"
+            },
+            "url": "{{baseUrl}}/MeasureReport"
+          }
+        },
+        {
+          "name": "Search MeasureReports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/MeasureReport?patient=Patient/{{patientId}}&status=complete"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Terminology",
+      "item": [
+        {
+          "name": "Expand ValueSet",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/ValueSet/$expand?url=http://example.org/fhir/ValueSet/condition-codes"
+          }
+        },
+        {
+          "name": "Lookup Code",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/CodeSystem/$lookup?system=http://snomed.info/sct&code=44054006"
+          }
+        },
+        {
+          "name": "Validate Code",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/ValueSet/$validate-code?url=http://example.org/fhir/ValueSet/condition-codes&code=44054006"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Batch/Transaction",
+      "item": [
+        {
+          "name": "Batch Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Bundle\",\n  \"type\": \"batch\",\n  \"entry\": [\n    {\n      \"request\": {\n        \"method\": \"GET\",\n        \"url\": \"Patient/{{patientId}}\"\n      }\n    },\n    {\n      \"request\": {\n        \"method\": \"GET\",\n        \"url\": \"Condition?patient=Patient/{{patientId}}\"\n      }\n    },\n    {\n      \"request\": {\n        \"method\": \"GET\",\n        \"url\": \"MedicationRequest?patient=Patient/{{patientId}}\"\n      }\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Advanced Search",
+      "item": [
+        {
+          "name": "Search with _include",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/Condition?patient=Patient/{{patientId}}&_include=Condition:subject"
+          }
+        },
+        {
+          "name": "Search with _revinclude",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/Patient?_id={{patientId}}&_revinclude=Condition:patient"
+          }
+        },
+        {
+          "name": "Search with Pagination",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/Observation?patient=Patient/{{patientId}}&_count=10&_offset=0"
+          }
+        },
+        {
+          "name": "Search with Sort",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/Observation?patient=Patient/{{patientId}}&_sort=-date"
+          }
+        },
+        {
+          "name": "Search by Date Range",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/Observation?patient=Patient/{{patientId}}&date=ge2024-01-01&date=le2024-12-31"
+          }
+        }
+      ]
+    }
+  ]
+}

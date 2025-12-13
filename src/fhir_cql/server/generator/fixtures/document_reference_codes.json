@@ -1,0 +1,46 @@
+{
+  "document_types": {
+    "system": "http://loinc.org",
+    "codes": [
+      {"code": "34117-2", "display": "History and physical note"},
+      {"code": "11488-4", "display": "Consultation note"},
+      {"code": "18842-5", "display": "Discharge summary"},
+      {"code": "11506-3", "display": "Progress note"},
+      {"code": "28570-0", "display": "Procedure note"},
+      {"code": "11502-2", "display": "Laboratory report"},
+      {"code": "18748-4", "display": "Diagnostic imaging report"},
+      {"code": "11526-1", "display": "Pathology study"},
+      {"code": "34133-9", "display": "Summary of episode note"},
+      {"code": "51897-7", "display": "Healthcare Associated Infection report"},
+      {"code": "57133-1", "display": "Referral note"},
+      {"code": "68608-9", "display": "Summary note"},
+      {"code": "74156-1", "display": "Oncology note"},
+      {"code": "75476-2", "display": "Physician hospital discharge note"},
+      {"code": "78347-0", "display": "Allergy/adverse drug event note"},
+      {"code": "34111-5", "display": "Emergency department note"}
+    ]
+  },
+  "categories": {
+    "system": "http://hl7.org/fhir/us/core/CodeSystem/us-core-documentreference-category",
+    "codes": [
+      {"code": "clinical-note", "display": "Clinical Note"}
+    ]
+  },
+  "status_codes": ["current", "superseded", "entered-in-error"],
+  "doc_status_codes": ["preliminary", "final", "amended", "entered-in-error"],
+  "content_types": [
+    "application/pdf",
+    "text/plain",
+    "text/html",
+    "application/xml",
+    "application/fhir+json"
+  ],
+  "security_labels": {
+    "system": "http://terminology.hl7.org/CodeSystem/v3-Confidentiality",
+    "codes": [
+      {"code": "N", "display": "Normal"},
+      {"code": "R", "display": "Restricted"},
+      {"code": "V", "display": "Very Restricted"}
+    ]
+  }
+}

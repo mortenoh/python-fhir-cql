@@ -1,0 +1,43 @@
+{
+  "resourceType": "ServiceRequest",
+  "id": "service-request-001",
+  "status": "active",
+  "intent": "order",
+  "priority": "routine",
+  "category": [{
+    "coding": [{
+      "system": "http://snomed.info/sct",
+      "code": "108252007",
+      "display": "Laboratory procedure"
+    }]
+  }],
+  "code": {
+    "coding": [{
+      "system": "http://snomed.info/sct",
+      "code": "26604007",
+      "display": "Complete blood count"
+    }],
+    "text": "Complete blood count"
+  },
+  "subject": {
+    "reference": "Patient/patient-001"
+  },
+  "encounter": {
+    "reference": "Encounter/encounter-001"
+  },
+  "authoredOn": "2024-06-15T10:30:00Z",
+  "requester": {
+    "reference": "Practitioner/practitioner-001"
+  },
+  "reasonCode": [{
+    "coding": [{
+      "system": "http://snomed.info/sct",
+      "code": "271737000",
+      "display": "Anemia"
+    }],
+    "text": "Suspected anemia"
+  }],
+  "note": [{
+    "text": "Fasting sample required"
+  }]
+}

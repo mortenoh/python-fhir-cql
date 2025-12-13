@@ -1,0 +1,118 @@
+{
+  "scoring_codes": {
+    "system": "http://terminology.hl7.org/CodeSystem/measure-scoring",
+    "codes": [
+      {"code": "proportion", "display": "Proportion"},
+      {"code": "ratio", "display": "Ratio"},
+      {"code": "continuous-variable", "display": "Continuous Variable"},
+      {"code": "cohort", "display": "Cohort"}
+    ]
+  },
+  "type_codes": {
+    "system": "http://terminology.hl7.org/CodeSystem/measure-type",
+    "codes": [
+      {"code": "process", "display": "Process"},
+      {"code": "outcome", "display": "Outcome"},
+      {"code": "structure", "display": "Structure"},
+      {"code": "patient-reported-outcome", "display": "Patient Reported Outcome"},
+      {"code": "composite", "display": "Composite"}
+    ]
+  },
+  "improvement_notation": {
+    "system": "http://terminology.hl7.org/CodeSystem/measure-improvement-notation",
+    "codes": [
+      {"code": "increase", "display": "Increased score indicates improvement"},
+      {"code": "decrease", "display": "Decreased score indicates improvement"}
+    ]
+  },
+  "population_codes": {
+    "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+    "codes": [
+      {"code": "initial-population", "display": "Initial Population"},
+      {"code": "numerator", "display": "Numerator"},
+      {"code": "numerator-exclusion", "display": "Numerator Exclusion"},
+      {"code": "denominator", "display": "Denominator"},
+      {"code": "denominator-exclusion", "display": "Denominator Exclusion"},
+      {"code": "denominator-exception", "display": "Denominator Exception"},
+      {"code": "measure-population", "display": "Measure Population"},
+      {"code": "measure-population-exclusion", "display": "Measure Population Exclusion"},
+      {"code": "measure-observation", "display": "Measure Observation"}
+    ]
+  },
+  "topic_codes": {
+    "system": "http://hl7.org/fhir/definition-topic",
+    "codes": [
+      {"code": "treatment", "display": "Treatment"},
+      {"code": "education", "display": "Education"},
+      {"code": "assessment", "display": "Assessment"}
+    ]
+  },
+  "example_measures": [
+    {
+      "name": "BreastCancerScreening",
+      "title": "Breast Cancer Screening",
+      "description": "Percentage of women 50-74 years of age who had a mammogram to screen for breast cancer in the 27 months prior to the end of the measurement period.",
+      "scoring": "proportion",
+      "type": "process"
+    },
+    {
+      "name": "ColorectalCancerScreening",
+      "title": "Colorectal Cancer Screening",
+      "description": "Percentage of adults 50-75 years of age who had appropriate screening for colorectal cancer.",
+      "scoring": "proportion",
+      "type": "process"
+    },
+    {
+      "name": "DiabetesHbA1cControl",
+      "title": "Diabetes: Hemoglobin A1c Poor Control",
+      "description": "Percentage of patients 18-75 years of age with diabetes who had hemoglobin A1c > 9.0% during the measurement period.",
+      "scoring": "proportion",
+      "type": "outcome"
+    },
+    {
+      "name": "ControllingHighBloodPressure",
+      "title": "Controlling High Blood Pressure",
+      "description": "Percentage of patients 18-85 years of age who had a diagnosis of hypertension and whose blood pressure was adequately controlled during the measurement period.",
+      "scoring": "proportion",
+      "type": "outcome"
+    },
+    {
+      "name": "DepressionScreening",
+      "title": "Depression Screening and Follow-Up",
+      "description": "Percentage of patients aged 12 years and older screened for depression using an age-appropriate standardized tool AND follow-up plan documented.",
+      "scoring": "proportion",
+      "type": "process"
+    },
+    {
+      "name": "TobaccoUseScreening",
+      "title": "Preventive Care and Screening: Tobacco Use",
+      "description": "Percentage of patients aged 18 years and older who were screened for tobacco use and received cessation intervention if identified as a tobacco user.",
+      "scoring": "proportion",
+      "type": "process"
+    },
+    {
+      "name": "FallsScreening",
+      "title": "Falls: Screening for Future Fall Risk",
+      "description": "Percentage of patients 65 years of age and older who were screened for future fall risk during the measurement period.",
+      "scoring": "proportion",
+      "type": "process"
+    },
+    {
+      "name": "MedicationReconciliation",
+      "title": "Medication Reconciliation Post-Discharge",
+      "description": "Percentage of discharges from any inpatient facility for which the discharge medication list was reconciled with the current medication list.",
+      "scoring": "proportion",
+      "type": "process"
+    }
+  ],
+  "status_codes": ["draft", "active", "retired"],
+  "composite_scoring": {
+    "system": "http://terminology.hl7.org/CodeSystem/composite-measure-scoring",
+    "codes": [
+      {"code": "opportunity", "display": "Opportunity"},
+      {"code": "all-or-nothing", "display": "All-or-nothing"},
+      {"code": "linear", "display": "Linear"},
+      {"code": "weighted", "display": "Weighted"}
+    ]
+  }
+}

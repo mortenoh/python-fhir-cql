@@ -1,0 +1,40 @@
+{
+  "order_codes": {
+    "system": "http://snomed.info/sct",
+    "codes": [
+      {"code": "26604007", "display": "Complete blood count", "category": "laboratory"},
+      {"code": "166312007", "display": "Blood chemistry", "category": "laboratory"},
+      {"code": "269814003", "display": "Urinalysis", "category": "laboratory"},
+      {"code": "104326007", "display": "Lipid panel", "category": "laboratory"},
+      {"code": "43396009", "display": "Hemoglobin A1c", "category": "laboratory"},
+      {"code": "77477000", "display": "CT scan", "category": "imaging"},
+      {"code": "113091000", "display": "MRI", "category": "imaging"},
+      {"code": "168537006", "display": "X-ray", "category": "imaging"},
+      {"code": "16310003", "display": "Ultrasound", "category": "imaging"},
+      {"code": "40701008", "display": "Echocardiogram", "category": "imaging"},
+      {"code": "308335008", "display": "Patient encounter procedure", "category": "counseling"},
+      {"code": "409063005", "display": "Counseling", "category": "counseling"},
+      {"code": "304567001", "display": "Admission to hospital", "category": "surgical"},
+      {"code": "387713003", "display": "Surgical procedure", "category": "surgical"},
+      {"code": "3457005", "display": "Patient referral", "category": "referral"},
+      {"code": "306206005", "display": "Referral to specialist", "category": "referral"},
+      {"code": "229065009", "display": "Exercise therapy", "category": "rehabilitation"},
+      {"code": "229070002", "display": "Physical therapy", "category": "rehabilitation"},
+      {"code": "229055000", "display": "Occupational therapy", "category": "rehabilitation"}
+    ]
+  },
+  "categories": {
+    "system": "http://snomed.info/sct",
+    "codes": [
+      {"code": "108252007", "display": "Laboratory procedure"},
+      {"code": "363679005", "display": "Imaging"},
+      {"code": "409063005", "display": "Counseling"},
+      {"code": "387713003", "display": "Surgical procedure"},
+      {"code": "3457005", "display": "Patient referral"},
+      {"code": "53950000", "display": "Rehabilitation"}
+    ]
+  },
+  "intent_codes": ["proposal", "plan", "directive", "order", "original-order", "reflex-order", "filler-order", "instance-order", "option"],
+  "status_codes": ["draft", "active", "on-hold", "revoked", "completed", "entered-in-error", "unknown"],
+  "priority_codes": ["routine", "urgent", "asap", "stat"]
+}

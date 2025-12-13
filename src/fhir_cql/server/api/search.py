@@ -1,8 +1,12 @@
 """FHIR search parameter handling."""
 
+import re
 from datetime import date, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qs
+
+if TYPE_CHECKING:
+    from ..storage.fhir_store import FHIRStore
 
 # Search parameter definitions by resource type
 SEARCH_PARAMS: dict[str, dict[str, dict[str, Any]]] = {
@@ -118,6 +122,130 @@ SEARCH_PARAMS: dict[str, dict[str, dict[str, Any]]] = {
         "status": {"path": "status", "type": "token"},
         "version": {"path": "version", "type": "token"},
         "type": {"path": "type.coding", "type": "token"},
+    },
+    "DiagnosticReport": {
+        "_id": {"path": "id", "type": "token"},
+        "patient": {"path": "subject.reference", "type": "reference"},
+        "subject": {"path": "subject.reference", "type": "reference"},
+        "code": {"path": "code.coding", "type": "token"},
+        "category": {"path": "category.coding", "type": "token"},
+        "status": {"path": "status", "type": "token"},
+        "date": {"path": "effectiveDateTime", "type": "date"},
+        "issued": {"path": "issued", "type": "date"},
+        "encounter": {"path": "encounter.reference", "type": "reference"},
+        "performer": {"path": "performer.reference", "type": "reference"},
+        "result": {"path": "result.reference", "type": "reference"},
+        "conclusion": {"path": "conclusion", "type": "string"},
+    },
+    "AllergyIntolerance": {
+        "_id": {"path": "id", "type": "token"},
+        "patient": {"path": "patient.reference", "type": "reference"},
+        "code": {"path": "code.coding", "type": "token"},
+        "clinical-status": {"path": "clinicalStatus.coding", "type": "token"},
+        "verification-status": {"path": "verificationStatus.coding", "type": "token"},
+        "category": {"path": "category", "type": "token"},
+        "criticality": {"path": "criticality", "type": "token"},
+        "type": {"path": "type", "type": "token"},
+        "onset": {"path": "onsetDateTime", "type": "date"},
+        "date": {"path": "recordedDate", "type": "date"},
+        "recorder": {"path": "recorder.reference", "type": "reference"},
+        "asserter": {"path": "asserter.reference", "type": "reference"},
+    },
+    "Immunization": {
+        "_id": {"path": "id", "type": "token"},
+        "patient": {"path": "patient.reference", "type": "reference"},
+        "vaccine-code": {"path": "vaccineCode.coding", "type": "token"},
+        "status": {"path": "status", "type": "token"},
+        "date": {"path": "occurrenceDateTime", "type": "date"},
+        "lot-number": {"path": "lotNumber", "type": "string"},
+        "performer": {"path": "performer.actor.reference", "type": "reference"},
+        "location": {"path": "location.reference", "type": "reference"},
+        "reaction": {"path": "reaction.detail.reference", "type": "reference"},
+        "site": {"path": "site.coding", "type": "token"},
+        "route": {"path": "route.coding", "type": "token"},
+    },
+    "CarePlan": {
+        "_id": {"path": "id", "type": "token"},
+        "patient": {"path": "subject.reference", "type": "reference"},
+        "subject": {"path": "subject.reference", "type": "reference"},
+        "status": {"path": "status", "type": "token"},
+        "intent": {"path": "intent", "type": "token"},
+        "category": {"path": "category.coding", "type": "token"},
+        "date": {"path": "period.start", "type": "date"},
+        "encounter": {"path": "encounter.reference", "type": "reference"},
+        "condition": {"path": "addresses.reference", "type": "reference"},
+    },
+    "Goal": {
+        "_id": {"path": "id", "type": "token"},
+        "patient": {"path": "subject.reference", "type": "reference"},
+        "subject": {"path": "subject.reference", "type": "reference"},
+        "lifecycle-status": {"path": "lifecycleStatus", "type": "token"},
+        "achievement-status": {"path": "achievementStatus.coding", "type": "token"},
+        "category": {"path": "category.coding", "type": "token"},
+        "start-date": {"path": "startDate", "type": "date"},
+        "target-date": {"path": "target.dueDate", "type": "date"},
+    },
+    "ServiceRequest": {
+        "_id": {"path": "id", "type": "token"},
+        "patient": {"path": "subject.reference", "type": "reference"},
+        "subject": {"path": "subject.reference", "type": "reference"},
+        "code": {"path": "code.coding", "type": "token"},
+        "category": {"path": "category.coding", "type": "token"},
+        "status": {"path": "status", "type": "token"},
+        "intent": {"path": "intent", "type": "token"},
+        "priority": {"path": "priority", "type": "token"},
+        "authored": {"path": "authoredOn", "type": "date"},
+        "encounter": {"path": "encounter.reference", "type": "reference"},
+        "requester": {"path": "requester.reference", "type": "reference"},
+        "performer": {"path": "performer.reference", "type": "reference"},
+    },
+    "DocumentReference": {
+        "_id": {"path": "id", "type": "token"},
+        "patient": {"path": "subject.reference", "type": "reference"},
+        "subject": {"path": "subject.reference", "type": "reference"},
+        "type": {"path": "type.coding", "type": "token"},
+        "category": {"path": "category.coding", "type": "token"},
+        "status": {"path": "status", "type": "token"},
+        "date": {"path": "date", "type": "date"},
+        "author": {"path": "author.reference", "type": "reference"},
+        "encounter": {"path": "context.encounter.reference", "type": "reference"},
+        "custodian": {"path": "custodian.reference", "type": "reference"},
+    },
+    "Medication": {
+        "_id": {"path": "id", "type": "token"},
+        "code": {"path": "code.coding", "type": "token"},
+        "status": {"path": "status", "type": "token"},
+        "form": {"path": "form.coding", "type": "token"},
+        "manufacturer": {"path": "manufacturer.reference", "type": "reference"},
+        "lot-number": {"path": "batch.lotNumber", "type": "string"},
+        "expiration-date": {"path": "batch.expirationDate", "type": "date"},
+    },
+    "Measure": {
+        "_id": {"path": "id", "type": "token"},
+        "url": {"path": "url", "type": "uri"},
+        "name": {"path": "name", "type": "string"},
+        "title": {"path": "title", "type": "string"},
+        "status": {"path": "status", "type": "token"},
+        "version": {"path": "version", "type": "token"},
+        "identifier": {"path": "identifier", "type": "token"},
+        "description": {"path": "description", "type": "string"},
+        "publisher": {"path": "publisher", "type": "string"},
+        "date": {"path": "date", "type": "date"},
+        "effective": {"path": "effectivePeriod.start", "type": "date"},
+        "context-type": {"path": "useContext.code", "type": "token"},
+        "topic": {"path": "topic.coding", "type": "token"},
+    },
+    "MeasureReport": {
+        "_id": {"path": "id", "type": "token"},
+        "identifier": {"path": "identifier", "type": "token"},
+        "status": {"path": "status", "type": "token"},
+        "measure": {"path": "measure", "type": "uri"},
+        "patient": {"path": "subject.reference", "type": "reference"},
+        "subject": {"path": "subject.reference", "type": "reference"},
+        "date": {"path": "date", "type": "date"},
+        "reporter": {"path": "reporter.reference", "type": "reference"},
+        "period": {"path": "period.start", "type": "date"},
+        "evaluated-resource": {"path": "evaluatedResource.reference", "type": "reference"},
     },
 }
 
@@ -489,3 +617,363 @@ def parse_search_params(query_string: str) -> dict[str, list[str]]:
         Dict of parameter name to list of values
     """
     return parse_qs(query_string)
+
+
+# =============================================================================
+# Chained Search Parameters
+# =============================================================================
+
+# Pattern to match chained parameters: param:Type.targetParam
+CHAINED_PARAM_PATTERN = re.compile(r"^([a-zA-Z\-]+):([A-Z][a-zA-Z]+)\.(.+)$")
+
+
+def parse_chained_param(param_name: str) -> tuple[str, str, str] | None:
+    """Parse a chained search parameter.
+
+    Chained parameters have the format: refParam:TargetType.targetSearchParam
+    Example: subject:Patient.name -> ("subject", "Patient", "name")
+
+    Args:
+        param_name: The parameter name to parse
+
+    Returns:
+        Tuple of (reference_param, target_type, target_search_param) or None
+    """
+    match = CHAINED_PARAM_PATTERN.match(param_name)
+    if match:
+        return match.group(1), match.group(2), match.group(3)
+    return None
+
+
+def resolve_chained_search(
+    resources: list[dict[str, Any]],
+    resource_type: str,
+    ref_param: str,
+    target_type: str,
+    target_param: str,
+    target_value: str,
+    store: "FHIRStore",
+) -> list[dict[str, Any]]:
+    """Resolve a chained search parameter.
+
+    Finds resources where the referenced resource matches the search criteria.
+
+    Example: Condition?subject:Patient.name=John
+    1. Find all Patients with name containing "John"
+    2. Return Conditions that reference those Patients
+
+    Args:
+        resources: List of source resources to filter
+        resource_type: The source resource type (e.g., "Condition")
+        ref_param: The reference parameter name (e.g., "subject")
+        target_type: The target resource type (e.g., "Patient")
+        target_param: The search parameter on target (e.g., "name")
+        target_value: The search value (e.g., "John")
+        store: The FHIR data store
+
+    Returns:
+        Filtered list of resources matching the chained criteria
+    """
+    # Get the parameter definition for the reference param
+    type_params = SEARCH_PARAMS.get(resource_type, {})
+    ref_param_def = type_params.get(ref_param)
+
+    if ref_param_def is None or ref_param_def.get("type") != "reference":
+        # Not a valid reference parameter
+        return resources
+
+    ref_path = ref_param_def["path"]
+
+    # First, search for matching target resources
+    target_resources, _ = store.search(
+        resource_type=target_type,
+        params={target_param: target_value},
+    )
+
+    if not target_resources:
+        # No matching targets, so no source resources match
+        return []
+
+    # Build set of matching target references
+    matching_refs: set[str] = set()
+    for target in target_resources:
+        target_id = target.get("id")
+        if target_id:
+            matching_refs.add(f"{target_type}/{target_id}")
+
+    # Filter source resources by reference to matching targets
+    result = []
+    for resource in resources:
+        ref_value = get_nested_value(resource, ref_path)
+        if ref_value is None:
+            continue
+
+        # Handle single or multiple references
+        if isinstance(ref_value, str):
+            if ref_value in matching_refs:
+                result.append(resource)
+        elif isinstance(ref_value, list):
+            for rv in ref_value:
+                if rv in matching_refs:
+                    result.append(resource)
+                    break
+
+    return result
+
+
+def filter_resources_with_chaining(
+    resources: list[dict[str, Any]],
+    resource_type: str,
+    params: dict[str, str | list[str]],
+    store: "FHIRStore",
+) -> list[dict[str, Any]]:
+    """Filter resources with support for chained parameters.
+
+    Handles both regular search parameters and chained parameters
+    (e.g., subject:Patient.name=John).
+
+    Args:
+        resources: List of FHIR resources to filter
+        resource_type: The resource type
+        params: Search parameters (may include chained params)
+        store: The FHIR data store for resolving chains
+
+    Returns:
+        Filtered list of resources
+    """
+    if not params:
+        return resources
+
+    # Separate regular params from chained params
+    regular_params: dict[str, str | list[str]] = {}
+    chained_params: list[tuple[str, str, str, str | list[str]]] = []
+
+    for param_name, param_values in params.items():
+        # Skip special parameters
+        if param_name.startswith("_") and param_name not in ("_id", "_lastUpdated"):
+            continue
+
+        # Check if this is a chained parameter
+        chained = parse_chained_param(param_name)
+        if chained:
+            ref_param, target_type, target_param = chained
+            chained_params.append((ref_param, target_type, target_param, param_values))
+        else:
+            regular_params[param_name] = param_values
+
+    # First apply regular filters
+    filtered = filter_resources(resources, resource_type, regular_params)
+
+    # Then apply chained filters
+    for ref_param, target_type, target_param, param_values in chained_params:
+        if isinstance(param_values, str):
+            param_values = [param_values]
+
+        # For multiple values, OR them together
+        chained_matches: list[dict[str, Any]] = []
+        for value in param_values:
+            matches = resolve_chained_search(
+                filtered,
+                resource_type,
+                ref_param,
+                target_type,
+                target_param,
+                value,
+                store,
+            )
+            for match in matches:
+                if match not in chained_matches:
+                    chained_matches.append(match)
+
+        filtered = chained_matches
+
+    return filtered
+
+
+# =============================================================================
+# Reverse Chained Search Parameters (_has)
+# =============================================================================
+
+# Pattern to match _has parameters: _has:Type:refParam:searchParam
+HAS_PARAM_PATTERN = re.compile(r"^_has:([A-Z][a-zA-Z]+):([a-zA-Z\-]+):(.+)$")
+
+
+def parse_has_param(param_name: str) -> tuple[str, str, str] | None:
+    """Parse a reverse chained (_has) search parameter.
+
+    _has parameters have the format: _has:SourceType:refParam:searchParam
+    Example: _has:Condition:patient:code -> ("Condition", "patient", "code")
+
+    This means: find resources that are referenced by a Condition
+    via the 'patient' reference, where that Condition has matching code.
+
+    Args:
+        param_name: The parameter name to parse
+
+    Returns:
+        Tuple of (source_type, ref_param, search_param) or None
+    """
+    match = HAS_PARAM_PATTERN.match(param_name)
+    if match:
+        return match.group(1), match.group(2), match.group(3)
+    return None
+
+
+def resolve_has_search(
+    resources: list[dict[str, Any]],
+    resource_type: str,
+    source_type: str,
+    ref_param: str,
+    search_param: str,
+    search_value: str,
+    store: "FHIRStore",
+) -> list[dict[str, Any]]:
+    """Resolve a reverse chained (_has) search parameter.
+
+    Finds resources that are referenced by other resources matching criteria.
+
+    Example: Patient?_has:Condition:patient:code=diabetes
+    1. Find all Conditions with code=diabetes
+    2. Extract patient references from those Conditions
+    3. Return Patients that are referenced
+
+    Args:
+        resources: List of target resources to filter
+        resource_type: The target resource type (e.g., "Patient")
+        source_type: The referencing resource type (e.g., "Condition")
+        ref_param: The reference parameter in source (e.g., "patient")
+        search_param: The search parameter on source (e.g., "code")
+        search_value: The search value (e.g., "diabetes")
+        store: The FHIR data store
+
+    Returns:
+        Filtered list of resources that are referenced by matching sources
+    """
+    # Get the reference path from source type's search params
+    source_params = SEARCH_PARAMS.get(source_type, {})
+    ref_param_def = source_params.get(ref_param)
+
+    if ref_param_def is None or ref_param_def.get("type") != "reference":
+        return resources
+
+    ref_path = ref_param_def["path"]
+
+    # Search for matching source resources
+    source_resources, _ = store.search(
+        resource_type=source_type,
+        params={search_param: search_value},
+    )
+
+    if not source_resources:
+        return []
+
+    # Extract references from matching source resources
+    referenced_ids: set[str] = set()
+    for source in source_resources:
+        ref_value = get_nested_value(source, ref_path)
+        if ref_value is None:
+            continue
+
+        if isinstance(ref_value, str):
+            # Extract ID from reference (e.g., "Patient/123" -> "123")
+            if ref_value.startswith(f"{resource_type}/"):
+                referenced_ids.add(ref_value.split("/", 1)[1])
+        elif isinstance(ref_value, list):
+            for rv in ref_value:
+                if isinstance(rv, str) and rv.startswith(f"{resource_type}/"):
+                    referenced_ids.add(rv.split("/", 1)[1])
+
+    # Filter target resources by ID
+    return [r for r in resources if r.get("id") in referenced_ids]
+
+
+def filter_resources_with_has(
+    resources: list[dict[str, Any]],
+    resource_type: str,
+    params: dict[str, str | list[str]],
+    store: "FHIRStore",
+) -> list[dict[str, Any]]:
+    """Filter resources with support for _has parameters.
+
+    Handles reverse chained parameters (e.g., _has:Condition:patient:code=diabetes).
+
+    Args:
+        resources: List of FHIR resources to filter
+        resource_type: The resource type
+        params: Search parameters (may include _has params)
+        store: The FHIR data store for resolving chains
+
+    Returns:
+        Filtered list of resources
+    """
+    if not params:
+        return resources
+
+    filtered = resources
+
+    for param_name, param_values in params.items():
+        # Check if this is a _has parameter
+        has_parsed = parse_has_param(param_name)
+        if not has_parsed:
+            continue
+
+        source_type, ref_param, search_param = has_parsed
+
+        if isinstance(param_values, str):
+            param_values = [param_values]
+
+        # For multiple values, OR them together
+        has_matches: list[dict[str, Any]] = []
+        for value in param_values:
+            matches = resolve_has_search(
+                filtered,
+                resource_type,
+                source_type,
+                ref_param,
+                search_param,
+                value,
+                store,
+            )
+            for match in matches:
+                if match not in has_matches:
+                    has_matches.append(match)
+
+        filtered = has_matches
+
+    return filtered
+
+
+# =============================================================================
+# Combined Advanced Search
+# =============================================================================
+
+
+def filter_resources_advanced(
+    resources: list[dict[str, Any]],
+    resource_type: str,
+    params: dict[str, str | list[str]],
+    store: "FHIRStore",
+) -> list[dict[str, Any]]:
+    """Filter resources with support for all advanced search features.
+
+    Handles:
+    - Regular search parameters
+    - Chained parameters (e.g., subject:Patient.name=John)
+    - Reverse chained _has parameters (e.g., _has:Condition:patient:code=diabetes)
+
+    Args:
+        resources: List of FHIR resources to filter
+        resource_type: The resource type
+        params: Search parameters
+        store: The FHIR data store for resolving chains
+
+    Returns:
+        Filtered list of resources
+    """
+    # Apply chained search (which also applies regular filters)
+    filtered = filter_resources_with_chaining(resources, resource_type, params, store)
+
+    # Apply _has search
+    filtered = filter_resources_with_has(filtered, resource_type, params, store)
+
+    return filtered

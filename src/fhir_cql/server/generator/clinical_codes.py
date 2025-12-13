@@ -166,6 +166,88 @@ ADDRESS_USE_CODES: list[str] = _patient_data["address_use_codes"]
 ADDRESS_TYPE_CODES: list[str] = _patient_data["address_type_codes"]
 NAME_USE_CODES: list[str] = _patient_data["name_use_codes"]
 
+# Load diagnostic report codes
+_diagnostic_report_data = _load_fixture("diagnostic_report_codes")
+DIAGNOSTIC_REPORT_TYPES: list[dict[str, str]] = _diagnostic_report_data["report_types"]["codes"]
+DIAGNOSTIC_REPORT_CATEGORIES: list[CodingTemplate] = _load_codes_with_system(
+    _diagnostic_report_data["categories"]
+)
+DIAGNOSTIC_REPORT_STATUS_CODES: list[str] = _diagnostic_report_data["status_codes"]
+DIAGNOSTIC_REPORT_CONCLUSION_CODES: list[CodingTemplate] = _load_codes_with_system(
+    _diagnostic_report_data["conclusion_codes"]
+)
+
+# Load allergy codes
+_allergy_data = _load_fixture("allergy_codes")
+ALLERGENS_MEDICATION: list[CodingTemplate] = _allergy_data["allergens"]["medication"]["codes"]
+ALLERGENS_FOOD: list[CodingTemplate] = _allergy_data["allergens"]["food"]["codes"]
+ALLERGENS_ENVIRONMENT: list[CodingTemplate] = _allergy_data["allergens"]["environment"]["codes"]
+ALLERGY_REACTIONS: list[dict[str, str]] = _allergy_data["reactions"]["codes"]
+ALLERGY_CATEGORIES: list[str] = _allergy_data["categories"]
+ALLERGY_CRITICALITIES: list[str] = _allergy_data["criticalities"]
+ALLERGY_CLINICAL_STATUS: list[CodingTemplate] = _allergy_data["clinical_status"]["codes"]
+ALLERGY_VERIFICATION_STATUS: list[CodingTemplate] = _allergy_data["verification_status"]["codes"]
+ALLERGY_TYPES: list[str] = _allergy_data["types"]
+
+# Load immunization codes
+_immunization_data = _load_fixture("immunization_codes")
+VACCINES: list[CodingTemplate] = _immunization_data["vaccines"]["codes"]
+IMMUNIZATION_SITES: list[CodingTemplate] = _immunization_data["sites"]["codes"]
+IMMUNIZATION_ROUTES: list[CodingTemplate] = _immunization_data["routes"]["codes"]
+IMMUNIZATION_STATUS_CODES: list[str] = _immunization_data["status_codes"]
+
+# Load careplan codes
+_careplan_data = _load_fixture("careplan_codes")
+CAREPLAN_CATEGORIES: list[CodingTemplate] = _careplan_data["categories"]["codes"]
+CAREPLAN_ACTIVITIES: list[CodingTemplate] = _careplan_data["activities"]["codes"]
+CAREPLAN_INTENT_CODES: list[str] = _careplan_data["intent_codes"]
+CAREPLAN_STATUS_CODES: list[str] = _careplan_data["status_codes"]
+
+# Load goal codes
+_goal_data = _load_fixture("goal_codes")
+GOAL_DESCRIPTIONS: list[CodingTemplate] = _goal_data["goal_descriptions"]["codes"]
+GOAL_ACHIEVEMENT_STATUS: list[CodingTemplate] = _goal_data["achievement_status"]["codes"]
+GOAL_PRIORITY: list[CodingTemplate] = _goal_data["priority"]["codes"]
+GOAL_LIFECYCLE_STATUS: list[str] = _goal_data["lifecycle_status"]
+GOAL_TARGET_MEASURES: list[dict[str, Any]] = _goal_data["target_measures"]
+
+# Load service request codes
+_service_request_data = _load_fixture("service_request_codes")
+SERVICE_REQUEST_ORDER_CODES: list[dict[str, str]] = _service_request_data["order_codes"]["codes"]
+SERVICE_REQUEST_CATEGORIES: list[CodingTemplate] = _service_request_data["categories"]["codes"]
+SERVICE_REQUEST_INTENT_CODES: list[str] = _service_request_data["intent_codes"]
+SERVICE_REQUEST_STATUS_CODES: list[str] = _service_request_data["status_codes"]
+SERVICE_REQUEST_PRIORITY_CODES: list[str] = _service_request_data["priority_codes"]
+
+# Load document reference codes
+_document_data = _load_fixture("document_reference_codes")
+DOCUMENT_TYPES: list[CodingTemplate] = _document_data["document_types"]["codes"]
+DOCUMENT_CATEGORIES: list[CodingTemplate] = _document_data["categories"]["codes"]
+DOCUMENT_STATUS_CODES: list[str] = _document_data["status_codes"]
+DOCUMENT_DOC_STATUS_CODES: list[str] = _document_data["doc_status_codes"]
+DOCUMENT_CONTENT_TYPES: list[str] = _document_data["content_types"]
+DOCUMENT_SECURITY_LABELS: list[CodingTemplate] = _document_data["security_labels"]["codes"]
+
+# Load medication form codes
+_medication_forms_data = _load_fixture("medication_forms")
+MEDICATION_DOSE_FORMS: list[CodingTemplate] = _medication_forms_data["dose_forms"]["codes"]
+MEDICATION_INGREDIENT_STRENGTHS: list[dict[str, Any]] = _medication_forms_data["ingredient_strengths"]
+MEDICATION_STATUS_CODES: list[str] = _medication_forms_data["status_codes"]
+
+# Load measure codes
+_measure_data = _load_fixture("measure_codes")
+MEASURE_SCORING_CODES: list[dict[str, str]] = _measure_data["scoring_codes"]["codes"]
+MEASURE_TYPE_CODES: list[dict[str, str]] = _measure_data["type_codes"]["codes"]
+MEASURE_IMPROVEMENT_NOTATION: list[dict[str, str]] = _measure_data["improvement_notation"]["codes"]
+MEASURE_POPULATION_CODES: list[dict[str, str]] = _measure_data["population_codes"]["codes"]
+MEASURE_EXAMPLES: list[dict[str, str]] = _measure_data["example_measures"]
+MEASURE_STATUS_CODES: list[str] = _measure_data["status_codes"]
+
+# Load measure report codes
+_measure_report_data = _load_fixture("measure_report_codes")
+MEASURE_REPORT_STATUS_CODES: list[str] = _measure_report_data["status_codes"]
+MEASURE_REPORT_TYPE_CODES: list[dict[str, str]] = _measure_report_data["type_codes"]
+
 
 # =============================================================================
 # Helper Functions

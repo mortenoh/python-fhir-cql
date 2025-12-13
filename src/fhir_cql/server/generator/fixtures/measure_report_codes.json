@@ -1,0 +1,37 @@
+{
+  "status_codes": ["complete", "pending", "error"],
+  "type_codes": [
+    {"code": "individual", "display": "Individual", "description": "Report for a single patient"},
+    {"code": "subject-list", "display": "Subject List", "description": "Report listing subjects"},
+    {"code": "summary", "display": "Summary", "description": "Summary report for a population"},
+    {"code": "data-collection", "display": "Data Collection", "description": "Data collection report"}
+  ],
+  "improvement_notation": {
+    "system": "http://terminology.hl7.org/CodeSystem/measure-improvement-notation",
+    "codes": [
+      {"code": "increase", "display": "Increased score indicates improvement"},
+      {"code": "decrease", "display": "Decreased score indicates improvement"}
+    ]
+  },
+  "population_codes": {
+    "system": "http://terminology.hl7.org/CodeSystem/measure-population",
+    "codes": [
+      {"code": "initial-population", "display": "Initial Population"},
+      {"code": "numerator", "display": "Numerator"},
+      {"code": "numerator-exclusion", "display": "Numerator Exclusion"},
+      {"code": "denominator", "display": "Denominator"},
+      {"code": "denominator-exclusion", "display": "Denominator Exclusion"},
+      {"code": "denominator-exception", "display": "Denominator Exception"},
+      {"code": "measure-population", "display": "Measure Population"},
+      {"code": "measure-population-exclusion", "display": "Measure Population Exclusion"},
+      {"code": "measure-observation", "display": "Measure Observation"}
+    ]
+  },
+  "stratifier_codes": [
+    {"code": "age", "display": "Age", "system": "http://terminology.hl7.org/CodeSystem/measure-stratifier-example"},
+    {"code": "gender", "display": "Gender", "system": "http://terminology.hl7.org/CodeSystem/measure-stratifier-example"},
+    {"code": "ethnicity", "display": "Ethnicity", "system": "http://terminology.hl7.org/CodeSystem/measure-stratifier-example"},
+    {"code": "payer", "display": "Payer", "system": "http://terminology.hl7.org/CodeSystem/measure-stratifier-example"},
+    {"code": "location", "display": "Location", "system": "http://terminology.hl7.org/CodeSystem/measure-stratifier-example"}
+  ]
+}

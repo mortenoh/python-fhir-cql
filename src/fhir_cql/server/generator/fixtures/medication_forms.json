@@ -1,0 +1,41 @@
+{
+  "dose_forms": {
+    "system": "http://snomed.info/sct",
+    "codes": [
+      {"code": "385055001", "display": "Tablet"},
+      {"code": "385049006", "display": "Capsule"},
+      {"code": "385023001", "display": "Oral solution"},
+      {"code": "385219001", "display": "Injection solution"},
+      {"code": "385101003", "display": "Ointment"},
+      {"code": "385089002", "display": "Cream"},
+      {"code": "421720008", "display": "Spray"},
+      {"code": "385087000", "display": "Eye drops"},
+      {"code": "421166008", "display": "Foam"},
+      {"code": "385054002", "display": "Powder"},
+      {"code": "385181001", "display": "Patch"},
+      {"code": "421145000", "display": "Lotion"},
+      {"code": "385038009", "display": "Suspension"},
+      {"code": "385064004", "display": "Suppository"},
+      {"code": "385059003", "display": "Lozenge"}
+    ]
+  },
+  "ingredient_strengths": [
+    {"value": 5, "unit": "mg"},
+    {"value": 10, "unit": "mg"},
+    {"value": 20, "unit": "mg"},
+    {"value": 25, "unit": "mg"},
+    {"value": 50, "unit": "mg"},
+    {"value": 100, "unit": "mg"},
+    {"value": 200, "unit": "mg"},
+    {"value": 250, "unit": "mg"},
+    {"value": 500, "unit": "mg"},
+    {"value": 1000, "unit": "mg"},
+    {"value": 1, "unit": "g"},
+    {"value": 2, "unit": "g"}
+  ],
+  "status_codes": ["active", "inactive", "entered-in-error"],
+  "batch_data": {
+    "lot_number_format": "##???###",
+    "expiration_range_months": [6, 36]
+  }
+}

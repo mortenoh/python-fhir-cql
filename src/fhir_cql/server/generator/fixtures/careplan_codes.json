@@ -1,0 +1,35 @@
+{
+  "categories": {
+    "system": "http://hl7.org/fhir/us/core/CodeSystem/careplan-category",
+    "codes": [
+      {"code": "assess-plan", "display": "Assessment and Plan of Treatment"}
+    ]
+  },
+  "activities": {
+    "system": "http://snomed.info/sct",
+    "codes": [
+      {"code": "698358001", "display": "Blood glucose monitoring"},
+      {"code": "226029000", "display": "Dietary modification"},
+      {"code": "229065009", "display": "Exercise therapy"},
+      {"code": "385763009", "display": "Dietary counseling"},
+      {"code": "386311003", "display": "Wound care management"},
+      {"code": "710081004", "display": "Medication therapy management"},
+      {"code": "225358003", "display": "Wound dressing"},
+      {"code": "229070002", "display": "Physical therapy"},
+      {"code": "229055000", "display": "Occupational therapy"},
+      {"code": "308335008", "display": "Patient encounter procedure"},
+      {"code": "182969009", "display": "Relaxation training"},
+      {"code": "225323000", "display": "Smoking cessation therapy"},
+      {"code": "429159005", "display": "Weight management"},
+      {"code": "416223000", "display": "Mental health treatment"},
+      {"code": "385949008", "display": "Diabetes management"},
+      {"code": "108313002", "display": "Hypertension management"},
+      {"code": "225390008", "display": "Home blood pressure monitoring"},
+      {"code": "226234005", "display": "Low salt diet"},
+      {"code": "11816003", "display": "Diet education"},
+      {"code": "386373004", "display": "Nutrition therapy"}
+    ]
+  },
+  "intent_codes": ["proposal", "plan", "order", "option"],
+  "status_codes": ["draft", "active", "on-hold", "revoked", "completed", "entered-in-error", "unknown"]
+}
