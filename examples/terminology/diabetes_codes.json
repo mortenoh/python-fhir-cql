@@ -1,0 +1,110 @@
+{
+  "resourceType": "ValueSet",
+  "id": "diabetes-codes",
+  "url": "http://example.org/fhir/ValueSet/diabetes-codes",
+  "version": "1.0.0",
+  "name": "DiabetesCodes",
+  "title": "Diabetes Mellitus Codes",
+  "status": "active",
+  "description": "Value set containing codes for diabetes mellitus conditions",
+  "compose": {
+    "include": [
+      {
+        "system": "http://snomed.info/sct",
+        "concept": [
+          {
+            "code": "44054006",
+            "display": "Type 2 diabetes mellitus"
+          },
+          {
+            "code": "46635009",
+            "display": "Type 1 diabetes mellitus"
+          },
+          {
+            "code": "73211009",
+            "display": "Diabetes mellitus"
+          },
+          {
+            "code": "237599002",
+            "display": "Gestational diabetes mellitus"
+          },
+          {
+            "code": "8801005",
+            "display": "Secondary diabetes mellitus"
+          }
+        ]
+      },
+      {
+        "system": "http://hl7.org/fhir/sid/icd-10-cm",
+        "concept": [
+          {
+            "code": "E10",
+            "display": "Type 1 diabetes mellitus"
+          },
+          {
+            "code": "E11",
+            "display": "Type 2 diabetes mellitus"
+          },
+          {
+            "code": "E13",
+            "display": "Other specified diabetes mellitus"
+          },
+          {
+            "code": "O24",
+            "display": "Diabetes mellitus in pregnancy"
+          }
+        ]
+      }
+    ]
+  },
+  "expansion": {
+    "timestamp": "2024-01-01T00:00:00Z",
+    "contains": [
+      {
+        "system": "http://snomed.info/sct",
+        "code": "44054006",
+        "display": "Type 2 diabetes mellitus"
+      },
+      {
+        "system": "http://snomed.info/sct",
+        "code": "46635009",
+        "display": "Type 1 diabetes mellitus"
+      },
+      {
+        "system": "http://snomed.info/sct",
+        "code": "73211009",
+        "display": "Diabetes mellitus"
+      },
+      {
+        "system": "http://snomed.info/sct",
+        "code": "237599002",
+        "display": "Gestational diabetes mellitus"
+      },
+      {
+        "system": "http://snomed.info/sct",
+        "code": "8801005",
+        "display": "Secondary diabetes mellitus"
+      },
+      {
+        "system": "http://hl7.org/fhir/sid/icd-10-cm",
+        "code": "E10",
+        "display": "Type 1 diabetes mellitus"
+      },
+      {
+        "system": "http://hl7.org/fhir/sid/icd-10-cm",
+        "code": "E11",
+        "display": "Type 2 diabetes mellitus"
+      },
+      {
+        "system": "http://hl7.org/fhir/sid/icd-10-cm",
+        "code": "E13",
+        "display": "Other specified diabetes mellitus"
+      },
+      {
+        "system": "http://hl7.org/fhir/sid/icd-10-cm",
+        "code": "O24",
+        "display": "Diabetes mellitus in pregnancy"
+      }
+    ]
+  }
+}

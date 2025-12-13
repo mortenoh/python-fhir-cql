@@ -1,0 +1,132 @@
+{
+  "resourceType": "ValueSet",
+  "id": "lab-result-codes",
+  "url": "http://example.org/fhir/ValueSet/lab-result-codes",
+  "version": "1.0.0",
+  "name": "LabResultCodes",
+  "title": "Common Laboratory Result Codes",
+  "status": "active",
+  "description": "Value set containing LOINC codes for common laboratory tests",
+  "compose": {
+    "include": [
+      {
+        "system": "http://loinc.org",
+        "concept": [
+          {
+            "code": "4548-4",
+            "display": "Hemoglobin A1c/Hemoglobin.total in Blood"
+          },
+          {
+            "code": "2339-0",
+            "display": "Glucose [Mass/volume] in Blood"
+          },
+          {
+            "code": "2345-7",
+            "display": "Glucose [Mass/volume] in Serum or Plasma"
+          },
+          {
+            "code": "2160-0",
+            "display": "Creatinine [Mass/volume] in Serum or Plasma"
+          },
+          {
+            "code": "33914-3",
+            "display": "Glomerular filtration rate/1.73 sq M.predicted"
+          },
+          {
+            "code": "2093-3",
+            "display": "Cholesterol [Mass/volume] in Serum or Plasma"
+          },
+          {
+            "code": "2085-9",
+            "display": "Cholesterol in HDL [Mass/volume] in Serum or Plasma"
+          },
+          {
+            "code": "13457-7",
+            "display": "Cholesterol in LDL [Mass/volume] in Serum or Plasma by calculation"
+          },
+          {
+            "code": "2571-8",
+            "display": "Triglyceride [Mass/volume] in Serum or Plasma"
+          },
+          {
+            "code": "718-7",
+            "display": "Hemoglobin [Mass/volume] in Blood"
+          },
+          {
+            "code": "777-3",
+            "display": "Platelets [#/volume] in Blood by Automated count"
+          },
+          {
+            "code": "6690-2",
+            "display": "Leukocytes [#/volume] in Blood by Automated count"
+          }
+        ]
+      }
+    ]
+  },
+  "expansion": {
+    "timestamp": "2024-01-01T00:00:00Z",
+    "contains": [
+      {
+        "system": "http://loinc.org",
+        "code": "4548-4",
+        "display": "Hemoglobin A1c/Hemoglobin.total in Blood"
+      },
+      {
+        "system": "http://loinc.org",
+        "code": "2339-0",
+        "display": "Glucose [Mass/volume] in Blood"
+      },
+      {
+        "system": "http://loinc.org",
+        "code": "2345-7",
+        "display": "Glucose [Mass/volume] in Serum or Plasma"
+      },
+      {
+        "system": "http://loinc.org",
+        "code": "2160-0",
+        "display": "Creatinine [Mass/volume] in Serum or Plasma"
+      },
+      {
+        "system": "http://loinc.org",
+        "code": "33914-3",
+        "display": "Glomerular filtration rate/1.73 sq M.predicted"
+      },
+      {
+        "system": "http://loinc.org",
+        "code": "2093-3",
+        "display": "Cholesterol [Mass/volume] in Serum or Plasma"
+      },
+      {
+        "system": "http://loinc.org",
+        "code": "2085-9",
+        "display": "Cholesterol in HDL [Mass/volume] in Serum or Plasma"
+      },
+      {
+        "system": "http://loinc.org",
+        "code": "13457-7",
+        "display": "Cholesterol in LDL [Mass/volume] in Serum or Plasma by calculation"
+      },
+      {
+        "system": "http://loinc.org",
+        "code": "2571-8",
+        "display": "Triglyceride [Mass/volume] in Serum or Plasma"
+      },
+      {
+        "system": "http://loinc.org",
+        "code": "718-7",
+        "display": "Hemoglobin [Mass/volume] in Blood"
+      },
+      {
+        "system": "http://loinc.org",
+        "code": "777-3",
+        "display": "Platelets [#/volume] in Blood by Automated count"
+      },
+      {
+        "system": "http://loinc.org",
+        "code": "6690-2",
+        "display": "Leukocytes [#/volume] in Blood by Automated count"
+      }
+    ]
+  }
+}
