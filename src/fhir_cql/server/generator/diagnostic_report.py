@@ -9,9 +9,9 @@ from .base import FHIRResourceGenerator
 from .clinical_codes import (
     DIAGNOSTIC_REPORT_CATEGORIES,
     DIAGNOSTIC_REPORT_CONCLUSION_CODES,
-    DIAGNOSTIC_REPORT_STATUS_CODES,
     DIAGNOSTIC_REPORT_TYPES,
     LOINC_SYSTEM,
+    CodingTemplate,
 )
 
 
@@ -149,9 +149,7 @@ class DiagnosticReportGenerator(FHIRResourceGenerator):
 
         return report
 
-    def _generate_conclusion_text(
-        self, report_type: dict[str, str], conclusion_code: dict[str, str]
-    ) -> str:
+    def _generate_conclusion_text(self, report_type: CodingTemplate, conclusion_code: CodingTemplate) -> str:
         """Generate a realistic conclusion text based on report type and conclusion."""
         report_display = report_type.get("display", "Report")
         conclusion_display = conclusion_code.get("display", "Normal")

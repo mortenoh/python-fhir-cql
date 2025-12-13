@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, TypedDict
 
 
-class CodingTemplate(TypedDict, total=False):
+class CodingTemplate(TypedDict):
     """Template for a FHIR Coding element."""
 
     system: str
@@ -168,10 +168,8 @@ NAME_USE_CODES: list[str] = _patient_data["name_use_codes"]
 
 # Load diagnostic report codes
 _diagnostic_report_data = _load_fixture("diagnostic_report_codes")
-DIAGNOSTIC_REPORT_TYPES: list[dict[str, str]] = _diagnostic_report_data["report_types"]["codes"]
-DIAGNOSTIC_REPORT_CATEGORIES: list[CodingTemplate] = _load_codes_with_system(
-    _diagnostic_report_data["categories"]
-)
+DIAGNOSTIC_REPORT_TYPES: list[CodingTemplate] = _diagnostic_report_data["report_types"]["codes"]
+DIAGNOSTIC_REPORT_CATEGORIES: list[CodingTemplate] = _load_codes_with_system(_diagnostic_report_data["categories"])
 DIAGNOSTIC_REPORT_STATUS_CODES: list[str] = _diagnostic_report_data["status_codes"]
 DIAGNOSTIC_REPORT_CONCLUSION_CODES: list[CodingTemplate] = _load_codes_with_system(
     _diagnostic_report_data["conclusion_codes"]

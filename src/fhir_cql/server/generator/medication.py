@@ -1,16 +1,14 @@
 """Medication resource generator."""
 
-from datetime import timedelta, timezone
 from typing import Any
 
 from faker import Faker
 
 from .base import FHIRResourceGenerator
 from .clinical_codes import (
-    MEDICATIONS_RXNORM,
     MEDICATION_DOSE_FORMS,
     MEDICATION_INGREDIENT_STRENGTHS,
-    MEDICATION_STATUS_CODES,
+    MEDICATIONS_RXNORM,
     RXNORM_SYSTEM,
     SNOMED_SYSTEM,
 )
@@ -50,9 +48,7 @@ class MedicationGenerator(FHIRResourceGenerator):
 
         # Status
         if status is None:
-            status = self.faker.random_element(
-                elements=["active"] * 90 + ["inactive"] * 8 + ["entered-in-error"] * 2
-            )
+            status = self.faker.random_element(elements=["active"] * 90 + ["inactive"] * 8 + ["entered-in-error"] * 2)
 
         # Select medication
         med = self.faker.random_element(MEDICATIONS_RXNORM)
@@ -136,9 +132,7 @@ class MedicationGenerator(FHIRResourceGenerator):
         lot_number = self.faker.bothify("??####-##").upper()
 
         # Expiration date 6-36 months from now
-        exp_date = (
-            self.faker.date_between(start_date="+6m", end_date="+3y")
-        ).isoformat()
+        exp_date = (self.faker.date_between(start_date="+6m", end_date="+3y")).isoformat()
 
         return {
             "lotNumber": lot_number,
@@ -161,8 +155,7 @@ class MedicationGenerator(FHIRResourceGenerator):
         )
         # Override form to tablet
         tablet_form = next(
-            (f for f in MEDICATION_DOSE_FORMS if "Tablet" in f.get("display", "")),
-            MEDICATION_DOSE_FORMS[0]
+            (f for f in MEDICATION_DOSE_FORMS if "Tablet" in f.get("display", "")), MEDICATION_DOSE_FORMS[0]
         )
         med["form"] = {
             "coding": [
@@ -192,8 +185,7 @@ class MedicationGenerator(FHIRResourceGenerator):
         )
         # Override form to injection
         injection_form = next(
-            (f for f in MEDICATION_DOSE_FORMS if "Injection" in f.get("display", "")),
-            MEDICATION_DOSE_FORMS[0]
+            (f for f in MEDICATION_DOSE_FORMS if "Injection" in f.get("display", "")), MEDICATION_DOSE_FORMS[0]
         )
         med["form"] = {
             "coding": [

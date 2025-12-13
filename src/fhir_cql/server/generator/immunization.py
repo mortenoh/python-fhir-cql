@@ -9,8 +9,8 @@ from .base import FHIRResourceGenerator
 from .clinical_codes import (
     IMMUNIZATION_ROUTES,
     IMMUNIZATION_SITES,
-    IMMUNIZATION_STATUS_CODES,
     VACCINES,
+    CodingTemplate,
 )
 
 
@@ -161,24 +161,20 @@ class ImmunizationGenerator(FHIRResourceGenerator):
                     {
                         "system": "http://terminology.hl7.org/CodeSystem/v3-ActReason",
                         "code": self.faker.random_element(["MEDPREC", "PATOBJ", "OSTOCK"]),
-                        "display": self.faker.random_element([
-                            "medical precaution",
-                            "patient objection",
-                            "product out of stock"
-                        ]),
+                        "display": self.faker.random_element(
+                            ["medical precaution", "patient objection", "product out of stock"]
+                        ),
                     }
                 ]
             }
 
         # Add note for some immunizations (20% chance)
         if self.faker.random.random() < 0.2:
-            immunization["note"] = [
-                {"text": self._generate_immunization_note(vaccine, status)}
-            ]
+            immunization["note"] = [{"text": self._generate_immunization_note(vaccine, status)}]
 
         return immunization
 
-    def _generate_immunization_note(self, vaccine: dict[str, str], status: str) -> str:
+    def _generate_immunization_note(self, vaccine: CodingTemplate, status: str) -> str:
         """Generate a clinical note for the immunization."""
         vaccine_name = vaccine.get("display", "vaccine")
 

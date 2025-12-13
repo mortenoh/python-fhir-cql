@@ -9,8 +9,6 @@ from .base import FHIRResourceGenerator
 from .clinical_codes import (
     CAREPLAN_ACTIVITIES,
     CAREPLAN_CATEGORIES,
-    CAREPLAN_INTENT_CODES,
-    CAREPLAN_STATUS_CODES,
     SNOMED_SYSTEM,
 )
 
@@ -63,9 +61,7 @@ class CarePlanGenerator(FHIRResourceGenerator):
 
         # Intent
         if intent is None:
-            intent = self.faker.random_element(
-                elements=["plan"] * 60 + ["order"] * 30 + ["proposal"] * 10
-            )
+            intent = self.faker.random_element(elements=["plan"] * 60 + ["order"] * 30 + ["proposal"] * 10)
 
         # Generate period
         if period_start is None:
@@ -167,9 +163,7 @@ class CarePlanGenerator(FHIRResourceGenerator):
         for activity_code in selected:
             activity: dict[str, Any] = {
                 "detail": {
-                    "status": self.faker.random_element(
-                        ["not-started", "scheduled", "in-progress", "completed"]
-                    ),
+                    "status": self.faker.random_element(["not-started", "scheduled", "in-progress", "completed"]),
                     "code": {
                         "coding": [
                             {

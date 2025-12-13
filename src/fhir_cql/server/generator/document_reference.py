@@ -10,11 +10,10 @@ from .base import FHIRResourceGenerator
 from .clinical_codes import (
     DOCUMENT_CATEGORIES,
     DOCUMENT_CONTENT_TYPES,
-    DOCUMENT_DOC_STATUS_CODES,
     DOCUMENT_SECURITY_LABELS,
-    DOCUMENT_STATUS_CODES,
     DOCUMENT_TYPES,
     LOINC_SYSTEM,
+    CodingTemplate,
 )
 
 
@@ -66,9 +65,7 @@ class DocumentReferenceGenerator(FHIRResourceGenerator):
 
         # Document status
         if doc_status is None:
-            doc_status = self.faker.random_element(
-                elements=["final"] * 80 + ["preliminary"] * 15 + ["amended"] * 5
-            )
+            doc_status = self.faker.random_element(elements=["final"] * 80 + ["preliminary"] * 15 + ["amended"] * 5)
 
         # Select document type
         doc_type = self.faker.random_element(DOCUMENT_TYPES)
@@ -166,14 +163,14 @@ class DocumentReferenceGenerator(FHIRResourceGenerator):
 
         return document_reference
 
-    def _generate_document_content(self, doc_type: dict[str, str], content_type: str) -> str:
+    def _generate_document_content(self, doc_type: CodingTemplate, content_type: str) -> str:
         """Generate base64-encoded document content."""
         doc_display = doc_type.get("display", "Document")
 
         if content_type == "text/plain":
             content = f"""
 {doc_display}
-{'=' * len(doc_display)}
+{"=" * len(doc_display)}
 
 Date: {self.faker.date()}
 Author: Dr. {self.faker.name()}
@@ -193,7 +190,7 @@ Signed electronically.
 
         return base64.b64encode(content.encode()).decode()
 
-    def _generate_description(self, doc_type: dict[str, str]) -> str:
+    def _generate_description(self, doc_type: CodingTemplate) -> str:
         """Generate a document description."""
         doc_display = doc_type.get("display", "Document")
         descriptions = [

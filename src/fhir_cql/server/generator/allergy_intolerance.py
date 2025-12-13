@@ -7,16 +7,14 @@ from faker import Faker
 
 from .base import FHIRResourceGenerator
 from .clinical_codes import (
-    ALLERGY_CATEGORIES,
-    ALLERGY_CLINICAL_STATUS,
-    ALLERGY_CRITICALITIES,
-    ALLERGY_REACTIONS,
-    ALLERGY_TYPES,
-    ALLERGY_VERIFICATION_STATUS,
     ALLERGENS_ENVIRONMENT,
     ALLERGENS_FOOD,
     ALLERGENS_MEDICATION,
+    ALLERGY_CLINICAL_STATUS,
+    ALLERGY_REACTIONS,
+    ALLERGY_VERIFICATION_STATUS,
     SNOMED_SYSTEM,
+    CodingTemplate,
 )
 
 
@@ -58,9 +56,7 @@ class AllergyIntoleranceGenerator(FHIRResourceGenerator):
 
         # Select category
         if category is None:
-            category = self.faker.random_element(
-                elements=["medication"] * 40 + ["food"] * 35 + ["environment"] * 25
-            )
+            category = self.faker.random_element(elements=["medication"] * 40 + ["food"] * 35 + ["environment"] * 25)
 
         # Select allergen based on category
         if category == "medication":
@@ -71,22 +67,15 @@ class AllergyIntoleranceGenerator(FHIRResourceGenerator):
             allergen = self.faker.random_element(ALLERGENS_ENVIRONMENT)
 
         # Select allergy type
-        allergy_type = self.faker.random_element(
-            elements=["allergy"] * 80 + ["intolerance"] * 20
-        )
+        allergy_type = self.faker.random_element(elements=["allergy"] * 80 + ["intolerance"] * 20)
 
         # Select criticality with weighted distribution
-        criticality = self.faker.random_element(
-            elements=["low"] * 50 + ["high"] * 35 + ["unable-to-assess"] * 15
-        )
+        criticality = self.faker.random_element(elements=["low"] * 50 + ["high"] * 35 + ["unable-to-assess"] * 15)
 
         # Select clinical status (most are active)
-        clinical_status = self.faker.random_element(
-            elements=["active"] * 75 + ["inactive"] * 15 + ["resolved"] * 10
-        )
+        clinical_status = self.faker.random_element(elements=["active"] * 75 + ["inactive"] * 15 + ["resolved"] * 10)
         clinical_status_obj = next(
-            (s for s in ALLERGY_CLINICAL_STATUS if s["code"] == clinical_status),
-            ALLERGY_CLINICAL_STATUS[0]
+            (s for s in ALLERGY_CLINICAL_STATUS if s["code"] == clinical_status), ALLERGY_CLINICAL_STATUS[0]
         )
 
         # Select verification status (most are confirmed)
@@ -94,8 +83,7 @@ class AllergyIntoleranceGenerator(FHIRResourceGenerator):
             elements=["confirmed"] * 60 + ["presumed"] * 25 + ["unconfirmed"] * 15
         )
         verification_status_obj = next(
-            (s for s in ALLERGY_VERIFICATION_STATUS if s["code"] == verification_status),
-            ALLERGY_VERIFICATION_STATUS[0]
+            (s for s in ALLERGY_VERIFICATION_STATUS if s["code"] == verification_status), ALLERGY_VERIFICATION_STATUS[0]
         )
 
         # Generate onset date if not provided
@@ -168,11 +156,7 @@ class AllergyIntoleranceGenerator(FHIRResourceGenerator):
 
         # Add note for high criticality (50% chance)
         if criticality == "high" and self.faker.random.random() < 0.5:
-            allergy["note"] = [
-                {
-                    "text": self._generate_allergy_note(allergen, criticality)
-                }
-            ]
+            allergy["note"] = [{"text": self._generate_allergy_note(allergen, criticality)}]
 
         return allergy
 
@@ -216,7 +200,7 @@ class AllergyIntoleranceGenerator(FHIRResourceGenerator):
             "severity": severity,
         }
 
-    def _generate_allergy_note(self, allergen: dict[str, str], criticality: str) -> str:
+    def _generate_allergy_note(self, allergen: CodingTemplate, criticality: str) -> str:
         """Generate a clinical note for the allergy."""
         allergen_name = allergen.get("display", "Unknown allergen")
 
@@ -226,8 +210,7 @@ class AllergyIntoleranceGenerator(FHIRResourceGenerator):
                 "Epinephrine auto-injector prescribed. Immediate medical attention required upon exposure.",
                 f"HIGH ALERT: Known severe {allergen_name}. "
                 "Previous anaphylactic reaction documented. Avoid all related substances.",
-                f"Critical allergy to {allergen_name}. "
-                "Patient carries emergency epinephrine. Alert all providers.",
+                f"Critical allergy to {allergen_name}. Patient carries emergency epinephrine. Alert all providers.",
             ]
         else:
             templates = [

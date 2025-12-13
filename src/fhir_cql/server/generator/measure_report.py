@@ -39,6 +39,7 @@ class MeasureReportGenerator(FHIRResourceGenerator):
         status: str | None = None,
         period_start: str | None = None,
         period_end: str | None = None,
+        **kwargs: Any,
     ) -> dict[str, Any]:
         """Generate a MeasureReport resource.
 
@@ -305,6 +306,7 @@ class MeasureReportGenerator(FHIRResourceGenerator):
         count: int = 10,
         measure_ref: str | None = None,
         patient_refs: list[str] | None = None,
+        **kwargs: Any,
     ) -> list[dict[str, Any]]:
         """Generate multiple MeasureReport resources.
 

@@ -9,10 +9,10 @@ from .base import FHIRResourceGenerator
 from .clinical_codes import (
     GOAL_ACHIEVEMENT_STATUS,
     GOAL_DESCRIPTIONS,
-    GOAL_LIFECYCLE_STATUS,
     GOAL_PRIORITY,
     GOAL_TARGET_MEASURES,
     SNOMED_SYSTEM,
+    CodingTemplate,
 )
 
 
@@ -53,8 +53,7 @@ class GoalGenerator(FHIRResourceGenerator):
         # Lifecycle status with weighted distribution
         if lifecycle_status is None:
             lifecycle_status = self.faker.random_element(
-                elements=["active"] * 50 + ["accepted"] * 20 + ["completed"] * 15 +
-                         ["on-hold"] * 10 + ["proposed"] * 5
+                elements=["active"] * 50 + ["accepted"] * 20 + ["completed"] * 15 + ["on-hold"] * 10 + ["proposed"] * 5
             )
 
         # Generate start date
@@ -73,13 +72,9 @@ class GoalGenerator(FHIRResourceGenerator):
         achievement_status = None
         if lifecycle_status in ["active", "completed"]:
             if lifecycle_status == "completed":
-                achievement_status = self.faker.random_element(
-                    ["achieved", "sustaining", "not-achieved"]
-                )
+                achievement_status = self.faker.random_element(["achieved", "sustaining", "not-achieved"])
             else:
-                achievement_status = self.faker.random_element(
-                    ["in-progress", "improving", "worsening", "no-change"]
-                )
+                achievement_status = self.faker.random_element(["in-progress", "improving", "worsening", "no-change"])
 
         # Priority
         priority = self.faker.random_element(GOAL_PRIORITY)
@@ -119,8 +114,7 @@ class GoalGenerator(FHIRResourceGenerator):
 
         if achievement_status:
             status_obj = next(
-                (s for s in GOAL_ACHIEVEMENT_STATUS if s["code"] == achievement_status),
-                GOAL_ACHIEVEMENT_STATUS[0]
+                (s for s in GOAL_ACHIEVEMENT_STATUS if s["code"] == achievement_status), GOAL_ACHIEVEMENT_STATUS[0]
             )
             goal["achievementStatus"] = {
                 "coding": [
@@ -138,9 +132,7 @@ class GoalGenerator(FHIRResourceGenerator):
 
         # Add note (30% chance)
         if self.faker.random.random() < 0.3:
-            goal["note"] = [
-                {"text": self._generate_goal_note(goal_desc, lifecycle_status)}
-            ]
+            goal["note"] = [{"text": self._generate_goal_note(goal_desc, lifecycle_status)}]
 
         return goal
 
@@ -153,10 +145,7 @@ class GoalGenerator(FHIRResourceGenerator):
         due_date = (start_dt + timedelta(days=self.faker.random_int(30, 180))).isoformat()
 
         # Target value within the target range
-        target_value = self.faker.random.uniform(
-            measure.get("target_low", 50),
-            measure.get("target_high", 100)
-        )
+        target_value = self.faker.random.uniform(measure.get("target_low", 50), measure.get("target_high", 100))
 
         return [
             {
@@ -180,7 +169,7 @@ class GoalGenerator(FHIRResourceGenerator):
             }
         ]
 
-    def _generate_goal_note(self, goal_desc: dict[str, str], status: str) -> str:
+    def _generate_goal_note(self, goal_desc: CodingTemplate, status: str) -> str:
         """Generate a clinical note for the goal."""
         goal_name = goal_desc.get("display", "goal")
 

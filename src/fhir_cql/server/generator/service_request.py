@@ -8,10 +8,7 @@ from faker import Faker
 from .base import FHIRResourceGenerator
 from .clinical_codes import (
     SERVICE_REQUEST_CATEGORIES,
-    SERVICE_REQUEST_INTENT_CODES,
     SERVICE_REQUEST_ORDER_CODES,
-    SERVICE_REQUEST_PRIORITY_CODES,
-    SERVICE_REQUEST_STATUS_CODES,
     SNOMED_SYSTEM,
 )
 
@@ -68,9 +65,7 @@ class ServiceRequestGenerator(FHIRResourceGenerator):
 
         # Intent
         if intent is None:
-            intent = self.faker.random_element(
-                elements=["order"] * 70 + ["plan"] * 20 + ["proposal"] * 10
-            )
+            intent = self.faker.random_element(elements=["order"] * 70 + ["plan"] * 20 + ["proposal"] * 10)
 
         # Priority
         if priority is None:
@@ -81,7 +76,11 @@ class ServiceRequestGenerator(FHIRResourceGenerator):
         # Select order code based on category
         if order_category:
             matching_orders = [o for o in SERVICE_REQUEST_ORDER_CODES if o.get("category") == order_category]
-            order_code = self.faker.random_element(matching_orders) if matching_orders else self.faker.random_element(SERVICE_REQUEST_ORDER_CODES)
+            order_code = (
+                self.faker.random_element(matching_orders)
+                if matching_orders
+                else self.faker.random_element(SERVICE_REQUEST_ORDER_CODES)
+            )
         else:
             order_code = self.faker.random_element(SERVICE_REQUEST_ORDER_CODES)
 
@@ -89,7 +88,7 @@ class ServiceRequestGenerator(FHIRResourceGenerator):
         category_code = order_code.get("category", "laboratory")
         category = next(
             (c for c in SERVICE_REQUEST_CATEGORIES if c["display"].lower() == category_code),
-            SERVICE_REQUEST_CATEGORIES[0]
+            SERVICE_REQUEST_CATEGORIES[0],
         )
 
         # Authored on
@@ -147,17 +146,11 @@ class ServiceRequestGenerator(FHIRResourceGenerator):
 
         # Add reason (50% chance)
         if self.faker.random.random() < 0.5:
-            service_request["reasonCode"] = [
-                {
-                    "text": self._generate_reason(order_code)
-                }
-            ]
+            service_request["reasonCode"] = [{"text": self._generate_reason(order_code)}]
 
         # Add note (30% chance)
         if self.faker.random.random() < 0.3:
-            service_request["note"] = [
-                {"text": self._generate_note(order_code, priority)}
-            ]
+            service_request["note"] = [{"text": self._generate_note(order_code, priority)}]
 
         return service_request
 

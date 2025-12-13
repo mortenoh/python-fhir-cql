@@ -42,6 +42,7 @@ class MeasureGenerator(FHIRResourceGenerator):
         library_ref: str | None = None,
         scoring: str | None = None,
         measure_type: str | None = None,
+        **kwargs: Any,
     ) -> dict[str, Any]:
         """Generate a Measure resource.
 
@@ -164,21 +165,27 @@ class MeasureGenerator(FHIRResourceGenerator):
         populations.append(self._make_population("initial-population"))
 
         if scoring == "proportion":
-            populations.extend([
-                self._make_population("denominator"),
-                self._make_population("denominator-exclusion"),
-                self._make_population("numerator"),
-            ])
+            populations.extend(
+                [
+                    self._make_population("denominator"),
+                    self._make_population("denominator-exclusion"),
+                    self._make_population("numerator"),
+                ]
+            )
         elif scoring == "ratio":
-            populations.extend([
-                self._make_population("denominator"),
-                self._make_population("numerator"),
-            ])
+            populations.extend(
+                [
+                    self._make_population("denominator"),
+                    self._make_population("numerator"),
+                ]
+            )
         elif scoring == "continuous-variable":
-            populations.extend([
-                self._make_population("measure-population"),
-                self._make_population("measure-observation"),
-            ])
+            populations.extend(
+                [
+                    self._make_population("measure-population"),
+                    self._make_population("measure-observation"),
+                ]
+            )
         elif scoring == "cohort":
             pass  # Only initial population needed
 
@@ -283,6 +290,7 @@ class MeasureGenerator(FHIRResourceGenerator):
         self,
         count: int = 10,
         library_ref: str | None = None,
+        **kwargs: Any,
     ) -> list[dict[str, Any]]:
         """Generate multiple Measure resources.
 
