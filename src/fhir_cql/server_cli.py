@@ -103,94 +103,8 @@ GENERATORS: dict[str, type] = {
 
 @app.command("generate")
 def generate(
-    output: Path = typer.Argument(..., help="Output JSON file path"),
-    patients: int = typer.Option(10, "--patients", "-n", help="Number of patients to generate"),
-    seed: int = typer.Option(None, "--seed", "-s", help="Random seed for reproducible data"),
-    format: str = typer.Option("bundle", "--format", "-f", help="Output format: bundle, ndjson, or files"),
-    pretty: bool = typer.Option(True, "--pretty/--no-pretty", help="Pretty-print JSON output"),
-) -> None:
-    """Generate synthetic FHIR data to a file.
-
-    Examples:
-        # Generate 100 patients as a bundle
-        fhir server generate ./data.json --patients 100
-
-        # Generate with reproducible seed
-        fhir server generate ./data.json --patients 50 --seed 42
-
-        # Generate as NDJSON (one resource per line)
-        fhir server generate ./data.ndjson --patients 100 --format ndjson
-    """
-    import uuid
-
-    from fhir_cql.server.generator import PatientRecordGenerator
-
-    rprint(f"[bold]Generating {patients} patient(s)...[/bold]")
-    if seed:
-        rprint(f"  Random seed: {seed}")
-
-    generator = PatientRecordGenerator(seed=seed)
-    resources = generator.generate_population(patients)
-
-    rprint(f"  Generated {len(resources)} total resources")
-
-    # Count by type
-    by_type: dict[str, int] = {}
-    for r in resources:
-        rt = r.get("resourceType", "Unknown")
-        by_type[rt] = by_type.get(rt, 0) + 1
-
-    table = Table(title="Generated Resources")
-    table.add_column("Resource Type", style="cyan")
-    table.add_column("Count", justify="right")
-    for rt, count in sorted(by_type.items()):
-        table.add_row(rt, str(count))
-    rprint(table)
-
-    # Write output
-    if format == "bundle":
-        bundle = {
-            "resourceType": "Bundle",
-            "id": str(uuid.uuid4()),
-            "type": "collection",
-            "total": len(resources),
-            "entry": [{"fullUrl": f"urn:uuid:{r.get('id', uuid.uuid4())}", "resource": r} for r in resources],
-        }
-        with open(output, "w") as f:
-            json.dump(bundle, f, indent=2 if pretty else None)
-        rprint(f"[green]Written to {output}[/green] (Bundle format)")
-
-    elif format == "ndjson":
-        with open(output, "w") as f:
-            for r in resources:
-                f.write(json.dumps(r) + "\n")
-        rprint(f"[green]Written to {output}[/green] (NDJSON format)")
-
-    elif format == "files":
-        # Create directory structure
-        output_dir = output.parent / output.stem
-        output_dir.mkdir(parents=True, exist_ok=True)
-
-        for r in resources:
-            rt = r.get("resourceType", "Unknown")
-            rid = r.get("id", str(uuid.uuid4()))
-            type_dir = output_dir / rt
-            type_dir.mkdir(exist_ok=True)
-            file_path = type_dir / f"{rid}.json"
-            with open(file_path, "w") as f:
-                json.dump(r, f, indent=2 if pretty else None)
-
-        rprint(f"[green]Written to {output_dir}/[/green] (individual files)")
-
-    else:
-        rprint(f"[red]Unknown format: {format}[/red]")
-        raise typer.Exit(1)
-
-
-@app.command("generate-resource")
-def generate_resource(
     resource_type: str = typer.Argument(None, help="Resource type to generate (e.g., Patient, Observation)"),
-    output: Path = typer.Argument(None, help="Output JSON file path"),
+    output: Path = typer.Argument(None, help="Output JSON file path (stdout if not specified)"),
     count: int = typer.Option(1, "--count", "-n", help="Number of resources to generate"),
     seed: int = typer.Option(None, "--seed", "-s", help="Random seed for reproducible data"),
     format: str = typer.Option("bundle", "--format", "-f", help="Output format: bundle, ndjson, or json"),
@@ -204,26 +118,32 @@ def generate_resource(
     load: bool = typer.Option(False, "--load", help="Load generated resources to FHIR server"),
     url: str = typer.Option("http://localhost:8080", "--url", "-u", help="FHIR server URL (used with --load)"),
 ) -> None:
-    """Generate individual FHIR resources of a specific type.
+    """Generate FHIR resources of a specific type.
 
     Examples:
         # List available resource types
-        fhir server generate-resource --list
+        fhir server generate --list
 
-        # Generate 10 patients
-        fhir server generate-resource Patient ./patients.json -n 10
+        # Generate 10 patients to stdout
+        fhir server generate Patient -n 10
+
+        # Generate and pipe to jq
+        fhir server generate Patient -n 3 | jq '.entry[0].resource'
+
+        # Generate 10 patients to file
+        fhir server generate Patient ./patients.json -n 10
 
         # Generate observations for a patient
-        fhir server generate-resource Observation ./obs.json -n 5 --patient-ref Patient/123
+        fhir server generate Observation ./obs.json -n 5 --patient-ref Patient/123
 
         # Generate location hierarchy (Site → Building → Wing → Ward)
-        fhir server generate-resource Location ./locations.json --hierarchy-depth 4
+        fhir server generate Location ./locations.json --hierarchy-depth 4
 
         # Generate with reproducible seed
-        fhir server generate-resource Condition ./conditions.json -n 20 --seed 42
+        fhir server generate Condition ./conditions.json -n 20 --seed 42
 
         # Generate and load to server in one step
-        fhir server generate-resource Patient ./patients.json -n 10 --load --url http://localhost:8080
+        fhir server generate Patient ./patients.json -n 10 --load --url http://localhost:8080
     """
     # Handle --list option
     if list_types:
@@ -241,10 +161,6 @@ def generate_resource(
         rprint("[red]Error:[/red] Resource type is required. Use --list to see available types.")
         raise typer.Exit(1)
 
-    if not output:
-        rprint("[red]Error:[/red] Output file path is required.")
-        raise typer.Exit(1)
-
     if resource_type not in GENERATORS:
         rprint(f"[red]Error:[/red] Unknown resource type '{resource_type}'")
         rprint("Use --list to see available types.")
@@ -254,15 +170,18 @@ def generate_resource(
     generator_class = GENERATORS[resource_type]
     generator = generator_class(seed=seed)
 
-    rprint(f"[bold]Generating {resource_type} resource(s)...[/bold]")
-    if seed:
-        rprint(f"  Random seed: {seed}")
+    # Only print status messages when writing to file (not stdout)
+    if output:
+        rprint(f"[bold]Generating {resource_type} resource(s)...[/bold]")
+        if seed:
+            rprint(f"  Random seed: {seed}")
 
     resources: list[dict[str, Any]] = []
 
     # Special handling for Location hierarchy
     if resource_type == "Location" and hierarchy_depth:
-        rprint(f"  Generating location hierarchy with depth {hierarchy_depth}")
+        if output:
+            rprint(f"  Generating location hierarchy with depth {hierarchy_depth}")
         resources = generator.generate_hierarchy(
             managing_organization_ref=organization_ref,
             depth=hierarchy_depth,
@@ -288,7 +207,8 @@ def generate_resource(
             resource = generator.generate(**kwargs)
             resources.append(resource)
 
-    rprint(f"  Generated {len(resources)} resource(s)")
+    if output:
+        rprint(f"  Generated {len(resources)} resource(s)")
 
     # Write output using same logic as generate command
     _write_resources(resources, output, format, pretty)
@@ -349,11 +269,11 @@ def _load_resources_to_server(resources: list[dict[str, Any]], url: str) -> None
 
 def _write_resources(
     resources: list[dict[str, Any]],
-    output: Path,
+    output: Path | None,
     format: str,
     pretty: bool,
 ) -> None:
-    """Write resources to file in specified format."""
+    """Write resources to file or stdout in specified format."""
     import uuid
 
     if format == "bundle":
@@ -364,22 +284,32 @@ def _write_resources(
             "total": len(resources),
             "entry": [{"fullUrl": f"urn:uuid:{r.get('id', uuid.uuid4())}", "resource": r} for r in resources],
         }
-        with open(output, "w") as f:
-            json.dump(bundle, f, indent=2 if pretty else None)
-        rprint(f"[green]Written to {output}[/green] (Bundle format)")
+        if output is None:
+            print(json.dumps(bundle, indent=2 if pretty else None))
+        else:
+            with open(output, "w") as f:
+                json.dump(bundle, f, indent=2 if pretty else None)
+            rprint(f"[green]Written to {output}[/green] (Bundle format)")
 
     elif format == "ndjson":
-        with open(output, "w") as f:
+        if output is None:
             for r in resources:
-                f.write(json.dumps(r) + "\n")
-        rprint(f"[green]Written to {output}[/green] (NDJSON format)")
+                print(json.dumps(r))
+        else:
+            with open(output, "w") as f:
+                for r in resources:
+                    f.write(json.dumps(r) + "\n")
+            rprint(f"[green]Written to {output}[/green] (NDJSON format)")
 
     elif format == "json":
         # Single resource or array
         data = resources[0] if len(resources) == 1 else resources
-        with open(output, "w") as f:
-            json.dump(data, f, indent=2 if pretty else None)
-        rprint(f"[green]Written to {output}[/green] (JSON format)")
+        if output is None:
+            print(json.dumps(data, indent=2 if pretty else None))
+        else:
+            with open(output, "w") as f:
+                json.dump(data, f, indent=2 if pretty else None)
+            rprint(f"[green]Written to {output}[/green] (JSON format)")
 
     else:
         rprint(f"[red]Unknown format: {format}[/red]")
@@ -613,6 +543,404 @@ def info(
     except httpx.RequestError as e:
         rprint(f"[red]Connection error:[/red] {e}")
         raise typer.Exit(1)
+
+
+@app.command("populate")
+def populate(
+    url: str = typer.Option("http://localhost:8080", "--url", "-u", help="FHIR server URL"),
+    seed: int = typer.Option(None, "--seed", "-s", help="Random seed for reproducible data"),
+    patients: int = typer.Option(3, "--patients", "-n", help="Number of patients to generate"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Generate but don't load to server"),
+    output: Path = typer.Option(None, "--output", "-o", help="Save generated resources to file"),
+) -> None:
+    """Populate a FHIR server with linked example resources of all types.
+
+    Creates a complete dataset with:
+    - Administrative resources (organizations, practitioners, locations)
+    - Multiple patients with linked clinical data
+    - Care management resources (care teams, care plans, goals)
+    - Financial resources (coverage, claims)
+    - Quality measures with linked reports
+
+    Examples:
+        # Populate local server with defaults (3 patients)
+        fhir server populate
+
+        # Populate with more patients
+        fhir server populate --patients 10
+
+        # Dry run - generate but don't load
+        fhir server populate --dry-run --output ./population.json
+
+        # Reproducible data
+        fhir server populate --seed 42 --patients 5
+    """
+    from faker import Faker
+
+    rprint("[bold]Generating linked FHIR resources...[/bold]")
+    if seed:
+        rprint(f"  Random seed: {seed}")
+
+    # Initialize Faker with seed
+    faker = Faker()
+    if seed is not None:
+        Faker.seed(seed)
+        faker.seed_instance(seed)
+
+    resources: list[dict[str, Any]] = []
+
+    # Track created resources for linking
+    created: dict[str, list[dict[str, Any]]] = {}
+
+    def track(resource: dict[str, Any]) -> dict[str, Any]:
+        """Track a resource and return it."""
+        rt = resource.get("resourceType", "Unknown")
+        if rt not in created:
+            created[rt] = []
+        created[rt].append(resource)
+        resources.append(resource)
+        return resource
+
+    def ref(resource: dict[str, Any]) -> str:
+        """Get reference string for a resource."""
+        return f"{resource['resourceType']}/{resource['id']}"
+
+    # ============================================================
+    # TIER 1: Foundation (no dependencies)
+    # ============================================================
+    rprint("  [cyan]Tier 1:[/cyan] Foundation resources")
+
+    # Organizations (hospital + insurance company)
+    org_gen = OrganizationGenerator(faker, seed)
+    hospital_org = track(org_gen.generate(name="General Hospital"))
+    insurance_org = track(org_gen.generate(name="Blue Cross Insurance"))
+
+    # Location hierarchy
+    loc_gen = LocationGenerator(faker, seed)
+    locations = loc_gen.generate_hierarchy(
+        managing_organization_ref=ref(hospital_org),
+        depth=4,  # Site → Building → Wing → Room
+    )
+    for loc in locations:
+        track(loc)
+    clinic_location = locations[-1] if locations else None
+
+    # Practitioners
+    prac_gen = PractitionerGenerator(faker, seed)
+    practitioners = [track(prac_gen.generate()) for _ in range(3)]
+
+    # Terminology resources
+    vs_gen = ValueSetGenerator(faker, seed)
+    cs_gen = CodeSystemGenerator(faker, seed)
+    track(vs_gen.generate())
+    track(cs_gen.generate())
+
+    # ============================================================
+    # TIER 2: Administrative (depend on Tier 1)
+    # ============================================================
+    rprint("  [cyan]Tier 2:[/cyan] Administrative resources")
+
+    # PractitionerRoles
+    pr_gen = PractitionerRoleGenerator(faker, seed)
+    for prac in practitioners:
+        track(pr_gen.generate(
+            practitioner_ref=ref(prac),
+            organization_ref=ref(hospital_org),
+            location_ref=ref(clinic_location) if clinic_location else None,
+        ))
+
+    # Devices
+    dev_gen = DeviceGenerator(faker, seed)
+    device = track(dev_gen.generate())
+
+    # ============================================================
+    # TIER 3: Scheduling (depend on Tier 1, 2)
+    # ============================================================
+    rprint("  [cyan]Tier 3:[/cyan] Scheduling resources")
+
+    # Schedule
+    sched_gen = ScheduleGenerator(faker, seed)
+    schedule = track(sched_gen.generate(
+        practitioner_ref=ref(practitioners[0]),
+        location_ref=ref(clinic_location) if clinic_location else None,
+    ))
+
+    # Slots
+    slot_gen = SlotGenerator(faker, seed)
+    slots = [track(slot_gen.generate(schedule_ref=ref(schedule))) for _ in range(3)]
+
+    # ============================================================
+    # Generate per-patient resources
+    # ============================================================
+    pat_gen = PatientGenerator(faker, seed)
+    rel_gen = RelatedPersonGenerator(faker, seed)
+    enc_gen = EncounterGenerator(faker, seed)
+    cond_gen = ConditionGenerator(faker, seed)
+    obs_gen = ObservationGenerator(faker, seed)
+    allergy_gen = AllergyIntoleranceGenerator(faker, seed)
+    imm_gen = ImmunizationGenerator(faker, seed)
+    care_team_gen = CareTeamGenerator(faker, seed)
+    care_plan_gen = CarePlanGenerator(faker, seed)
+    goal_gen = GoalGenerator(faker, seed)
+    task_gen = TaskGenerator(faker, seed)
+    med_gen = MedicationGenerator(faker, seed)
+    med_req_gen = MedicationRequestGenerator(faker, seed)
+    proc_gen = ProcedureGenerator(faker, seed)
+    svc_req_gen = ServiceRequestGenerator(faker, seed)
+    diag_gen = DiagnosticReportGenerator(faker, seed)
+    doc_gen = DocumentReferenceGenerator(faker, seed)
+    appt_gen = AppointmentGenerator(faker, seed)
+    cov_gen = CoverageGenerator(faker, seed)
+    claim_gen = ClaimGenerator(faker, seed)
+    eob_gen = ExplanationOfBenefitGenerator(faker, seed)
+
+    patient_refs: list[str] = []
+
+    for i in range(patients):
+        rprint(f"  [cyan]Patient {i+1}/{patients}:[/cyan] Generating clinical data")
+
+        # Patient
+        patient = track(pat_gen.generate(
+            practitioner_ref=ref(practitioners[0]),
+            organization_ref=ref(hospital_org),
+        ))
+        patient_ref = ref(patient)
+        patient_refs.append(patient_ref)
+
+        # RelatedPerson
+        track(rel_gen.generate(patient_ref=patient_ref))
+
+        # ============================================================
+        # TIER 4: Clinical Core
+        # ============================================================
+
+        # Encounters
+        encounters = []
+        for _ in range(faker.random_int(1, 3)):
+            enc = track(enc_gen.generate(
+                patient_ref=patient_ref,
+                practitioner_ref=ref(faker.random_element(practitioners)),
+                organization_ref=ref(hospital_org),
+            ))
+            encounters.append(enc)
+
+        # Per-encounter resources
+        conditions_for_patient = []
+        observations_for_patient = []
+
+        for enc in encounters:
+            enc_ref = ref(enc)
+
+            # Conditions
+            for _ in range(faker.random_int(1, 2)):
+                cond = track(cond_gen.generate(
+                    patient_ref=patient_ref,
+                    encounter_ref=enc_ref,
+                ))
+                conditions_for_patient.append(cond)
+
+            # Observations
+            for _ in range(faker.random_int(2, 4)):
+                obs = track(obs_gen.generate(
+                    patient_ref=patient_ref,
+                    encounter_ref=enc_ref,
+                ))
+                observations_for_patient.append(obs)
+
+        # AllergyIntolerance
+        track(allergy_gen.generate(
+            patient_ref=patient_ref,
+            encounter_ref=ref(encounters[0]) if encounters else None,
+            recorder_ref=ref(practitioners[0]),
+        ))
+
+        # Immunization
+        track(imm_gen.generate(
+            patient_ref=patient_ref,
+            encounter_ref=ref(encounters[0]) if encounters else None,
+            performer_ref=ref(practitioners[0]),
+        ))
+
+        # ============================================================
+        # TIER 5: Care Management
+        # ============================================================
+
+        # CareTeam
+        track(care_team_gen.generate(
+            patient_ref=patient_ref,
+            practitioner_refs=[ref(p) for p in practitioners[:2]],
+            encounter_ref=ref(encounters[0]) if encounters else None,
+        ))
+
+        # CarePlan (linked to conditions)
+        track(care_plan_gen.generate(
+            patient_ref=patient_ref,
+            encounter_ref=ref(encounters[0]) if encounters else None,
+            author_ref=ref(practitioners[0]),
+            condition_refs=[ref(c) for c in conditions_for_patient[:2]],
+        ))
+
+        # Goal
+        track(goal_gen.generate(patient_ref=patient_ref))
+
+        # Task
+        track(task_gen.generate(
+            patient_ref=patient_ref,
+            owner_ref=ref(practitioners[0]),
+        ))
+
+        # ============================================================
+        # TIER 6: Treatment
+        # ============================================================
+
+        # Medication
+        medication = track(med_gen.generate())
+
+        # MedicationRequest
+        track(med_req_gen.generate(
+            patient_ref=patient_ref,
+            practitioner_ref=ref(practitioners[0]),
+            encounter_ref=ref(encounters[0]) if encounters else None,
+        ))
+
+        # Procedure
+        track(proc_gen.generate(
+            patient_ref=patient_ref,
+            practitioner_ref=ref(practitioners[0]),
+            encounter_ref=ref(encounters[0]) if encounters else None,
+        ))
+
+        # ServiceRequest
+        track(svc_req_gen.generate(
+            patient_ref=patient_ref,
+            requester_ref=ref(practitioners[0]),
+            encounter_ref=ref(encounters[0]) if encounters else None,
+        ))
+
+        # DiagnosticReport (linked to observations)
+        track(diag_gen.generate(
+            patient_ref=patient_ref,
+            encounter_ref=ref(encounters[0]) if encounters else None,
+            performer_ref=ref(practitioners[0]),
+            result_refs=[ref(o) for o in observations_for_patient[:3]],
+        ))
+
+        # DocumentReference
+        track(doc_gen.generate(patient_ref=patient_ref))
+
+        # Appointment (linked to slot)
+        track(appt_gen.generate(
+            patient_ref=patient_ref,
+            practitioner_ref=ref(practitioners[0]),
+            location_ref=ref(clinic_location) if clinic_location else None,
+            slot_ref=ref(slots[i % len(slots)]) if slots else None,
+        ))
+
+        # ============================================================
+        # TIER 7: Financial
+        # ============================================================
+
+        # Coverage
+        coverage = track(cov_gen.generate(
+            patient_ref=patient_ref,
+            payor_ref=ref(insurance_org),
+        ))
+
+        # Claim
+        claim = track(claim_gen.generate(
+            patient_ref=patient_ref,
+            provider_ref=ref(practitioners[0]),
+            insurer_ref=ref(insurance_org),
+            coverage_ref=ref(coverage),
+        ))
+
+        # ExplanationOfBenefit
+        track(eob_gen.generate(
+            patient_ref=patient_ref,
+            provider_ref=ref(practitioners[0]),
+            insurer_ref=ref(insurance_org),
+            coverage_ref=ref(coverage),
+            claim_ref=ref(claim),
+        ))
+
+    # ============================================================
+    # TIER 8: Quality Measures
+    # ============================================================
+    rprint("  [cyan]Tier 8:[/cyan] Quality Measures")
+
+    # Group (with patient members)
+    grp_gen = GroupGenerator(faker, seed)
+    track(grp_gen.generate(
+        name="Diabetes Patient Cohort",
+        group_type="person",
+        actual=True,
+        member_refs=patient_refs,
+        managing_entity_ref=ref(hospital_org),
+    ))
+
+    # Library
+    lib_gen = LibraryGenerator(faker, seed)
+    library = track(lib_gen.generate(
+        name="DiabetesMeasuresLibrary",
+        include_cql=True,
+    ))
+
+    # Measure (linked to library)
+    measure_gen = MeasureGenerator(faker, seed)
+    measure = track(measure_gen.generate(
+        name="DiabetesHbA1cControl",
+        title="Diabetes: HbA1c Poor Control",
+        library_ref=f"Library/{library['id']}",
+    ))
+
+    # MeasureReport (one per patient + summary)
+    mr_gen = MeasureReportGenerator(faker, seed)
+
+    # Individual reports
+    for patient_ref in patient_refs:
+        track(mr_gen.generate(
+            measure_ref=f"Measure/{measure['id']}",
+            patient_ref=patient_ref,
+            reporter_ref=ref(hospital_org),
+            report_type="individual",
+        ))
+
+    # Summary report
+    track(mr_gen.generate(
+        measure_ref=f"Measure/{measure['id']}",
+        reporter_ref=ref(hospital_org),
+        report_type="summary",
+    ))
+
+    # ============================================================
+    # Summary
+    # ============================================================
+    rprint(f"\n[bold]Generated {len(resources)} total resources[/bold]")
+
+    # Count by type
+    by_type: dict[str, int] = {}
+    for r in resources:
+        rt = r.get("resourceType", "Unknown")
+        by_type[rt] = by_type.get(rt, 0) + 1
+
+    table = Table(title="Generated Resources")
+    table.add_column("Resource Type", style="cyan")
+    table.add_column("Count", justify="right")
+    for rt, count in sorted(by_type.items()):
+        table.add_row(rt, str(count))
+    table.add_row("─" * 20, "─" * 8)
+    table.add_row("[bold]Total[/bold]", f"[bold]{len(resources)}[/bold]")
+    rprint(table)
+
+    # Save to file if requested
+    if output:
+        _write_resources(resources, output, "bundle", True)
+
+    # Load to server unless dry run
+    if not dry_run:
+        _load_resources_to_server(resources, url)
+    else:
+        rprint("[yellow]Dry run - resources not loaded to server[/yellow]")
 
 
 if __name__ == "__main__":
