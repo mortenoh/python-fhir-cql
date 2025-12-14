@@ -72,6 +72,7 @@ from .plugins import (
     get_global_registry,
     register_function,
 )
+from .terminology import CQLTerminologyAdapter, create_terminology_datasource
 from .types import (
     CQLBoolean,
     CQLCode,
@@ -160,4 +161,7 @@ __all__ = [
     "get_global_registry",
     "create_math_plugins",
     "create_string_plugins",
+    # Terminology
+    "CQLTerminologyAdapter",
+    "create_terminology_datasource",
 ]

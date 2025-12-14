@@ -1,204 +1,178 @@
-# Terminology Service Guide
+# Terminology Guide
 
-A comprehensive guide to the FHIR terminology service for code validation and ValueSet operations.
+A comprehensive guide to terminology operations in the FHIR server.
 
-## What is the Terminology Service?
+## Overview
 
-The terminology service provides operations for working with medical codes and value sets:
+The FHIR server provides full terminology support through standard FHIR operations on CodeSystem and ValueSet resources. All terminology operations are available at:
 
-- **Code Validation**: Check if a code is valid within a ValueSet
-- **Membership Testing**: Verify code membership in value sets
-- **Subsumption Testing**: Check hierarchical relationships between codes
-- **ValueSet Expansion**: List all codes in a ValueSet
+| Operation | Endpoint | Description |
+|-----------|----------|-------------|
+| `$expand` | `/ValueSet/$expand` | Expand a ValueSet to list all codes |
+| `$validate-code` | `/ValueSet/$validate-code` | Validate a code against a ValueSet |
+| `$lookup` | `/CodeSystem/$lookup` | Look up code information |
+| `$subsumes` | `/CodeSystem/$subsumes` | Test subsumption relationship |
+| `memberOf` | `/terminology/memberOf` | Check code membership |
 
 ### Key Concepts
 
 | Term | Description |
 |------|-------------|
-| **Code System** | A collection of codes (e.g., SNOMED CT, LOINC, ICD-10) |
+| **CodeSystem** | A collection of codes (e.g., SNOMED CT, LOINC, ICD-10) |
 | **ValueSet** | A selection of codes from one or more code systems |
 | **Coding** | A single code with its system and display text |
 | **CodeableConcept** | Multiple codings representing the same concept |
-
-### Use Cases
-
-- **Data Validation**: Ensure clinical data uses valid codes
-- **CQL Evaluation**: Support terminology operations in CQL expressions
-- **FHIR Validation**: Validate FHIR resources against terminology bindings
-- **Data Quality**: Check code membership and relationships
 
 ---
 
 ## Quick Start
 
-### Start Terminology Server
+### Start the FHIR Server
 
 ```bash
-# Start with local ValueSets
-fhir terminology serve --valuesets ./terminology
+# Start the FHIR server
+uv run fhir-server
 
-# Output:
-# Terminology Service
-#   Loading ValueSets from ./terminology...
-#   Loaded 5 ValueSets
-#
-# Starting server on http://0.0.0.0:8080
-#   Docs: http://0.0.0.0:8080/docs
+# Or with uvicorn
+uvicorn fhir_cql.server.api.app:create_app --factory --reload
+```
+
+### Create a CodeSystem
+
+```bash
+curl -X PUT http://localhost:8000/CodeSystem/diabetes-types \
+  -H "Content-Type: application/fhir+json" \
+  -d '{
+    "resourceType": "CodeSystem",
+    "id": "diabetes-types",
+    "url": "http://example.org/fhir/CodeSystem/diabetes-types",
+    "name": "DiabetesTypes",
+    "status": "active",
+    "concept": [
+      {
+        "code": "diabetes",
+        "display": "Diabetes mellitus",
+        "concept": [
+          {"code": "type1", "display": "Type 1 diabetes"},
+          {"code": "type2", "display": "Type 2 diabetes"},
+          {"code": "gestational", "display": "Gestational diabetes"}
+        ]
+      }
+    ]
+  }'
+```
+
+### Create a ValueSet
+
+```bash
+curl -X PUT http://localhost:8000/ValueSet/diabetes-codes \
+  -H "Content-Type: application/fhir+json" \
+  -d '{
+    "resourceType": "ValueSet",
+    "id": "diabetes-codes",
+    "url": "http://example.org/fhir/ValueSet/diabetes-codes",
+    "name": "DiabetesCodes",
+    "status": "active",
+    "compose": {
+      "include": [
+        {
+          "system": "http://example.org/fhir/CodeSystem/diabetes-types",
+          "concept": [
+            {"code": "type1", "display": "Type 1 diabetes"},
+            {"code": "type2", "display": "Type 2 diabetes"}
+          ]
+        }
+      ]
+    }
+  }'
 ```
 
 ### Validate a Code
 
 ```bash
-# CLI validation
-fhir terminology validate 44054006 \
-  --system http://snomed.info/sct \
-  --valueset http://example.com/vs/diabetes-conditions \
-  --dir ./terminology
-
-# Output:
-# Code Validation Result
-#   Code:     44054006
-#   System:   http://snomed.info/sct
-#   ValueSet: http://example.com/vs/diabetes-conditions
-#   Result:   VALID
+curl "http://localhost:8000/ValueSet/\$validate-code?url=http://example.org/fhir/ValueSet/diabetes-codes&code=type1&system=http://example.org/fhir/CodeSystem/diabetes-types"
 ```
 
-### REST API
-
-```bash
-# Validate via REST API
-curl "http://localhost:8080/ValueSet/\$validate-code?url=http://example.com/vs/diabetes-conditions&code=44054006&system=http://snomed.info/sct"
-
-# Response:
-# {
-#   "resourceType": "Parameters",
-#   "parameter": [
-#     {"name": "result", "valueBoolean": true},
-#     {"name": "display", "valueString": "Diabetes mellitus"}
-#   ]
-# }
-```
-
----
-
-## CLI Reference
-
-### fhir terminology serve
-
-Start the terminology service server.
-
-```bash
-fhir terminology serve [OPTIONS]
-```
-
-#### Options
-
-| Option | Short | Default | Description |
-|--------|-------|---------|-------------|
-| `--host` | `-h` | `0.0.0.0` | Host to bind to |
-| `--port` | `-p` | `8080` | Port to listen on |
-| `--valuesets` | `-v` | None | Directory containing ValueSet JSON files |
-| `--reload` | `-r` | `False` | Enable auto-reload for development |
-| `--log-level` | `-l` | `INFO` | Logging level |
-
-#### Examples
-
-```bash
-# Start with local ValueSets
-fhir terminology serve --valuesets ./terminology
-
-# Custom port
-fhir terminology serve --valuesets ./terminology --port 9000
-
-# Development mode
-fhir terminology serve --valuesets ./terminology --reload
-```
-
-### fhir terminology validate
-
-Validate a code against a ValueSet.
-
-```bash
-fhir terminology validate CODE [OPTIONS]
-```
-
-#### Options
-
-| Option | Short | Required | Description |
-|--------|-------|----------|-------------|
-| `--system` | `-s` | Yes | Code system URL |
-| `--valueset` | `-v` | Yes | ValueSet URL |
-| `--dir` | `-d` | No | Directory containing ValueSet JSON files |
-| `--server` | | No | Terminology server URL |
-
-#### Examples
-
-```bash
-# Validate against local ValueSets
-fhir terminology validate 44054006 \
-  --system http://snomed.info/sct \
-  --valueset http://example.com/vs/conditions \
-  --dir ./terminology
-
-# Validate against remote server
-fhir terminology validate 8480-6 \
-  --system http://loinc.org \
-  --valueset http://hl7.org/fhir/ValueSet/observation-vitalsignresult \
-  --server http://terminology.example.com
-```
-
-### fhir terminology member-of
-
-Check if a code is a member of a ValueSet.
-
-```bash
-fhir terminology member-of CODE [OPTIONS]
-```
-
-#### Options
-
-| Option | Short | Required | Description |
-|--------|-------|----------|-------------|
-| `--system` | `-s` | Yes | Code system URL |
-| `--valueset` | `-v` | Yes | ValueSet URL |
-| `--dir` | `-d` | No | Directory containing ValueSet JSON files |
-
-#### Example
-
-```bash
-fhir terminology member-of 8480-6 \
-  --system http://loinc.org \
-  --valueset http://example.com/vs/vital-signs \
-  --dir ./terminology
-```
-
-### fhir terminology list-valuesets
-
-List ValueSets in a directory.
-
-```bash
-fhir terminology list-valuesets DIRECTORY
-```
-
-#### Example
-
-```bash
-fhir terminology list-valuesets ./terminology
-
-# Output:
-# ValueSets in ./terminology
-# ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┓
-# ┃ URL                                        ┃ Name               ┃ Codes  ┃
-# ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━┩
-# │ http://example.com/vs/diabetes-conditions  │ DiabetesConditions │     15 │
-# │ http://example.com/vs/vital-signs          │ VitalSigns         │      7 │
-# │ http://example.com/vs/lab-results          │ LabResults         │     23 │
-# └────────────────────────────────────────────┴────────────────────┴────────┘
+Response:
+```json
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    {"name": "result", "valueBoolean": true},
+    {"name": "display", "valueString": "Type 1 diabetes"}
+  ]
+}
 ```
 
 ---
 
 ## REST API Reference
+
+### ValueSet $expand
+
+Expand a ValueSet to list all codes.
+
+```http
+GET /ValueSet/$expand?url={valueSetUrl}
+GET /ValueSet/$expand?url={valueSetUrl}&filter={searchText}
+GET /ValueSet/{id}/$expand
+POST /ValueSet/$expand
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `url` | uri | ValueSet canonical URL |
+| `filter` | string | Filter by code or display text |
+| `count` | integer | Maximum codes to return (default 100) |
+| `offset` | integer | Pagination offset |
+
+#### Example - Expand by URL
+
+```bash
+curl "http://localhost:8000/ValueSet/\$expand?url=http://example.org/fhir/ValueSet/diabetes-codes"
+```
+
+#### Example - Expand with Filter
+
+```bash
+curl "http://localhost:8000/ValueSet/\$expand?url=http://example.org/fhir/ValueSet/diabetes-codes&filter=type"
+```
+
+#### Example - Expand by ID
+
+```bash
+curl "http://localhost:8000/ValueSet/diabetes-codes/\$expand"
+```
+
+#### Response
+
+```json
+{
+  "resourceType": "ValueSet",
+  "id": "diabetes-codes",
+  "url": "http://example.org/fhir/ValueSet/diabetes-codes",
+  "status": "active",
+  "expansion": {
+    "identifier": "urn:uuid:abc123",
+    "timestamp": "2024-01-15T10:30:00Z",
+    "total": 2,
+    "contains": [
+      {
+        "system": "http://example.org/fhir/CodeSystem/diabetes-types",
+        "code": "type1",
+        "display": "Type 1 diabetes"
+      },
+      {
+        "system": "http://example.org/fhir/CodeSystem/diabetes-types",
+        "code": "type2",
+        "display": "Type 2 diabetes"
+      }
+    ]
+  }
+}
+```
 
 ### ValueSet $validate-code
 
@@ -209,36 +183,60 @@ GET /ValueSet/$validate-code?url={valueSetUrl}&code={code}&system={system}
 POST /ValueSet/$validate-code
 ```
 
-#### Parameters
+#### GET Parameters
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `url` | uri | Yes | ValueSet canonical URL |
 | `code` | string | Yes* | Code to validate |
 | `system` | uri | No | Code system URL |
-| `display` | string | No | Expected display text |
-| `coding` | Coding | Yes* | Coding to validate |
-| `codeableConcept` | CodeableConcept | Yes* | CodeableConcept to validate |
 
-*One of code, coding, or codeableConcept is required.
+*Required unless using POST with coding or codeableConcept.
 
 #### GET Example
 
 ```bash
-curl "http://localhost:8080/ValueSet/\$validate-code?url=http://example.com/vs/conditions&code=44054006&system=http://snomed.info/sct"
+curl "http://localhost:8000/ValueSet/\$validate-code?url=http://example.org/fhir/ValueSet/diabetes-codes&code=type1&system=http://example.org/fhir/CodeSystem/diabetes-types"
 ```
 
-#### POST Example
+#### POST Example - With Coding
 
 ```bash
-curl -X POST http://localhost:8080/ValueSet/\$validate-code \
+curl -X POST http://localhost:8000/ValueSet/\$validate-code \
   -H "Content-Type: application/fhir+json" \
   -d '{
     "resourceType": "Parameters",
     "parameter": [
-      {"name": "url", "valueUri": "http://example.com/vs/conditions"},
-      {"name": "code", "valueCode": "44054006"},
-      {"name": "system", "valueUri": "http://snomed.info/sct"}
+      {"name": "url", "valueUri": "http://example.org/fhir/ValueSet/diabetes-codes"},
+      {
+        "name": "coding",
+        "valueCoding": {
+          "system": "http://example.org/fhir/CodeSystem/diabetes-types",
+          "code": "type2"
+        }
+      }
+    ]
+  }'
+```
+
+#### POST Example - With CodeableConcept
+
+```bash
+curl -X POST http://localhost:8000/ValueSet/\$validate-code \
+  -H "Content-Type: application/fhir+json" \
+  -d '{
+    "resourceType": "Parameters",
+    "parameter": [
+      {"name": "url", "valueUri": "http://example.org/fhir/ValueSet/diabetes-codes"},
+      {
+        "name": "codeableConcept",
+        "valueCodeableConcept": {
+          "coding": [
+            {"system": "http://other", "code": "WRONG"},
+            {"system": "http://example.org/fhir/CodeSystem/diabetes-types", "code": "type1"}
+          ]
+        }
+      }
     ]
   }'
 ```
@@ -250,7 +248,7 @@ curl -X POST http://localhost:8080/ValueSet/\$validate-code \
   "resourceType": "Parameters",
   "parameter": [
     {"name": "result", "valueBoolean": true},
-    {"name": "display", "valueString": "Diabetes mellitus"}
+    {"name": "display", "valueString": "Type 1 diabetes"}
   ]
 }
 ```
@@ -275,7 +273,7 @@ POST /CodeSystem/$lookup
 #### Example
 
 ```bash
-curl "http://localhost:8080/CodeSystem/\$lookup?system=http://snomed.info/sct&code=44054006"
+curl "http://localhost:8000/CodeSystem/\$lookup?system=http://example.org/fhir/CodeSystem/diabetes-types&code=type1"
 ```
 
 #### Response
@@ -284,20 +282,21 @@ curl "http://localhost:8080/CodeSystem/\$lookup?system=http://snomed.info/sct&co
 {
   "resourceType": "Parameters",
   "parameter": [
-    {"name": "name", "valueString": "SNOMED CT"},
-    {"name": "display", "valueString": "Diabetes mellitus"},
-    {"name": "code", "valueCode": "44054006"},
-    {"name": "system", "valueUri": "http://snomed.info/sct"}
+    {"name": "name", "valueString": "DiabetesTypes"},
+    {"name": "display", "valueString": "Type 1 diabetes"},
+    {"name": "code", "valueCode": "type1"},
+    {"name": "system", "valueUri": "http://example.org/fhir/CodeSystem/diabetes-types"}
   ]
 }
 ```
 
 ### CodeSystem $subsumes
 
-Check if one code subsumes another.
+Test if one code subsumes another (hierarchical relationship).
 
 ```http
 GET /CodeSystem/$subsumes?system={systemUrl}&codeA={codeA}&codeB={codeB}
+GET /CodeSystem/{id}/$subsumes?codeA={codeA}&codeB={codeB}
 POST /CodeSystem/$subsumes
 ```
 
@@ -306,497 +305,345 @@ POST /CodeSystem/$subsumes
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `system` | uri | Yes | Code system URL |
-| `codeA` | string | Yes | First code |
-| `codeB` | string | Yes | Second code |
+| `codeA` | string | Yes | First code (potential ancestor) |
+| `codeB` | string | Yes | Second code (potential descendant) |
 | `version` | string | No | Code system version |
 
 #### Response Outcomes
 
 | Outcome | Meaning |
 |---------|---------|
-| `equivalent` | Codes are equivalent |
-| `subsumes` | Code A subsumes Code B |
-| `subsumed-by` | Code A is subsumed by Code B |
-| `not-subsumed` | No subsumption relationship |
+| `equivalent` | Codes are the same |
+| `subsumes` | codeA is an ancestor of codeB |
+| `subsumed-by` | codeA is a descendant of codeB |
+| `not-subsumed` | No hierarchical relationship |
 
----
+#### Example - Parent Subsumes Child
 
-## ValueSet Format
+```bash
+curl "http://localhost:8000/CodeSystem/\$subsumes?system=http://example.org/fhir/CodeSystem/diabetes-types&codeA=diabetes&codeB=type1"
+```
 
-### Basic Structure
-
+Response:
 ```json
 {
-  "resourceType": "ValueSet",
-  "id": "diabetes-conditions",
-  "url": "http://example.com/vs/diabetes-conditions",
-  "version": "1.0.0",
-  "name": "DiabetesConditions",
-  "title": "Diabetes-Related Conditions",
-  "status": "active",
-  "compose": {
-    "include": [
-      {
-        "system": "http://snomed.info/sct",
-        "concept": [
-          {"code": "44054006", "display": "Diabetes mellitus"},
-          {"code": "46635009", "display": "Type 1 diabetes"},
-          {"code": "44054006", "display": "Type 2 diabetes"}
-        ]
-      }
-    ]
-  }
+  "resourceType": "Parameters",
+  "parameter": [{"name": "outcome", "valueCode": "subsumes"}]
 }
 ```
 
-### Multiple Code Systems
+#### Example - Child Subsumed By Parent
 
+```bash
+curl "http://localhost:8000/CodeSystem/\$subsumes?system=http://example.org/fhir/CodeSystem/diabetes-types&codeA=type1&codeB=diabetes"
+```
+
+Response:
 ```json
 {
-  "resourceType": "ValueSet",
-  "url": "http://example.com/vs/lab-results",
-  "compose": {
-    "include": [
-      {
-        "system": "http://loinc.org",
-        "concept": [
-          {"code": "2345-7", "display": "Glucose"},
-          {"code": "4548-4", "display": "HbA1c"}
-        ]
-      },
-      {
-        "system": "http://snomed.info/sct",
-        "concept": [
-          {"code": "33747003", "display": "Glucose measurement"}
-        ]
-      }
-    ]
-  }
+  "resourceType": "Parameters",
+  "parameter": [{"name": "outcome", "valueCode": "subsumed-by"}]
 }
 ```
 
-### With Expansion
+### memberOf Endpoint
 
+Convenience endpoint to check code membership in a ValueSet.
+
+```http
+GET /terminology/memberOf?code={code}&system={system}&valueSetUrl={url}
+```
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `code` | string | Yes | Code to check |
+| `system` | uri | Yes | Code system URL |
+| `valueSetUrl` | uri | Yes | ValueSet URL |
+
+#### Example
+
+```bash
+curl "http://localhost:8000/terminology/memberOf?code=type1&system=http://example.org/fhir/CodeSystem/diabetes-types&valueSetUrl=http://example.org/fhir/ValueSet/diabetes-codes"
+```
+
+Response:
 ```json
 {
-  "resourceType": "ValueSet",
-  "url": "http://example.com/vs/vital-signs",
-  "expansion": {
-    "identifier": "urn:uuid:abc123",
-    "timestamp": "2024-01-15T10:30:00Z",
-    "total": 7,
-    "contains": [
-      {"system": "http://loinc.org", "code": "8310-5", "display": "Body temperature"},
-      {"system": "http://loinc.org", "code": "8867-4", "display": "Heart rate"},
-      {"system": "http://loinc.org", "code": "8480-6", "display": "Systolic blood pressure"}
-    ]
-  }
+  "resourceType": "Parameters",
+  "parameter": [{"name": "result", "valueBoolean": true}]
 }
 ```
 
 ---
 
-## Python API
+## Hierarchical CodeSystems
 
-### TerminologyService Base Class
+The terminology provider supports hierarchical CodeSystems where codes can have nested child concepts:
 
-```python
-from fhir_cql.terminology import (
-    TerminologyService,
-    InMemoryTerminologyService,
-    FHIRTerminologyService,
-)
-
-# Abstract base class defines the interface
-class TerminologyService(ABC):
-    def validate_code(self, request: ValidateCodeRequest) -> ValidateCodeResponse: ...
-    def member_of(self, request: MemberOfRequest) -> MemberOfResponse: ...
-    def subsumes(self, request: SubsumesRequest) -> SubsumesResponse: ...
-    def get_value_set(self, url: str, version: str | None = None) -> ValueSet | None: ...
-```
-
-### InMemoryTerminologyService
-
-For testing and development without external dependencies.
-
-```python
-from fhir_cql.terminology import InMemoryTerminologyService
-from fhir_cql.terminology.models import (
-    ValidateCodeRequest,
-    MemberOfRequest,
-    ValueSet,
-)
-
-# Create service
-service = InMemoryTerminologyService()
-
-# Load ValueSets from directory
-count = service.load_value_sets_from_directory("./terminology")
-print(f"Loaded {count} ValueSets")
-
-# Load individual ValueSet
-service.load_value_set_file("./diabetes-codes.json")
-
-# Load from JSON data
-service.add_value_set_from_json({
-    "resourceType": "ValueSet",
-    "url": "http://example.com/vs/test",
-    "compose": {
-        "include": [{
-            "system": "http://example.com/cs",
-            "concept": [{"code": "123", "display": "Test"}]
-        }]
+```json
+{
+  "resourceType": "CodeSystem",
+  "url": "http://example.org/fhir/CodeSystem/conditions",
+  "concept": [
+    {
+      "code": "metabolic",
+      "display": "Metabolic disorders",
+      "concept": [
+        {
+          "code": "diabetes",
+          "display": "Diabetes mellitus",
+          "concept": [
+            {"code": "type1", "display": "Type 1 diabetes"},
+            {"code": "type2", "display": "Type 2 diabetes"}
+          ]
+        },
+        {"code": "obesity", "display": "Obesity"}
+      ]
+    },
+    {
+      "code": "cardiovascular",
+      "display": "Cardiovascular diseases"
     }
-})
-
-# Validate code
-request = ValidateCodeRequest(
-    url="http://example.com/vs/diabetes-conditions",
-    code="44054006",
-    system="http://snomed.info/sct"
-)
-response = service.validate_code(request)
-
-if response.result:
-    print(f"Valid! Display: {response.display}")
-else:
-    print(f"Invalid: {response.message}")
-
-# Check membership
-member_request = MemberOfRequest(
-    code="44054006",
-    system="http://snomed.info/sct",
-    valueSetUrl="http://example.com/vs/diabetes-conditions"
-)
-member_response = service.member_of(member_request)
-print(f"Is member: {member_response.result}")
-
-# Get ValueSet
-value_set = service.get_value_set("http://example.com/vs/diabetes-conditions")
-if value_set:
-    print(f"ValueSet: {value_set.name}")
+  ]
+}
 ```
 
-### FHIRTerminologyService
-
-Delegates to an external FHIR terminology server.
-
-```python
-from fhir_cql.terminology import FHIRTerminologyService
-from fhir_cql.terminology.models import ValidateCodeRequest
-
-# Create service pointing to external server
-service = FHIRTerminologyService(
-    base_url="http://terminology.example.com/fhir",
-    headers={"Authorization": "Bearer token123"}
-)
-
-# Operations are proxied to the FHIR server
-request = ValidateCodeRequest(
-    url="http://hl7.org/fhir/ValueSet/observation-codes",
-    code="8480-6",
-    system="http://loinc.org"
-)
-response = service.validate_code(request)
-```
-
-### Models
-
-```python
-from fhir_cql.terminology.models import (
-    Coding,
-    CodeableConcept,
-    ValueSet,
-    ValueSetCompose,
-    ValueSetComposeInclude,
-    ValueSetExpansion,
-    ValidateCodeRequest,
-    ValidateCodeResponse,
-    MemberOfRequest,
-    MemberOfResponse,
-    SubsumesRequest,
-    SubsumesResponse,
-)
-
-# Coding
-coding = Coding(
-    system="http://snomed.info/sct",
-    code="44054006",
-    display="Diabetes mellitus"
-)
-
-# CodeableConcept with multiple codings
-concept = CodeableConcept(
-    coding=[
-        Coding(system="http://snomed.info/sct", code="44054006"),
-        Coding(system="http://hl7.org/fhir/sid/icd-10", code="E11")
-    ],
-    text="Type 2 diabetes"
-)
-
-# ValueSet programmatically
-value_set = ValueSet(
-    url="http://example.com/vs/test",
-    name="TestValueSet",
-    status="active",
-    compose=ValueSetCompose(
-        include=[
-            ValueSetComposeInclude(
-                system="http://snomed.info/sct",
-                concept=[
-                    ValueSetComposeIncludeConcept(code="44054006", display="Diabetes")
-                ]
-            )
-        ]
-    )
-)
-```
+With this structure:
+- `$lookup` finds codes at any level of the hierarchy
+- `$subsumes` tests hierarchical relationships
+- `$expand` includes all codes when referencing the CodeSystem
 
 ---
 
 ## Integration with CQL
 
-### Using Terminology in CQL
+### CQLTerminologyAdapter
+
+For CQL evaluation, use the `CQLTerminologyAdapter` which integrates with the FHIR server's terminology provider:
+
+```python
+from fhir_cql.server.storage.fhir_store import FHIRStore
+from fhir_cql.engine.cql import (
+    CQLEvaluator,
+    CQLTerminologyAdapter,
+    InMemoryDataSource,
+)
+
+# Create store with terminology resources
+store = FHIRStore()
+
+# Load CodeSystem
+store.update("CodeSystem", "diabetes-types", {
+    "resourceType": "CodeSystem",
+    "id": "diabetes-types",
+    "url": "http://example.org/fhir/CodeSystem/diabetes-types",
+    "concept": [
+        {"code": "type1", "display": "Type 1 diabetes"},
+        {"code": "type2", "display": "Type 2 diabetes"},
+    ]
+})
+
+# Load ValueSet
+store.update("ValueSet", "diabetes-codes", {
+    "resourceType": "ValueSet",
+    "id": "diabetes-codes",
+    "url": "http://example.org/fhir/ValueSet/diabetes-codes",
+    "compose": {
+        "include": [{
+            "system": "http://example.org/fhir/CodeSystem/diabetes-types"
+        }]
+    }
+})
+
+# Create terminology adapter
+adapter = CQLTerminologyAdapter(store)
+
+# Expand ValueSet for CQL
+codes = adapter.expand_valueset("http://example.org/fhir/ValueSet/diabetes-codes")
+for code in codes:
+    print(f"{code.system}|{code.code}: {code.display}")
+
+# Create data source with terminology
+data_source = InMemoryDataSource()
+data_source.add_valueset("http://example.org/fhir/ValueSet/diabetes-codes", codes)
+
+# Create evaluator
+evaluator = CQLEvaluator(data_source=data_source)
+```
+
+### Convenience Function
+
+```python
+from fhir_cql.engine.cql import create_terminology_datasource
+
+# Create data source with preloaded ValueSets
+data_source, adapter = create_terminology_datasource(
+    store,
+    valueset_urls=[
+        "http://example.org/fhir/ValueSet/diabetes-codes",
+        "http://example.org/fhir/ValueSet/vital-signs"
+    ]
+)
+
+# Use with CQL evaluator
+evaluator = CQLEvaluator(data_source=data_source)
+```
+
+### CQL with ValueSet References
 
 ```cql
 library DiabetesScreening version '1.0'
 
 using FHIR version '4.0.1'
 
-// Reference ValueSets
-valueset "Diabetes Conditions": 'http://example.com/vs/diabetes-conditions'
-valueset "HbA1c Tests": 'http://example.com/vs/hba1c-tests'
+// Reference ValueSets by URL
+valueset "Diabetes Conditions": 'http://example.org/fhir/ValueSet/diabetes-codes'
 
 context Patient
 
-// Check if patient has diabetes using ValueSet membership
+// Use ValueSet in retrieve
 define HasDiabetes:
   exists([Condition: "Diabetes Conditions"])
 
-// Get HbA1c observations
-define HbA1cResults:
-  [Observation: "HbA1c Tests"]
-
-// Check specific code membership
-define HasType2Diabetes:
-  exists(
-    [Condition] C
-      where C.code.coding contains (
-        Coding { system: 'http://snomed.info/sct', code: '44054006' }
-      )
-  )
+// Explicit membership check
+define DiabetesConditions:
+  [Condition] C
+    where C.code in "Diabetes Conditions"
 ```
 
-### Running CQL with Terminology
+---
 
-```bash
-# Start terminology server
-fhir terminology serve --valuesets ./terminology --port 8081 &
+## Python API
 
-# Start FHIR server with data
-fhir server serve --patients 100 --port 8080 &
-
-# Evaluate CQL (uses terminology server)
-fhir cql run ./diabetes-screening.cql \
-  --data http://localhost:8080 \
-  --terminology http://localhost:8081
-```
-
-### Terminology Service in CQL Evaluator
+### Using the Terminology Provider Directly
 
 ```python
-from fhir_cql.engine.cql import CQLEvaluator
-from fhir_cql.terminology import InMemoryTerminologyService
+from fhir_cql.server.storage.fhir_store import FHIRStore
+from fhir_cql.server.terminology import FHIRStoreTerminologyProvider
 
-# Create terminology service
-terminology = InMemoryTerminologyService()
-terminology.load_value_sets_from_directory("./terminology")
+# Create store and provider
+store = FHIRStore()
+provider = FHIRStoreTerminologyProvider(store)
 
-# Create evaluator with terminology service
-evaluator = CQLEvaluator(terminology_service=terminology)
+# Expand a ValueSet
+expansion = provider.expand_valueset(url="http://example.org/fhir/ValueSet/test")
+for item in expansion["expansion"]["contains"]:
+    print(f"{item['code']}: {item['display']}")
 
-# Parse and evaluate CQL
-library = evaluator.parse_file("./diabetes-screening.cql")
-results = evaluator.evaluate(library, patient_data)
+# Validate a code
+result = provider.validate_code(
+    valueset_url="http://example.org/fhir/ValueSet/test",
+    code="type1",
+    system="http://example.org/fhir/CodeSystem/test"
+)
+is_valid = result["parameter"][0]["valueBoolean"]
+
+# Check membership
+is_member = provider.member_of(
+    valueset_url="http://example.org/fhir/ValueSet/test",
+    code="type1",
+    system="http://example.org/fhir/CodeSystem/test"
+)
+
+# Lookup code
+info = provider.lookup_code(
+    system="http://example.org/fhir/CodeSystem/test",
+    code="type1"
+)
+
+# Test subsumption
+result = provider.subsumes(
+    system="http://example.org/fhir/CodeSystem/test",
+    code_a="parent",
+    code_b="child"
+)
 ```
 
 ---
 
 ## Examples
 
-### Example ValueSet Files
-
-#### diabetes_codes.json
-
-```json
-{
-  "resourceType": "ValueSet",
-  "id": "diabetes-conditions",
-  "url": "http://example.com/vs/diabetes-conditions",
-  "name": "DiabetesConditions",
-  "title": "Diabetes-Related Conditions",
-  "status": "active",
-  "compose": {
-    "include": [
-      {
-        "system": "http://snomed.info/sct",
-        "concept": [
-          {"code": "44054006", "display": "Diabetes mellitus"},
-          {"code": "46635009", "display": "Diabetes mellitus type 1"},
-          {"code": "44054006", "display": "Diabetes mellitus type 2"},
-          {"code": "11530004", "display": "Gestational diabetes"},
-          {"code": "426875007", "display": "Latent autoimmune diabetes"},
-          {"code": "237599002", "display": "Insulin resistance"},
-          {"code": "73211009", "display": "Diabetes mellitus"},
-          {"code": "359642000", "display": "Diabetes type 2 with complication"}
-        ]
-      }
-    ]
-  }
-}
-```
-
-#### vital_signs_codes.json
-
-```json
-{
-  "resourceType": "ValueSet",
-  "id": "vital-signs",
-  "url": "http://example.com/vs/vital-signs",
-  "name": "VitalSigns",
-  "title": "Vital Sign Observation Codes",
-  "status": "active",
-  "compose": {
-    "include": [
-      {
-        "system": "http://loinc.org",
-        "concept": [
-          {"code": "8310-5", "display": "Body temperature"},
-          {"code": "8867-4", "display": "Heart rate"},
-          {"code": "8480-6", "display": "Systolic blood pressure"},
-          {"code": "8462-4", "display": "Diastolic blood pressure"},
-          {"code": "9279-1", "display": "Respiratory rate"},
-          {"code": "2708-6", "display": "Oxygen saturation"},
-          {"code": "39156-5", "display": "Body mass index"}
-        ]
-      }
-    ]
-  }
-}
-```
-
-### Usage Script
+### Loading Terminology from Files
 
 ```python
-#!/usr/bin/env python3
-"""Example terminology service usage."""
-
+import json
 from pathlib import Path
-from fhir_cql.terminology import InMemoryTerminologyService
-from fhir_cql.terminology.models import ValidateCodeRequest, MemberOfRequest
+from fhir_cql.server.storage.fhir_store import FHIRStore
 
-def main():
-    # Create service
-    service = InMemoryTerminologyService()
+def load_terminology_directory(store: FHIRStore, directory: Path):
+    """Load all CodeSystem and ValueSet files from a directory."""
+    for file_path in directory.glob("*.json"):
+        with open(file_path) as f:
+            resource = json.load(f)
 
-    # Load ValueSets
-    terminology_dir = Path("./examples/terminology")
-    count = service.load_value_sets_from_directory(terminology_dir)
-    print(f"Loaded {count} ValueSets")
+        resource_type = resource.get("resourceType")
+        resource_id = resource.get("id")
 
-    # Validate diabetes code
-    print("\n--- Validating Diabetes Code ---")
-    request = ValidateCodeRequest(
-        url="http://example.com/vs/diabetes-conditions",
-        code="44054006",
-        system="http://snomed.info/sct"
-    )
-    response = service.validate_code(request)
-    print(f"Code: 44054006 (SNOMED)")
-    print(f"Valid: {response.result}")
-    print(f"Display: {response.display}")
+        if resource_type in ("CodeSystem", "ValueSet") and resource_id:
+            store.update(resource_type, resource_id, resource)
+            print(f"Loaded {resource_type}/{resource_id}")
 
-    # Check vital sign membership
-    print("\n--- Checking Vital Sign Membership ---")
-    vital_codes = ["8310-5", "8867-4", "12345-X"]
-    for code in vital_codes:
-        member_request = MemberOfRequest(
-            code=code,
-            system="http://loinc.org",
-            valueSetUrl="http://example.com/vs/vital-signs"
-        )
-        result = service.member_of(member_request)
-        status = "MEMBER" if result.result else "NOT MEMBER"
-        print(f"  {code}: {status}")
-
-    # Get ValueSet details
-    print("\n--- ValueSet Details ---")
-    vs = service.get_value_set("http://example.com/vs/vital-signs")
-    if vs:
-        print(f"Name: {vs.name}")
-        print(f"URL: {vs.url}")
-        print(f"Status: {vs.status}")
-
-if __name__ == "__main__":
-    main()
+# Usage
+store = FHIRStore()
+load_terminology_directory(store, Path("./terminology"))
 ```
 
----
+### Example CodeSystem with Definitions
 
-## Troubleshooting
-
-### Common Issues
-
-#### ValueSet not found
-
-```
-Error: ValueSet not found: http://example.com/vs/test
-```
-
-**Solution**: Ensure the ValueSet file is in the specified directory and has the correct URL.
-
-```bash
-# Check loaded ValueSets
-fhir terminology list-valuesets ./terminology
-```
-
-#### Code system mismatch
-
-```
-Code '44054006' not found in value set
-```
-
-**Solution**: Verify the code system URL matches the ValueSet definition.
-
-```bash
-# Correct - with matching system
-fhir terminology validate 44054006 \
-  --system http://snomed.info/sct \
-  --valueset http://example.com/vs/conditions
-
-# Incorrect - wrong system
-fhir terminology validate 44054006 \
-  --system http://loinc.org \
-  --valueset http://example.com/vs/conditions
+```json
+{
+  "resourceType": "CodeSystem",
+  "id": "observation-status",
+  "url": "http://hl7.org/fhir/observation-status",
+  "name": "ObservationStatus",
+  "status": "active",
+  "concept": [
+    {
+      "code": "registered",
+      "display": "Registered",
+      "definition": "The existence of the observation is registered, but there is no result yet available."
+    },
+    {
+      "code": "preliminary",
+      "display": "Preliminary",
+      "definition": "This is an initial or interim observation: data may be incomplete or unverified."
+    },
+    {
+      "code": "final",
+      "display": "Final",
+      "definition": "The observation is complete and verified."
+    },
+    {
+      "code": "amended",
+      "display": "Amended",
+      "definition": "Subsequent to being Final, the observation has been modified."
+    }
+  ]
+}
 ```
 
-#### Invalid JSON in ValueSet file
+### Example ValueSet Referencing Entire CodeSystem
 
+```json
+{
+  "resourceType": "ValueSet",
+  "id": "all-observation-status",
+  "url": "http://example.org/fhir/ValueSet/all-observation-status",
+  "name": "AllObservationStatus",
+  "status": "active",
+  "compose": {
+    "include": [
+      {
+        "system": "http://hl7.org/fhir/observation-status"
+      }
+    ]
+  }
+}
 ```
-Error loading ValueSet: Invalid JSON
-```
 
-**Solution**: Validate your JSON files:
-
-```bash
-python -m json.tool < diabetes_codes.json > /dev/null
-```
-
-### Performance Tips
-
-- **Preload ValueSets**: Load all ValueSets at startup for faster lookups
-- **Use Expansion**: Pre-expanded ValueSets are faster than compose-based lookups
-- **Cache Results**: Consider caching validation results for frequently checked codes
+When expanded, this ValueSet includes all codes from the referenced CodeSystem.
 
 ---
 

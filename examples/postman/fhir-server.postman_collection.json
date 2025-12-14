@@ -653,27 +653,156 @@
       "name": "Terminology",
       "item": [
         {
-          "name": "Expand ValueSet",
+          "name": "Create Test CodeSystem",
           "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{baseUrl}}/ValueSet/$expand?url=http://example.org/fhir/ValueSet/condition-codes"
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"CodeSystem\",\n  \"id\": \"diabetes-types\",\n  \"url\": \"http://example.org/fhir/CodeSystem/diabetes-types\",\n  \"name\": \"DiabetesTypes\",\n  \"status\": \"active\",\n  \"concept\": [\n    {\n      \"code\": \"diabetes\",\n      \"display\": \"Diabetes mellitus\",\n      \"concept\": [\n        {\"code\": \"type1\", \"display\": \"Type 1 diabetes\"},\n        {\"code\": \"type2\", \"display\": \"Type 2 diabetes\"},\n        {\"code\": \"gestational\", \"display\": \"Gestational diabetes\"}\n      ]\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/CodeSystem/diabetes-types"
           }
         },
         {
-          "name": "Lookup Code",
+          "name": "Create Test ValueSet",
           "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{baseUrl}}/CodeSystem/$lookup?system=http://snomed.info/sct&code=44054006"
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"ValueSet\",\n  \"id\": \"diabetes-codes\",\n  \"url\": \"http://example.org/fhir/ValueSet/diabetes-codes\",\n  \"name\": \"DiabetesCodes\",\n  \"status\": \"active\",\n  \"compose\": {\n    \"include\": [\n      {\n        \"system\": \"http://example.org/fhir/CodeSystem/diabetes-types\",\n        \"concept\": [\n          {\"code\": \"type1\", \"display\": \"Type 1 diabetes\"},\n          {\"code\": \"type2\", \"display\": \"Type 2 diabetes\"}\n        ]\n      }\n    ]\n  }\n}"
+            },
+            "url": "{{baseUrl}}/ValueSet/diabetes-codes"
           }
         },
         {
-          "name": "Validate Code",
+          "name": "$expand - by URL",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": "{{baseUrl}}/ValueSet/$validate-code?url=http://example.org/fhir/ValueSet/condition-codes&code=44054006"
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/ValueSet/$expand?url=http://example.org/fhir/ValueSet/diabetes-codes"
+          }
+        },
+        {
+          "name": "$expand - by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/ValueSet/diabetes-codes/$expand"
+          }
+        },
+        {
+          "name": "$expand - with filter",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/ValueSet/$expand?url=http://example.org/fhir/ValueSet/diabetes-codes&filter=type"
+          }
+        },
+        {
+          "name": "$lookup",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/CodeSystem/$lookup?system=http://example.org/fhir/CodeSystem/diabetes-types&code=type1"
+          }
+        },
+        {
+          "name": "$validate-code (GET)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/ValueSet/$validate-code?url=http://example.org/fhir/ValueSet/diabetes-codes&code=type1&system=http://example.org/fhir/CodeSystem/diabetes-types"
+          }
+        },
+        {
+          "name": "$validate-code (POST with Coding)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Parameters\",\n  \"parameter\": [\n    {\"name\": \"url\", \"valueUri\": \"http://example.org/fhir/ValueSet/diabetes-codes\"},\n    {\n      \"name\": \"coding\",\n      \"valueCoding\": {\n        \"system\": \"http://example.org/fhir/CodeSystem/diabetes-types\",\n        \"code\": \"type2\"\n      }\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/ValueSet/$validate-code"
+          }
+        },
+        {
+          "name": "$validate-code (POST with CodeableConcept)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Parameters\",\n  \"parameter\": [\n    {\"name\": \"url\", \"valueUri\": \"http://example.org/fhir/ValueSet/diabetes-codes\"},\n    {\n      \"name\": \"codeableConcept\",\n      \"valueCodeableConcept\": {\n        \"coding\": [\n          {\"system\": \"http://other\", \"code\": \"WRONG\"},\n          {\"system\": \"http://example.org/fhir/CodeSystem/diabetes-types\", \"code\": \"type1\"}\n        ]\n      }\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/ValueSet/$validate-code"
+          }
+        },
+        {
+          "name": "$subsumes (GET)",
+          "description": "Test if 'diabetes' subsumes 'type1'",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/CodeSystem/$subsumes?system=http://example.org/fhir/CodeSystem/diabetes-types&codeA=diabetes&codeB=type1"
+          }
+        },
+        {
+          "name": "$subsumes (by ID)",
+          "description": "Test subsumption on specific CodeSystem",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/CodeSystem/diabetes-types/$subsumes?codeA=diabetes&codeB=type2"
+          }
+        },
+        {
+          "name": "$subsumes (POST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Parameters\",\n  \"parameter\": [\n    {\"name\": \"system\", \"valueUri\": \"http://example.org/fhir/CodeSystem/diabetes-types\"},\n    {\"name\": \"codeA\", \"valueCode\": \"type1\"},\n    {\"name\": \"codeB\", \"valueCode\": \"diabetes\"}\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/CodeSystem/$subsumes"
+          }
+        },
+        {
+          "name": "memberOf",
+          "description": "Check if code is member of ValueSet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/terminology/memberOf?code=type1&system=http://example.org/fhir/CodeSystem/diabetes-types&valueSetUrl=http://example.org/fhir/ValueSet/diabetes-codes"
           }
         }
       ]

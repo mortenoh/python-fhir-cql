@@ -1,7 +1,6 @@
 """FHIR REST API routes."""
 
 import uuid
-from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, Query, Request, Response
@@ -761,6 +760,320 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
         )
 
     # =========================================================================
+    # Terminology Operations
+    # =========================================================================
+    # NOTE: These must be defined BEFORE generic /{resource_type} routes
+    # to ensure proper route matching for paths like /CodeSystem/$subsumes
+
+    @router.get("/ValueSet/$expand", tags=["Terminology"])
+    @router.post("/ValueSet/$expand", tags=["Terminology"])
+    async def expand_valueset(
+        request: Request,
+        url: str | None = Query(default=None),
+        filter: str | None = Query(default=None),
+        count: int = Query(default=100, ge=1, le=1000),
+        offset: int = Query(default=0, ge=0),
+    ) -> Response:
+        """Expand a ValueSet.
+
+        Expands the ValueSet to include all codes. Supports:
+        - Filtering by code/display text
+        - CodeSystem expansion (when compose references entire CodeSystem)
+        - Hierarchical code inclusion
+        - ValueSet references within compose
+        """
+        # For POST, get parameters from body
+        if request.method == "POST":
+            try:
+                body = await request.json()
+                url = body.get("parameter", [{}])[0].get("valueUri", url)
+                for param in body.get("parameter", []):
+                    if param.get("name") == "url":
+                        url = param.get("valueUri")
+                    elif param.get("name") == "filter":
+                        filter = param.get("valueString")
+            except Exception:
+                pass
+
+        if not url:
+            outcome = OperationOutcome.error("ValueSet URL is required", code="required")
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        # Use terminology provider for enhanced expansion
+        from ..terminology import FHIRStoreTerminologyProvider
+
+        provider = FHIRStoreTerminologyProvider(store)
+        expansion = provider.expand_valueset(url=url, filter_text=filter, count=count, offset=offset)
+
+        if not expansion:
+            outcome = OperationOutcome.error(f"ValueSet not found: {url}", code="not-found")
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=404,
+                media_type=FHIR_JSON,
+            )
+
+        return JSONResponse(content=expansion, media_type=FHIR_JSON)
+
+    @router.get("/ValueSet/{valueset_id}/$expand", tags=["Terminology"])
+    async def expand_valueset_by_id(
+        request: Request,
+        valueset_id: str,
+        filter: str | None = Query(default=None),
+        count: int = Query(default=100, ge=1, le=1000),
+        offset: int = Query(default=0, ge=0),
+    ) -> Response:
+        """Expand a specific ValueSet by ID.
+
+        Supports:
+        - Filtering by code/display text
+        - CodeSystem expansion (when compose references entire CodeSystem)
+        - Hierarchical code inclusion
+        """
+        # Use terminology provider for enhanced expansion
+        from ..terminology import FHIRStoreTerminologyProvider
+
+        provider = FHIRStoreTerminologyProvider(store)
+        expansion = provider.expand_valueset(valueset_id=valueset_id, filter_text=filter, count=count, offset=offset)
+
+        if not expansion:
+            outcome = OperationOutcome.not_found("ValueSet", valueset_id)
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=404,
+                media_type=FHIR_JSON,
+            )
+
+        return JSONResponse(content=expansion, media_type=FHIR_JSON)
+
+    @router.get("/ValueSet/$validate-code", tags=["Terminology"])
+    @router.post("/ValueSet/$validate-code", tags=["Terminology"])
+    async def validate_code(
+        request: Request,
+        url: str | None = Query(default=None),
+        system: str | None = Query(default=None),
+        code: str | None = Query(default=None),
+    ) -> Response:
+        """Validate that a code is in a ValueSet.
+
+        Returns whether the code is valid and its display text.
+        Supports:
+        - Simple code + system validation
+        - Coding object input (POST body)
+        - CodeableConcept object input (POST body)
+        """
+        coding: dict[str, Any] | None = None
+        codeable_concept: dict[str, Any] | None = None
+
+        # For POST, get parameters from body
+        if request.method == "POST":
+            try:
+                body = await request.json()
+                for param in body.get("parameter", []):
+                    if param.get("name") == "url":
+                        url = param.get("valueUri")
+                    elif param.get("name") == "system":
+                        system = param.get("valueUri")
+                    elif param.get("name") == "code":
+                        code = param.get("valueCode")
+                    elif param.get("name") == "coding":
+                        coding = param.get("valueCoding")
+                    elif param.get("name") == "codeableConcept":
+                        codeable_concept = param.get("valueCodeableConcept")
+            except Exception:
+                pass
+
+        # Must have URL and either code or coding/codeableConcept
+        if not url:
+            outcome = OperationOutcome.error("ValueSet URL is required", code="required")
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        if not code and not coding and not codeable_concept:
+            outcome = OperationOutcome.error("Code, coding, or codeableConcept is required", code="required")
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        # Use terminology provider for validation
+        from ..terminology import FHIRStoreTerminologyProvider
+
+        provider = FHIRStoreTerminologyProvider(store)
+        result = provider.validate_code(
+            valueset_url=url,
+            code=code,
+            system=system,
+            coding=coding,
+            codeable_concept=codeable_concept,
+        )
+
+        return JSONResponse(content=result, media_type=FHIR_JSON)
+
+    @router.get("/CodeSystem/$lookup", tags=["Terminology"])
+    @router.post("/CodeSystem/$lookup", tags=["Terminology"])
+    async def lookup_code(
+        request: Request,
+        system: str | None = Query(default=None),
+        code: str | None = Query(default=None),
+        version: str | None = Query(default=None),
+    ) -> Response:
+        """Look up a code in a CodeSystem.
+
+        Returns information about the code including display text.
+        Supports hierarchical CodeSystems (searches nested concepts).
+        """
+        # For POST, get parameters from body
+        if request.method == "POST":
+            try:
+                body = await request.json()
+                for param in body.get("parameter", []):
+                    if param.get("name") == "system":
+                        system = param.get("valueUri")
+                    elif param.get("name") == "code":
+                        code = param.get("valueCode")
+                    elif param.get("name") == "version":
+                        version = param.get("valueString")
+            except Exception:
+                pass
+
+        if not system or not code:
+            outcome = OperationOutcome.error("Both system and code are required", code="required")
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        # Use terminology provider for hierarchical lookup
+        from ..terminology import FHIRStoreTerminologyProvider
+
+        provider = FHIRStoreTerminologyProvider(store)
+        result = provider.lookup_code(system, code, version)
+
+        if not result:
+            outcome = OperationOutcome.error(f"Code '{code}' not found in CodeSystem", code="not-found")
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=404,
+                media_type=FHIR_JSON,
+            )
+
+        return JSONResponse(content=result, media_type=FHIR_JSON)
+
+    @router.get("/CodeSystem/$subsumes", tags=["Terminology"])
+    @router.post("/CodeSystem/$subsumes", tags=["Terminology"])
+    async def subsumes_code(
+        request: Request,
+        system: str | None = Query(default=None),
+        codeA: str | None = Query(default=None),
+        codeB: str | None = Query(default=None),
+        version: str | None = Query(default=None),
+    ) -> Response:
+        """Test subsumption relationship between two codes.
+
+        Returns the relationship between codeA and codeB:
+        - equivalent: codes are the same
+        - subsumes: codeA is an ancestor of codeB
+        - subsumed-by: codeA is a descendant of codeB
+        - not-subsumed: codes have no hierarchical relationship
+        """
+        # For POST, get parameters from body
+        if request.method == "POST":
+            try:
+                body = await request.json()
+                for param in body.get("parameter", []):
+                    if param.get("name") == "system":
+                        system = param.get("valueUri")
+                    elif param.get("name") == "codeA":
+                        codeA = param.get("valueCode")
+                    elif param.get("name") == "codeB":
+                        codeB = param.get("valueCode")
+                    elif param.get("name") == "version":
+                        version = param.get("valueString")
+            except Exception:
+                pass
+
+        if not system or not codeA or not codeB:
+            outcome = OperationOutcome.error("system, codeA, and codeB are required", code="required")
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        # Use terminology provider
+        from ..terminology import FHIRStoreTerminologyProvider
+
+        provider = FHIRStoreTerminologyProvider(store)
+        result = provider.subsumes(system, codeA, codeB, version)
+
+        return JSONResponse(content=result, media_type=FHIR_JSON)
+
+    @router.get("/CodeSystem/{codesystem_id}/$subsumes", tags=["Terminology"])
+    async def subsumes_code_by_id(
+        request: Request,
+        codesystem_id: str,
+        codeA: str = Query(...),
+        codeB: str = Query(...),
+    ) -> Response:
+        """Test subsumption relationship for a specific CodeSystem by ID."""
+        codesystem = store.read("CodeSystem", codesystem_id)
+        if codesystem is None:
+            outcome = OperationOutcome.not_found("CodeSystem", codesystem_id)
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=404,
+                media_type=FHIR_JSON,
+            )
+
+        system = codesystem.get("url")
+        if not system:
+            outcome = OperationOutcome.error("CodeSystem has no URL", code="invalid")
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        from ..terminology import FHIRStoreTerminologyProvider
+
+        provider = FHIRStoreTerminologyProvider(store)
+        result = provider.subsumes(system, codeA, codeB)
+
+        return JSONResponse(content=result, media_type=FHIR_JSON)
+
+    @router.get("/terminology/memberOf", tags=["Terminology"])
+    async def member_of(
+        request: Request,
+        code: str = Query(...),
+        system: str = Query(...),
+        valueSetUrl: str = Query(...),
+    ) -> Response:
+        """Check if a code is a member of a ValueSet.
+
+        Convenience endpoint that returns a simple boolean result.
+        """
+        from ..terminology import FHIRStoreTerminologyProvider
+
+        provider = FHIRStoreTerminologyProvider(store)
+        is_member = provider.member_of(valueSetUrl, code, system)
+
+        result = {
+            "resourceType": "Parameters",
+            "parameter": [{"name": "result", "valueBoolean": is_member}],
+        }
+        return JSONResponse(content=result, media_type=FHIR_JSON)
+
+    # =========================================================================
     # Resource Operations
     # =========================================================================
 
@@ -1247,297 +1560,6 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
             )
 
         return Response(status_code=204)
-
-    # =========================================================================
-    # Terminology Operations
-    # =========================================================================
-
-    @router.get("/ValueSet/$expand", tags=["Terminology"])
-    @router.post("/ValueSet/$expand", tags=["Terminology"])
-    async def expand_valueset(
-        request: Request,
-        url: str | None = Query(default=None),
-        filter: str | None = Query(default=None),
-        count: int = Query(default=100, ge=1, le=1000),
-        offset: int = Query(default=0, ge=0),
-    ) -> Response:
-        """Expand a ValueSet.
-
-        Expands the ValueSet to include all codes.
-        Supports filtering by code/display text.
-        """
-        # For POST, get parameters from body
-        if request.method == "POST":
-            try:
-                body = await request.json()
-                url = body.get("parameter", [{}])[0].get("valueUri", url)
-                for param in body.get("parameter", []):
-                    if param.get("name") == "url":
-                        url = param.get("valueUri")
-                    elif param.get("name") == "filter":
-                        filter = param.get("valueString")
-            except Exception:
-                pass
-
-        if not url:
-            outcome = OperationOutcome.error("ValueSet URL is required", code="required")
-            return JSONResponse(
-                content=outcome.model_dump(exclude_none=True),
-                status_code=400,
-                media_type=FHIR_JSON,
-            )
-
-        # Find ValueSet by URL
-        valuesets, _ = store.search("ValueSet", {"url": url})
-        if not valuesets:
-            outcome = OperationOutcome.error(f"ValueSet not found: {url}", code="not-found")
-            return JSONResponse(
-                content=outcome.model_dump(exclude_none=True),
-                status_code=404,
-                media_type=FHIR_JSON,
-            )
-
-        valueset = valuesets[0]
-
-        # Extract codes from compose
-        codes = []
-        compose = valueset.get("compose", {})
-        for include in compose.get("include", []):
-            system = include.get("system", "")
-            for concept in include.get("concept", []):
-                codes.append(
-                    {
-                        "system": system,
-                        "code": concept.get("code"),
-                        "display": concept.get("display"),
-                    }
-                )
-
-        # Apply filter if specified
-        if filter:
-            filter_lower = filter.lower()
-            codes = [
-                c
-                for c in codes
-                if filter_lower in (c.get("display", "").lower()) or filter_lower in (c.get("code", "").lower())
-            ]
-
-        # Apply pagination
-        total = len(codes)
-        codes = codes[offset : offset + count]
-
-        # Build expansion
-        expansion = {
-            "resourceType": "ValueSet",
-            "id": valueset.get("id"),
-            "url": url,
-            "status": valueset.get("status", "active"),
-            "expansion": {
-                "identifier": f"urn:uuid:{uuid.uuid4()}",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "total": total,
-                "offset": offset,
-                "contains": codes,
-            },
-        }
-
-        return JSONResponse(content=expansion, media_type=FHIR_JSON)
-
-    @router.get("/ValueSet/{valueset_id}/$expand", tags=["Terminology"])
-    async def expand_valueset_by_id(
-        request: Request,
-        valueset_id: str,
-        filter: str | None = Query(default=None),
-        count: int = Query(default=100, ge=1, le=1000),
-        offset: int = Query(default=0, ge=0),
-    ) -> Response:
-        """Expand a specific ValueSet by ID."""
-        valueset = store.read("ValueSet", valueset_id)
-        if valueset is None:
-            outcome = OperationOutcome.not_found("ValueSet", valueset_id)
-            return JSONResponse(
-                content=outcome.model_dump(exclude_none=True),
-                status_code=404,
-                media_type=FHIR_JSON,
-            )
-
-        # Extract codes
-        codes = []
-        compose = valueset.get("compose", {})
-        for include in compose.get("include", []):
-            system = include.get("system", "")
-            for concept in include.get("concept", []):
-                codes.append(
-                    {
-                        "system": system,
-                        "code": concept.get("code"),
-                        "display": concept.get("display"),
-                    }
-                )
-
-        # Apply filter
-        if filter:
-            filter_lower = filter.lower()
-            codes = [
-                c
-                for c in codes
-                if filter_lower in (c.get("display", "").lower()) or filter_lower in (c.get("code", "").lower())
-            ]
-
-        # Pagination
-        total = len(codes)
-        codes = codes[offset : offset + count]
-
-        expansion = {
-            "resourceType": "ValueSet",
-            "id": valueset_id,
-            "url": valueset.get("url"),
-            "status": valueset.get("status", "active"),
-            "expansion": {
-                "identifier": f"urn:uuid:{uuid.uuid4()}",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "total": total,
-                "offset": offset,
-                "contains": codes,
-            },
-        }
-
-        return JSONResponse(content=expansion, media_type=FHIR_JSON)
-
-    @router.get("/CodeSystem/$lookup", tags=["Terminology"])
-    @router.post("/CodeSystem/$lookup", tags=["Terminology"])
-    async def lookup_code(
-        request: Request,
-        system: str | None = Query(default=None),
-        code: str | None = Query(default=None),
-    ) -> Response:
-        """Look up a code in a CodeSystem.
-
-        Returns information about the code including display text.
-        """
-        # For POST, get parameters from body
-        if request.method == "POST":
-            try:
-                body = await request.json()
-                for param in body.get("parameter", []):
-                    if param.get("name") == "system":
-                        system = param.get("valueUri")
-                    elif param.get("name") == "code":
-                        code = param.get("valueCode")
-            except Exception:
-                pass
-
-        if not system or not code:
-            outcome = OperationOutcome.error("Both system and code are required", code="required")
-            return JSONResponse(
-                content=outcome.model_dump(exclude_none=True),
-                status_code=400,
-                media_type=FHIR_JSON,
-            )
-
-        # Find CodeSystem by URL
-        codesystems, _ = store.search("CodeSystem", {"url": system})
-        if not codesystems:
-            outcome = OperationOutcome.error(f"CodeSystem not found: {system}", code="not-found")
-            return JSONResponse(
-                content=outcome.model_dump(exclude_none=True),
-                status_code=404,
-                media_type=FHIR_JSON,
-            )
-
-        codesystem = codesystems[0]
-
-        # Find the code
-        for concept in codesystem.get("concept", []):
-            if concept.get("code") == code:
-                params: list[dict[str, Any]] = [
-                    {"name": "name", "valueString": codesystem.get("name")},
-                    {"name": "display", "valueString": concept.get("display")},
-                    {"name": "code", "valueCode": code},
-                    {"name": "system", "valueUri": system},
-                ]
-                if concept.get("definition"):
-                    params.append({"name": "definition", "valueString": concept.get("definition")})
-                result = {"resourceType": "Parameters", "parameter": params}
-                return JSONResponse(content=result, media_type=FHIR_JSON)
-
-        outcome = OperationOutcome.error(f"Code '{code}' not found in CodeSystem", code="not-found")
-        return JSONResponse(
-            content=outcome.model_dump(exclude_none=True),
-            status_code=404,
-            media_type=FHIR_JSON,
-        )
-
-    @router.get("/ValueSet/$validate-code", tags=["Terminology"])
-    @router.post("/ValueSet/$validate-code", tags=["Terminology"])
-    async def validate_code(
-        request: Request,
-        url: str | None = Query(default=None),
-        system: str | None = Query(default=None),
-        code: str | None = Query(default=None),
-    ) -> Response:
-        """Validate that a code is in a ValueSet.
-
-        Returns whether the code is valid and its display text.
-        """
-        # For POST, get parameters from body
-        if request.method == "POST":
-            try:
-                body = await request.json()
-                for param in body.get("parameter", []):
-                    if param.get("name") == "url":
-                        url = param.get("valueUri")
-                    elif param.get("name") == "system":
-                        system = param.get("valueUri")
-                    elif param.get("name") == "code":
-                        code = param.get("valueCode")
-            except Exception:
-                pass
-
-        if not url or not code:
-            outcome = OperationOutcome.error("ValueSet URL and code are required", code="required")
-            return JSONResponse(
-                content=outcome.model_dump(exclude_none=True),
-                status_code=400,
-                media_type=FHIR_JSON,
-            )
-
-        # Find ValueSet
-        valuesets, _ = store.search("ValueSet", {"url": url})
-        if not valuesets:
-            outcome = OperationOutcome.error(f"ValueSet not found: {url}", code="not-found")
-            return JSONResponse(
-                content=outcome.model_dump(exclude_none=True),
-                status_code=404,
-                media_type=FHIR_JSON,
-            )
-
-        valueset = valuesets[0]
-
-        # Check if code is in ValueSet
-        found = False
-        display = None
-        compose = valueset.get("compose", {})
-        for include in compose.get("include", []):
-            include_system = include.get("system", "")
-            if system and include_system != system:
-                continue
-            for concept in include.get("concept", []):
-                if concept.get("code") == code:
-                    found = True
-                    display = concept.get("display")
-                    break
-            if found:
-                break
-
-        params: list[dict[str, Any]] = [{"name": "result", "valueBoolean": found}]
-        if found and display:
-            params.append({"name": "display", "valueString": display})
-        if not found:
-            params.append({"name": "message", "valueString": f"Code '{code}' not found in ValueSet"})
-
-        result = {"resourceType": "Parameters", "parameter": params}
-        return JSONResponse(content=result, media_type=FHIR_JSON)
 
     # =========================================================================
     # Batch/Transaction
