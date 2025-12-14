@@ -17,6 +17,7 @@ from .document_reference import DocumentReferenceGenerator
 from .encounter import EncounterGenerator
 from .goal import GoalGenerator
 from .immunization import ImmunizationGenerator
+from .location import LocationGenerator
 from .measure import MeasureGenerator
 from .measure_report import MeasureReportGenerator
 from .medication import MedicationGenerator
@@ -173,6 +174,7 @@ __all__ = [
     "PatientGenerator",
     "PractitionerGenerator",
     "OrganizationGenerator",
+    "LocationGenerator",
     "EncounterGenerator",
     "ConditionGenerator",
     "ObservationGenerator",
