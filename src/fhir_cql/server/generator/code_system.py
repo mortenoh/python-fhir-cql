@@ -11,7 +11,7 @@ class CodeSystemGenerator(FHIRResourceGenerator):
     """Generator for FHIR CodeSystem resources."""
 
     # Code system templates
-    CODE_SYSTEM_TEMPLATES = [
+    CODE_SYSTEM_TEMPLATES: list[dict[str, Any]] = [
         {
             "name": "PriorityCodes",
             "title": "Priority Codes",
@@ -81,12 +81,16 @@ class CodeSystemGenerator(FHIRResourceGenerator):
             code_system_id = self._generate_id()
 
         # Use provided template or select random one
+        selected: dict[str, Any]
         if template is None:
-            template = self.faker.random_element(self.CODE_SYSTEM_TEMPLATES)
+            selected = self.CODE_SYSTEM_TEMPLATES[self.faker.random_int(0, len(self.CODE_SYSTEM_TEMPLATES) - 1)]
+        else:
+            selected = template
 
         if name is None:
-            name = template["name"]
+            name = str(selected["name"])
 
+        concepts: list[dict[str, Any]] = list(selected["concepts"])
         code_system: dict[str, Any] = {
             "resourceType": "CodeSystem",
             "id": code_system_id,
@@ -100,22 +104,22 @@ class CodeSystemGenerator(FHIRResourceGenerator):
             ],
             "version": version,
             "name": name,
-            "title": template["title"],
+            "title": selected["title"],
             "status": status,
             "experimental": False,
             "date": self._generate_date(),
             "publisher": self.faker.company(),
-            "description": template["description"],
+            "description": selected["description"],
             "caseSensitive": True,
             "content": content,
-            "count": len(template["concepts"]),
+            "count": len(concepts),
             "concept": [
                 {
                     "code": c["code"],
                     "display": c["display"],
                     "definition": c.get("definition", c["display"]),
                 }
-                for c in template["concepts"]
+                for c in concepts
             ],
         }
 

@@ -129,7 +129,7 @@ class FHIRValidator:
 
     def _validate_required_fields(self, resource: dict[str, Any]) -> list[ValidationIssue]:
         """Validate that all required fields are present."""
-        issues = []
+        issues: list[ValidationIssue] = []
 
         resource_type = resource.get("resourceType")
         if not resource_type:
@@ -205,7 +205,7 @@ class FHIRValidator:
 
     def _validate_code_bindings(self, resource: dict[str, Any]) -> list[ValidationIssue]:
         """Validate code fields against their ValueSet bindings."""
-        issues = []
+        issues: list[ValidationIssue] = []
 
         resource_type = resource.get("resourceType")
         if not resource_type:
@@ -265,7 +265,7 @@ class FHIRValidator:
 
     def _validate_references(self, resource: dict[str, Any]) -> list[ValidationIssue]:
         """Validate that reference targets exist."""
-        issues = []
+        issues: list[ValidationIssue] = []
 
         if not self._store:
             return issues

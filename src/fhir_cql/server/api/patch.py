@@ -331,18 +331,18 @@ def _apply_replace(obj: dict[str, Any], path: str, value: Any) -> dict[str, Any]
         return value
 
     # Navigate to parent
-    current = obj
+    current: Any = obj
     for segment in segments[:-1]:
-        if isinstance(current, dict):
+        if isinstance(current, dict) and isinstance(segment, str):
             current = current[segment]
-        elif isinstance(current, list):
+        elif isinstance(current, list) and isinstance(segment, int):
             current = current[segment]
 
     # Replace value
     last_segment = segments[-1]
-    if isinstance(current, dict):
+    if isinstance(current, dict) and isinstance(last_segment, str):
         current[last_segment] = value
-    elif isinstance(current, list):
+    elif isinstance(current, list) and isinstance(last_segment, int):
         current[last_segment] = value
 
     return obj

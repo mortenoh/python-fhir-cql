@@ -11,7 +11,7 @@ class ValueSetGenerator(FHIRResourceGenerator):
     """Generator for FHIR ValueSet resources."""
 
     # Common value set templates
-    VALUE_SET_TEMPLATES = [
+    VALUE_SET_TEMPLATES: list[dict[str, Any]] = [
         {
             "name": "ConditionSeverity",
             "title": "Condition Severity",
@@ -89,15 +89,18 @@ class ValueSetGenerator(FHIRResourceGenerator):
             value_set_id = self._generate_id()
 
         # Use provided template or select random one
+        selected: dict[str, Any]
         if template is None:
-            template = self.faker.random_element(self.VALUE_SET_TEMPLATES)
+            selected = self.VALUE_SET_TEMPLATES[self.faker.random_int(0, len(self.VALUE_SET_TEMPLATES) - 1)]
+        else:
+            selected = template
 
         if name is None:
-            name = template["name"]
+            name = str(selected["name"])
 
         # Group concepts by system
-        systems: dict[str, list] = {}
-        for concept in template["concepts"]:
+        systems: dict[str, list[dict[str, str]]] = {}
+        for concept in list(selected["concepts"]):
             system = concept["system"]
             if system not in systems:
                 systems[system] = []
@@ -116,12 +119,12 @@ class ValueSetGenerator(FHIRResourceGenerator):
             ],
             "version": version,
             "name": name,
-            "title": template["title"],
+            "title": selected["title"],
             "status": status,
             "experimental": False,
             "date": self._generate_date(),
             "publisher": self.faker.company(),
-            "description": template["description"],
+            "description": selected["description"],
             "compose": {
                 "include": [
                     {

@@ -555,10 +555,10 @@ def info(
 @app.command("populate")
 def populate(
     url: str = typer.Option("http://localhost:8080", "--url", "-u", help="FHIR server URL"),
-    seed: int = typer.Option(None, "--seed", "-s", help="Random seed for reproducible data"),
+    seed: int | None = typer.Option(None, "--seed", "-s", help="Random seed for reproducible data"),
     patients: int = typer.Option(3, "--patients", "-n", help="Number of patients to generate"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Generate but don't load to server"),
-    output: Path = typer.Option(None, "--output", "-o", help="Save generated resources to file"),
+    output: Path | None = typer.Option(None, "--output", "-o", help="Save generated resources to file"),
 ) -> None:
     """Populate a FHIR server with linked example resources of all types.
 
