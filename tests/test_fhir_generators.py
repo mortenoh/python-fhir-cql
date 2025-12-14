@@ -1,15 +1,23 @@
 """Tests for FHIR synthetic data generators."""
 
 from fhir_cql.server.generator import (
+    ClinicalImpressionGenerator,
+    CommunicationGenerator,
     ConditionGenerator,
     EncounterGenerator,
+    FamilyMemberHistoryGenerator,
+    FlagGenerator,
+    MedicationAdministrationGenerator,
     MedicationRequestGenerator,
+    MedicationStatementGenerator,
+    NutritionOrderGenerator,
     ObservationGenerator,
     OrganizationGenerator,
     PatientGenerator,
     PatientRecordGenerator,
     PractitionerGenerator,
     ProcedureGenerator,
+    SpecimenGenerator,
 )
 from fhir_cql.server.generator.clinical_codes import (
     CONDITIONS_SNOMED,
@@ -308,6 +316,245 @@ class TestPatientRecordGenerator:
             patient_ref = condition.get("subject", {}).get("reference")
             if patient_ref:
                 assert patient_ref in resource_ids
+
+
+class TestMedicationAdministrationGenerator:
+    """Tests for MedicationAdministrationGenerator."""
+
+    def test_generate_medication_administration(self):
+        """Test generating a medication administration."""
+        gen = MedicationAdministrationGenerator(seed=42)
+        admin = gen.generate(patient_ref="Patient/123")
+
+        assert admin["resourceType"] == "MedicationAdministration"
+        assert "id" in admin
+        assert "status" in admin
+        assert "medicationCodeableConcept" in admin
+        assert admin["subject"]["reference"] == "Patient/123"
+
+    def test_medication_administration_has_dosage(self):
+        """Test that medication administration has dosage."""
+        gen = MedicationAdministrationGenerator(seed=42)
+        admin = gen.generate()
+
+        assert "dosage" in admin
+        assert "dose" in admin["dosage"]
+
+    def test_medication_administration_with_encounter(self):
+        """Test medication administration with encounter reference."""
+        gen = MedicationAdministrationGenerator(seed=42)
+        admin = gen.generate(
+            patient_ref="Patient/123",
+            encounter_ref="Encounter/456",
+        )
+
+        assert admin["context"]["reference"] == "Encounter/456"
+
+
+class TestMedicationStatementGenerator:
+    """Tests for MedicationStatementGenerator."""
+
+    def test_generate_medication_statement(self):
+        """Test generating a medication statement."""
+        gen = MedicationStatementGenerator(seed=42)
+        stmt = gen.generate(patient_ref="Patient/123")
+
+        assert stmt["resourceType"] == "MedicationStatement"
+        assert "id" in stmt
+        assert "status" in stmt
+        assert "medicationCodeableConcept" in stmt
+        assert stmt["subject"]["reference"] == "Patient/123"
+
+    def test_medication_statement_has_dosage(self):
+        """Test that medication statement has dosage."""
+        gen = MedicationStatementGenerator(seed=42)
+        stmt = gen.generate()
+
+        assert "dosage" in stmt
+        assert len(stmt["dosage"]) > 0
+
+
+class TestFlagGenerator:
+    """Tests for FlagGenerator."""
+
+    def test_generate_flag(self):
+        """Test generating a flag."""
+        gen = FlagGenerator(seed=42)
+        flag = gen.generate(patient_ref="Patient/123")
+
+        assert flag["resourceType"] == "Flag"
+        assert "id" in flag
+        assert "status" in flag
+        assert "category" in flag
+        assert "code" in flag
+        assert flag["subject"]["reference"] == "Patient/123"
+
+    def test_flag_has_valid_status(self):
+        """Test that flag has valid status."""
+        gen = FlagGenerator(seed=42)
+        flag = gen.generate()
+
+        assert flag["status"] in ["active", "inactive", "entered-in-error"]
+
+    def test_flag_has_period(self):
+        """Test that flag has period."""
+        gen = FlagGenerator(seed=42)
+        flag = gen.generate()
+
+        assert "period" in flag
+        assert "start" in flag["period"]
+
+
+class TestClinicalImpressionGenerator:
+    """Tests for ClinicalImpressionGenerator."""
+
+    def test_generate_clinical_impression(self):
+        """Test generating a clinical impression."""
+        gen = ClinicalImpressionGenerator(seed=42)
+        impression = gen.generate(patient_ref="Patient/123")
+
+        assert impression["resourceType"] == "ClinicalImpression"
+        assert "id" in impression
+        assert "status" in impression
+        assert impression["subject"]["reference"] == "Patient/123"
+
+    def test_clinical_impression_has_effective_datetime(self):
+        """Test that clinical impression has effective datetime."""
+        gen = ClinicalImpressionGenerator(seed=42)
+        impression = gen.generate()
+
+        assert "effectiveDateTime" in impression
+
+    def test_clinical_impression_with_encounter(self):
+        """Test clinical impression with encounter reference."""
+        gen = ClinicalImpressionGenerator(seed=42)
+        impression = gen.generate(
+            patient_ref="Patient/123",
+            encounter_ref="Encounter/456",
+        )
+
+        assert impression["encounter"]["reference"] == "Encounter/456"
+
+
+class TestCommunicationGenerator:
+    """Tests for CommunicationGenerator."""
+
+    def test_generate_communication(self):
+        """Test generating a communication."""
+        gen = CommunicationGenerator(seed=42)
+        comm = gen.generate(patient_ref="Patient/123")
+
+        assert comm["resourceType"] == "Communication"
+        assert "id" in comm
+        assert "status" in comm
+        assert "category" in comm
+        assert comm["subject"]["reference"] == "Patient/123"
+
+    def test_communication_has_payload(self):
+        """Test that communication has payload."""
+        gen = CommunicationGenerator(seed=42)
+        comm = gen.generate()
+
+        assert "payload" in comm
+        assert len(comm["payload"]) > 0
+
+    def test_communication_has_sent_time(self):
+        """Test that communication has sent time."""
+        gen = CommunicationGenerator(seed=42)
+        comm = gen.generate()
+
+        assert "sent" in comm
+
+
+class TestNutritionOrderGenerator:
+    """Tests for NutritionOrderGenerator."""
+
+    def test_generate_nutrition_order(self):
+        """Test generating a nutrition order."""
+        gen = NutritionOrderGenerator(seed=42)
+        order = gen.generate(patient_ref="Patient/123")
+
+        assert order["resourceType"] == "NutritionOrder"
+        assert "id" in order
+        assert "status" in order
+        assert "intent" in order
+        assert order["patient"]["reference"] == "Patient/123"
+
+    def test_nutrition_order_has_datetime(self):
+        """Test that nutrition order has datetime."""
+        gen = NutritionOrderGenerator(seed=42)
+        order = gen.generate()
+
+        assert "dateTime" in order
+
+    def test_nutrition_order_has_oral_diet(self):
+        """Test that nutrition order has oral diet."""
+        gen = NutritionOrderGenerator(seed=42)
+        order = gen.generate()
+
+        assert "oralDiet" in order
+        assert "type" in order["oralDiet"]
+
+
+class TestSpecimenGenerator:
+    """Tests for SpecimenGenerator."""
+
+    def test_generate_specimen(self):
+        """Test generating a specimen."""
+        gen = SpecimenGenerator(seed=42)
+        specimen = gen.generate(patient_ref="Patient/123")
+
+        assert specimen["resourceType"] == "Specimen"
+        assert "id" in specimen
+        assert "status" in specimen
+        assert "type" in specimen
+        assert specimen["subject"]["reference"] == "Patient/123"
+
+    def test_specimen_has_collection(self):
+        """Test that specimen has collection info."""
+        gen = SpecimenGenerator(seed=42)
+        specimen = gen.generate()
+
+        assert "collection" in specimen
+        assert "collectedDateTime" in specimen["collection"]
+        assert "bodySite" in specimen["collection"]
+
+    def test_specimen_has_container(self):
+        """Test that specimen has container info."""
+        gen = SpecimenGenerator(seed=42)
+        specimen = gen.generate()
+
+        assert "container" in specimen
+        assert len(specimen["container"]) > 0
+
+
+class TestFamilyMemberHistoryGenerator:
+    """Tests for FamilyMemberHistoryGenerator."""
+
+    def test_generate_family_member_history(self):
+        """Test generating a family member history."""
+        gen = FamilyMemberHistoryGenerator(seed=42)
+        history = gen.generate(patient_ref="Patient/123")
+
+        assert history["resourceType"] == "FamilyMemberHistory"
+        assert "id" in history
+        assert "status" in history
+        assert "relationship" in history
+        assert history["patient"]["reference"] == "Patient/123"
+
+    def test_family_member_history_has_sex(self):
+        """Test that family member history has sex."""
+        gen = FamilyMemberHistoryGenerator(seed=42)
+        history = gen.generate()
+
+        assert "sex" in history
+
+    def test_family_member_history_has_age_or_deceased(self):
+        """Test that family member history has age or deceased info."""
+        gen = FamilyMemberHistoryGenerator(seed=42)
+        history = gen.generate()
+
+        assert "ageAge" in history or "deceasedAge" in history
 
 
 class TestClinicalCodes:
