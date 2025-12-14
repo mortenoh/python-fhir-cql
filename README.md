@@ -21,7 +21,7 @@ This project provides complete implementations of:
 - **CLI Tools**: Command-line interfaces for evaluation, AST visualization, validation, and server management
 - **Python API**: Programmatic access to evaluators for integration into applications
 
-**Current test count: 1723+ passing tests**
+**Current test count: 2244+ passing tests**
 
 ## Requirements
 
@@ -131,12 +131,19 @@ all_results = evaluator.evaluate_all_definitions()
 | Temporal operations | - | Yes | Yes | - | - | - |
 | Terminology (codes/valuesets) | - | Yes | Yes | Yes | - | Yes |
 | FHIR data sources | - | Yes | Yes | Yes | - | - |
-| Quality measures | - | Yes | Yes | - | - | - |
+| Quality measures | - | Yes | Yes | Yes | - | - |
 | CQL-to-ELM export | - | Yes | - | - | - | - |
-| FHIR REST API (CRUD) | - | - | - | Yes | - | - |
+| FHIR REST API (CRUD+PATCH) | - | - | - | Yes | - | - |
 | Search parameters | - | - | - | Yes | - | - |
 | Batch/transaction | - | - | - | Yes | - | - |
+| Conditional operations | - | - | - | Yes | - | - |
 | Synthetic data generation | - | - | - | Yes | - | - |
+| Group resource support | - | - | - | Yes | - | - |
+| $validate | - | - | - | Yes | - | - |
+| $diff | - | - | - | Yes | - | - |
+| $export (Bulk Data) | - | - | - | Yes | - | - |
+| $everything | - | - | - | Yes | - | - |
+| $evaluate-measure | - | - | - | Yes | - | - |
 | $expand, $lookup | - | - | - | Yes | - | Yes |
 | $validate-code | - | - | - | Yes | - | Yes |
 | $subsumes | - | - | - | Yes | - | Yes |
