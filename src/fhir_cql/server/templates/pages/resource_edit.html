@@ -63,7 +63,7 @@
                     <h2 class="text-lg font-medium text-gray-900">Resource JSON</h2>
                     <p class="mt-1 text-sm text-gray-500">
                         Edit the FHIR resource in JSON format
-                        <span class="text-fhir-600">(Ctrl+Space for autocomplete)</span>
+                        <span class="text-fhir-600">(Ctrl+I or Ctrl+Space for autocomplete)</span>
                     </p>
                 </div>
                 <div class="flex space-x-2">
@@ -113,7 +113,10 @@
 
     // Load Monaco
     require(['vs/editor/editor.main'], function() {
-        // Fetch schema from API and configure JSON validation
+        // Model URI must match the fileMatch pattern for schema to work
+        var modelUri = monaco.Uri.parse('file:///{{ resource_type }}.json');
+
+        // Fetch schema from API and configure JSON validation + completion
         fetch('{{ api_base_path }}/schema/{{ resource_type }}')
             .then(response => response.json())
             .then(schema => {
@@ -122,20 +125,23 @@
                     allowComments: false,
                     schemas: [{
                         uri: 'http://fhir/schema/{{ resource_type }}',
-                        fileMatch: ['*'],
+                        fileMatch: [modelUri.toString()],
                         schema: schema
                     }],
                     enableSchemaRequest: false
                 });
+                console.log('Schema loaded for {{ resource_type }}');
             })
             .catch(err => {
                 console.warn('Could not load schema for autocomplete:', err);
             });
 
-        // Create the editor
+        // Create model with specific URI
+        var model = monaco.editor.createModel(initialJson, 'json', modelUri);
+
+        // Create the editor with the model
         editor = monaco.editor.create(document.getElementById('monaco-editor'), {
-            value: initialJson,
-            language: 'json',
+            model: model,
             theme: 'vs',
             minimap: { enabled: false },
             automaticLayout: true,
@@ -153,7 +159,15 @@
                 comments: false,
                 strings: true
             },
-            suggestOnTriggerCharacters: true
+            suggestOnTriggerCharacters: true,
+            suggest: {
+                showProperties: true
+            }
+        });
+
+        // Add keyboard shortcut for trigger suggest (Ctrl+Space may conflict with OS)
+        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyI, function() {
+            editor.trigger('keyboard', 'editor.action.triggerSuggest', {});
         });
 
         // Format on load
