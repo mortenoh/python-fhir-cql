@@ -16,6 +16,42 @@
         </div>
     </div>
 
+    <!-- Getting Started Banner (collapsible) -->
+    <div id="getting-started" class="bg-gradient-to-r from-fhir-50 to-indigo-50 border border-fhir-200 rounded-lg p-4">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <h3 class="text-sm font-semibold text-fhir-900 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-fhir-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Getting Started with CQL
+                </h3>
+                <div id="getting-started-content" class="mt-2 text-sm text-gray-700 space-y-2">
+                    <p><strong>CQL (Clinical Quality Language)</strong> is used to express clinical logic for quality measures, decision support, and data extraction.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+                        <div class="bg-white/60 rounded p-2">
+                            <span class="text-xs font-medium text-green-700">1. Start Simple</span>
+                            <p class="text-xs text-gray-600 mt-1">Click Execute to run the default example. No patient needed!</p>
+                        </div>
+                        <div class="bg-white/60 rounded p-2">
+                            <span class="text-xs font-medium text-yellow-700">2. Try Examples</span>
+                            <p class="text-xs text-gray-600 mt-1">Use the Examples dropdown. Green = no patient, Yellow/Red = needs patient.</p>
+                        </div>
+                        <div class="bg-white/60 rounded p-2">
+                            <span class="text-xs font-medium text-blue-700">3. Add Patient</span>
+                            <p class="text-xs text-gray-600 mt-1">Select a patient from the dropdown to query real clinical data.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button onclick="toggleGettingStarted()" class="ml-4 text-gray-400 hover:text-gray-600">
+                <svg id="getting-started-icon" class="w-5 h-5 transform rotate-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
     <!-- Main Content -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Left Panel: CQL Editor -->
@@ -30,46 +66,36 @@
                     <div class="flex space-x-2">
                         <select id="example-select" onchange="loadCQLExample()" class="text-sm border-gray-300 rounded-md">
                             <option value="">-- Examples --</option>
-                            <optgroup label="Basic">
+                            <optgroup label="🟢 Beginner (No Patient Required)">
                                 <option value="basic-arithmetic">Arithmetic operations</option>
                                 <option value="basic-strings">String operations</option>
                                 <option value="basic-dates">Date operations</option>
                                 <option value="basic-lists">List operations</option>
                                 <option value="basic-intervals">Interval operations</option>
                             </optgroup>
-                            <optgroup label="Patient Data">
+                            <optgroup label="🟡 Intermediate (Patient Context)">
                                 <option value="patient-demographics">Patient demographics</option>
                                 <option value="patient-age">Age calculations</option>
                                 <option value="patient-contacts">Patient contacts</option>
-                            </optgroup>
-                            <optgroup label="Observations">
                                 <option value="obs-vitals">Vital signs query</option>
                                 <option value="obs-labs">Lab results query</option>
                                 <option value="obs-latest">Most recent observation</option>
-                                <option value="obs-abnormal">Abnormal values</option>
-                            </optgroup>
-                            <optgroup label="Conditions">
                                 <option value="cond-active">Active conditions</option>
                                 <option value="cond-diabetes">Diabetes check</option>
-                                <option value="cond-chronic">Chronic conditions</option>
-                            </optgroup>
-                            <optgroup label="Medications">
                                 <option value="med-active">Active medications</option>
+                            </optgroup>
+                            <optgroup label="🔴 Advanced (Clinical Logic)">
+                                <option value="obs-abnormal">Abnormal values</option>
+                                <option value="cond-chronic">Chronic conditions</option>
                                 <option value="med-opioids">Opioid check</option>
                                 <option value="med-interactions">Drug class check</option>
-                            </optgroup>
-                            <optgroup label="Quality Measures">
                                 <option value="measure-ipp">Initial population</option>
                                 <option value="measure-denom">Denominator criteria</option>
                                 <option value="measure-numer">Numerator criteria</option>
                                 <option value="measure-exclusion">Exclusion criteria</option>
-                            </optgroup>
-                            <optgroup label="Clinical Rules">
                                 <option value="rule-alerts">Clinical alerts</option>
                                 <option value="rule-reminders">Care reminders</option>
                                 <option value="rule-contraindications">Contraindications</option>
-                            </optgroup>
-                            <optgroup label="Advanced">
                                 <option value="adv-aggregates">Aggregate functions</option>
                                 <option value="adv-timing">Timing relationships</option>
                                 <option value="adv-queries">Complex queries</option>
@@ -180,159 +206,255 @@
 <script>
     var cqlEditor = null;
     var currentResults = null;
+    var gettingStartedVisible = true;
+
+    function toggleGettingStarted() {
+        var content = document.getElementById('getting-started-content');
+        var icon = document.getElementById('getting-started-icon');
+        gettingStartedVisible = !gettingStartedVisible;
+        if (gettingStartedVisible) {
+            content.classList.remove('hidden');
+            icon.classList.remove('rotate-180');
+        } else {
+            content.classList.add('hidden');
+            icon.classList.add('rotate-180');
+        }
+        // Remember preference
+        localStorage.setItem('cqlGettingStartedHidden', !gettingStartedVisible);
+    }
+
+    // Restore preference on load
+    document.addEventListener('DOMContentLoaded', function() {
+        if (localStorage.getItem('cqlGettingStartedHidden') === 'true') {
+            toggleGettingStarted();
+        }
+    });
 
     const defaultCQL = `library Example version '1.0.0'
 
-using FHIR version '4.0.1'
+// Welcome to FHIRKit CQL Workbench!
+// These examples work without patient context.
+// Select a patient above to try patient-specific queries.
 
-context Patient
+define "Greeting": 'Hello, CQL!'
 
-define "Patient Name":
-  Patient.name.first().given.first()
+define "Arithmetic": 2 + 3 * 4
 
-define "Patient Age":
-  AgeInYears()
+define "Today": Today()
 
-define "Is Adult":
-  AgeInYears() >= 18
+define "DateMath": Today() + 30 days
+
+define "StringOps": Upper('fhirkit')
+
+define "ListSum": Sum({1, 2, 3, 4, 5})
+
+define "ListUnion": {1, 2, 3} union {3, 4, 5}
+
+define "IntervalCheck": Interval[1, 10] contains 5
 `;
 
     const cqlExamples = {
         'basic-arithmetic': `library ArithmeticExamples version '1.0.0'
 
-// Basic arithmetic operations in CQL
+/*
+ * CQL Arithmetic Operations
+ * -------------------------
+ * CQL supports standard math operations plus useful
+ * functions for clinical calculations like BMI, eGFR, etc.
+ *
+ * Try modifying values to see how results change!
+ */
 
-define "Addition": 5 + 3
-define "Subtraction": 10 - 4
-define "Multiplication": 6 * 7
-define "Division": 20 / 4
-define "Integer Division": 20 div 3
-define "Modulo": 17 mod 5
-define "Power": 2 ^ 10
-define "Negation": -42
-define "Absolute Value": Abs(-15)
-define "Ceiling": Ceiling(4.2)
-define "Floor": Floor(4.8)
-define "Round": Round(3.567, 2)
-define "Truncate": Truncate(5.9)
-define "Minimum": Min({ 3, 1, 4, 1, 5 })
-define "Maximum": Max({ 3, 1, 4, 1, 5 })
-define "Sum": Sum({ 1, 2, 3, 4, 5 })
-define "Average": Avg({ 1, 2, 3, 4, 5 })
+// Basic operators: +, -, *, /
+define "Addition": 5 + 3           // Result: 8
+define "Subtraction": 10 - 4       // Result: 6
+define "Multiplication": 6 * 7     // Result: 42
+define "Division": 20 / 4          // Result: 5.0 (decimal)
+
+// Integer operations
+define "Integer Division": 20 div 3  // Result: 6 (whole number only)
+define "Modulo": 17 mod 5            // Result: 2 (remainder)
+define "Power": 2 ^ 10               // Result: 1024
+
+// Useful math functions
+define "Absolute Value": Abs(-15)    // Result: 15
+define "Ceiling": Ceiling(4.2)       // Result: 5 (round up)
+define "Floor": Floor(4.8)           // Result: 4 (round down)
+define "Round": Round(3.567, 2)      // Result: 3.57 (2 decimals)
+
+// Aggregate functions (work on lists)
+define "Minimum": Min({ 3, 1, 4, 1, 5 })   // Result: 1
+define "Maximum": Max({ 3, 1, 4, 1, 5 })   // Result: 5
+define "Sum": Sum({ 1, 2, 3, 4, 5 })       // Result: 15
+define "Average": Avg({ 1, 2, 3, 4, 5 })   // Result: 3.0
 `,
 
         'basic-strings': `library StringExamples version '1.0.0'
 
-// String operations in CQL
+/*
+ * CQL String Operations
+ * ---------------------
+ * Strings in CQL use single quotes: 'Hello'
+ * These functions are useful for searching patient names,
+ * parsing codes, and formatting display text.
+ */
 
+// Creating and combining strings
 define "Simple String": 'Hello, World!'
 define "Concatenation": 'Hello' + ', ' + 'World!'
-define "Length": Length('Hello')
-define "Upper Case": Upper('hello')
-define "Lower Case": Lower('HELLO')
-define "Substring": Substring('Hello World', 0, 5)
-define "Position Of": PositionOf('World', 'Hello World')
-define "Starts With": StartsWith('Hello World', 'Hello')
-define "Ends With": EndsWith('Hello World', 'World')
+
+// Getting string information
+define "Length": Length('Hello')                    // Result: 5
+define "Position Of": PositionOf('World', 'Hello World')  // Result: 6
+
+// Case conversion (useful for case-insensitive matching)
+define "Upper Case": Upper('hello')                 // Result: 'HELLO'
+define "Lower Case": Lower('HELLO')                 // Result: 'hello'
+
+// Extracting parts of strings
+define "Substring": Substring('Hello World', 0, 5) // Result: 'Hello'
+
+// Checking string content
+define "Starts With": StartsWith('Hello World', 'Hello')  // Result: true
+define "Ends With": EndsWith('Hello World', 'World')      // Result: true
 define "Contains": PositionOf('World', 'Hello World') >= 0
+
+// Modifying strings
 define "Replace": Replace('Hello World', 'World', 'CQL')
-define "Split": Split('a,b,c,d', ',')
-define "Combine": Combine({ 'a', 'b', 'c' }, '-')
-define "Trim": Length('  hello  ') // Note: no built-in trim
-define "String Equality": 'abc' = 'abc'
-define "String Compare": 'apple' < 'banana'
+
+// Working with delimited data
+define "Split": Split('a,b,c,d', ',')              // Result: ['a','b','c','d']
+define "Combine": Combine({ 'a', 'b', 'c' }, '-')  // Result: 'a-b-c'
+
+// Comparison (alphabetical ordering)
+define "String Equality": 'abc' = 'abc'            // Result: true
+define "String Compare": 'apple' < 'banana'        // Result: true
 `,
 
         'basic-dates': `library DateExamples version '1.0.0'
 
-// Date and time operations in CQL
+/*
+ * CQL Date & Time Operations
+ * --------------------------
+ * Dates are CRITICAL in clinical CQL for:
+ * - Calculating patient age
+ * - Finding observations in time ranges
+ * - Checking medication durations
+ *
+ * Date literals start with @: @2024-01-15
+ */
 
-define "Today": Today()
-define "Now": Now()
+// Current date/time
+define "Today": Today()       // Current date (no time)
+define "Now": Now()           // Current date AND time
+
+// Date literals (start with @)
 define "Date Literal": @2024-01-15
 define "DateTime Literal": @2024-01-15T10:30:00
 define "Time Literal": @T14:30:00
 
-define "Year": year from @2024-06-15
-define "Month": month from @2024-06-15
-define "Day": day from @2024-06-15
-define "Hour": hour from @2024-06-15T14:30:00
-define "Minute": minute from @2024-06-15T14:30:00
+// Extracting parts of dates
+define "Year": year from @2024-06-15      // Result: 2024
+define "Month": month from @2024-06-15    // Result: 6
+define "Day": day from @2024-06-15        // Result: 15
 
-define "Date Math - Add Days": @2024-01-01 + 30 days
-define "Date Math - Add Months": @2024-01-01 + 3 months
-define "Date Math - Add Years": @2024-01-01 + 1 year
-define "Date Math - Subtract": @2024-12-31 - 1 month
+// Date arithmetic (essential for clinical queries!)
+define "Add Days": @2024-01-01 + 30 days
+define "Add Months": @2024-01-01 + 3 months
+define "Subtract": @2024-12-31 - 1 month
 
-define "Duration In Days": days between @2024-01-01 and @2024-12-31
-define "Duration In Months": months between @2024-01-01 and @2024-12-31
-define "Duration In Years": years between @2000-01-01 and @2024-01-01
+// Duration calculations
+define "Days Between": days between @2024-01-01 and @2024-12-31    // Result: 365
+define "Months Between": months between @2024-01-01 and @2024-12-31
+define "Years Between": years between @2000-01-01 and @2024-01-01  // Result: 24
 
-define "Date Comparison": @2024-01-01 < @2024-12-31
-define "Same Year": year from @2024-06-15 = year from @2024-01-01
-define "Is Past": Today() > @2020-01-01
-define "Is Future": @2030-01-01 > Today()
+// Comparisons (for filtering by date)
+define "Date Comparison": @2024-01-01 < @2024-12-31   // Result: true
+define "Is Past": Today() > @2020-01-01               // Result: true
+define "Is Future": @2030-01-01 > Today()             // Result: true
 `,
 
         'basic-lists': `library ListExamples version '1.0.0'
 
-// List operations in CQL
+/*
+ * CQL List Operations
+ * -------------------
+ * Lists are fundamental in CQL because FHIR data is list-based:
+ * - [Condition] returns a LIST of conditions
+ * - Patient.name is a LIST of names
+ *
+ * Lists use curly braces: { 1, 2, 3 }
+ */
 
-define "Simple List": { 1, 2, 3, 4, 5 }
+// Creating lists
+define "Number List": { 1, 2, 3, 4, 5 }
 define "String List": { 'apple', 'banana', 'cherry' }
 define "Empty List": { }
-define "List Length": Count({ 1, 2, 3, 4, 5 })
-define "Is Empty": IsEmpty({ })
-define "Exists": exists { 1, 2, 3 }
 
-define "First": First({ 1, 2, 3, 4, 5 })
-define "Last": Last({ 1, 2, 3, 4, 5 })
-define "Indexer": ({ 1, 2, 3, 4, 5 })[2]
-define "Take": Take({ 1, 2, 3, 4, 5 }, 3)
-define "Skip": Skip({ 1, 2, 3, 4, 5 }, 2)
-define "Tail": Tail({ 1, 2, 3, 4, 5 })
+// List information
+define "Count": Count({ 1, 2, 3, 4, 5 })   // Result: 5
+define "Is Empty": IsEmpty({ })             // Result: true
+define "Exists": exists { 1, 2, 3 }         // Result: true
 
-define "Contains": 3 in { 1, 2, 3, 4, 5 }
-define "Includes": { 1, 2, 3, 4, 5 } includes { 2, 3 }
-define "Included In": { 2, 3 } included in { 1, 2, 3, 4, 5 }
-define "Union": { 1, 2, 3 } union { 3, 4, 5 }
-define "Intersect": { 1, 2, 3, 4 } intersect { 3, 4, 5, 6 }
-define "Except": { 1, 2, 3, 4 } except { 3, 4 }
+// Accessing elements
+define "First": First({ 1, 2, 3, 4, 5 })   // Result: 1
+define "Last": Last({ 1, 2, 3, 4, 5 })     // Result: 5
+define "By Index": ({ 1, 2, 3, 4, 5 })[2]  // Result: 3 (0-indexed)
+define "Take First 3": Take({ 1, 2, 3, 4, 5 }, 3)  // Result: {1,2,3}
+define "Skip First 2": Skip({ 1, 2, 3, 4, 5 }, 2)  // Result: {3,4,5}
 
-define "Distinct": distinct { 1, 1, 2, 2, 3, 3 }
-define "Flatten": flatten { { 1, 2 }, { 3, 4 }, { 5 } }
-define "Sort Asc": ({ 3, 1, 4, 1, 5 }) L return all L sort asc
-define "Sort Desc": ({ 3, 1, 4, 1, 5 }) L return all L sort desc
+// Membership testing
+define "Contains": 3 in { 1, 2, 3, 4, 5 }           // Result: true
+define "Includes All": { 1, 2, 3, 4, 5 } includes { 2, 3 }
+
+// Set operations (removing duplicates)
+define "Union": { 1, 2, 3 } union { 3, 4, 5 }       // Result: {1,2,3,4,5}
+define "Intersect": { 1, 2, 3, 4 } intersect { 3, 4, 5, 6 }  // Result: {3,4}
+define "Except": { 1, 2, 3, 4 } except { 3, 4 }     // Result: {1,2}
+
+// Transforming lists
+define "Distinct": distinct { 1, 1, 2, 2, 3, 3 }   // Result: {1,2,3}
+define "Flatten": flatten { { 1, 2 }, { 3, 4 } }   // Result: {1,2,3,4}
 `,
 
         'basic-intervals': `library IntervalExamples version '1.0.0'
 
-// Interval operations in CQL
+/*
+ * CQL Interval Operations
+ * -----------------------
+ * Intervals represent ranges - essential for clinical queries:
+ * - Measurement periods: Interval[@2024-01-01, @2024-12-31]
+ * - Value ranges: blood pressure 90-140 mmHg
+ * - Time windows: "in the last 30 days"
+ *
+ * [ ] = inclusive (closed), ( ) = exclusive (open)
+ */
 
-define "Closed Interval": Interval[1, 10]
-define "Open Interval": Interval(1, 10)
-define "Half Open": Interval[1, 10)
-define "Date Interval": Interval[@2024-01-01, @2024-12-31]
+// Creating intervals
+define "Closed": Interval[1, 10]     // Includes 1 and 10
+define "Open": Interval(1, 10)       // Excludes 1 and 10
+define "Half Open": Interval[1, 10)  // Includes 1, excludes 10
 
-define "Start": start of Interval[1, 10]
-define "End": end of Interval[1, 10]
-define "Width": width of Interval[1, 10]
-define "Size": Size(Interval[1, 10])
-define "Point In": 5 in Interval[1, 10]
-define "Point Not In": 15 in Interval[1, 10]
+// Date intervals (very common in clinical queries)
+define "This Year": Interval[@2024-01-01, @2024-12-31]
+define "Measurement Period": Interval[Today() - 1 year, Today()]
 
-define "Contains Interval": Interval[1, 10] includes Interval[3, 7]
-define "Overlaps": Interval[1, 5] overlaps Interval[4, 8]
-define "Before": Interval[1, 3] before Interval[5, 8]
-define "After": Interval[5, 8] after Interval[1, 3]
-define "Meets": Interval[1, 5] meets Interval[5, 10]
+// Getting interval boundaries
+define "Start": start of Interval[1, 10]    // Result: 1
+define "End": end of Interval[1, 10]        // Result: 10
 
-define "Union Intervals": Interval[1, 5] union Interval[4, 10]
-define "Intersect Intervals": Interval[1, 8] intersect Interval[4, 12]
-define "Except Intervals": Interval[1, 10] except Interval[4, 6]
+// Testing if value is in interval
+define "5 In Range": 5 in Interval[1, 10]      // Result: true
+define "15 In Range": 15 in Interval[1, 10]    // Result: false
 
-define "During": Interval[3, 7] during Interval[1, 10]
-define "Properly During": Interval[3, 7] properly during Interval[1, 10]
+// Comparing intervals
+define "Overlaps": Interval[1, 5] overlaps Interval[4, 8]  // true
+define "Before": Interval[1, 3] before Interval[5, 8]      // true
+define "During": Interval[3, 7] during Interval[1, 10]     // true
+
+// Combining intervals
+define "Union": Interval[1, 5] union Interval[4, 10]       // [1,10]
+define "Intersect": Interval[1, 8] intersect Interval[4, 12]  // [4,8]
 `,
 
         'patient-demographics': `library PatientDemographics version '1.0.0'
@@ -1672,16 +1794,40 @@ define "Readmissions Within 30 Days":
         var resultsDiv = document.getElementById('results-content');
         var html = '';
 
+        var nullCount = 0;
+        var totalCount = 0;
         if (data.results) {
             for (var name in data.results) {
+                totalCount++;
                 var value = data.results[name];
+                var isNull = value === null;
+                if (isNull) nullCount++;
+
                 html += '<div class="border border-gray-200 rounded-lg overflow-hidden">';
-                html += '<div class="bg-gray-50 px-3 py-2 border-b border-gray-200">';
+                html += '<div class="bg-gray-50 px-3 py-2 border-b border-gray-200 flex justify-between items-center">';
                 html += '<span class="font-medium text-sm text-gray-900">' + name + '</span>';
+                if (isNull) {
+                    html += '<span class="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded">null</span>';
+                }
                 html += '</div>';
                 html += '<pre class="p-3 text-sm overflow-auto max-h-48 json-content">' + JSON.stringify(value, null, 2) + '</pre>';
                 html += '</div>';
             }
+        }
+
+        // Show helpful message if all or most results are null
+        if (totalCount > 0 && nullCount === totalCount) {
+            var patientSelect = document.getElementById('patient-select');
+            var hasPatient = patientSelect && patientSelect.value;
+            var hint = '<div class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">';
+            hint += '<p class="text-sm text-amber-800 font-medium">All results are null</p>';
+            if (!hasPatient) {
+                hint += '<p class="text-xs text-amber-700 mt-1">This CQL may require patient context. Try selecting a patient above, or use examples from "Basic" that work without patient data.</p>';
+            } else {
+                hint += '<p class="text-xs text-amber-700 mt-1">The patient may not have the required data (conditions, observations, etc.) for these queries.</p>';
+            }
+            hint += '</div>';
+            html = hint + html;
         }
 
         resultsDiv.innerHTML = html || '<p class="text-sm text-gray-500">No results</p>';
