@@ -2,16 +2,62 @@
 
 import json
 from pathlib import Path
+from typing import Any
 
 import typer
 from rich import print as rprint
 from rich.table import Table
+
+from fhir_cql.server.generator import (
+    AllergyIntoleranceGenerator,
+    CarePlanGenerator,
+    ConditionGenerator,
+    DiagnosticReportGenerator,
+    DocumentReferenceGenerator,
+    EncounterGenerator,
+    GoalGenerator,
+    ImmunizationGenerator,
+    LocationGenerator,
+    MeasureGenerator,
+    MeasureReportGenerator,
+    MedicationGenerator,
+    MedicationRequestGenerator,
+    ObservationGenerator,
+    OrganizationGenerator,
+    PatientGenerator,
+    PractitionerGenerator,
+    ProcedureGenerator,
+    ServiceRequestGenerator,
+)
 
 app = typer.Typer(
     name="server",
     help="FHIR R4 server utilities (generate, load, stats, info). Use 'fhir serve' to start the server.",
     no_args_is_help=True,
 )
+
+# Mapping of resource types to generator classes
+GENERATORS: dict[str, type] = {
+    "Patient": PatientGenerator,
+    "Practitioner": PractitionerGenerator,
+    "Organization": OrganizationGenerator,
+    "Location": LocationGenerator,
+    "Encounter": EncounterGenerator,
+    "Condition": ConditionGenerator,
+    "Observation": ObservationGenerator,
+    "MedicationRequest": MedicationRequestGenerator,
+    "Procedure": ProcedureGenerator,
+    "DiagnosticReport": DiagnosticReportGenerator,
+    "AllergyIntolerance": AllergyIntoleranceGenerator,
+    "Immunization": ImmunizationGenerator,
+    "CarePlan": CarePlanGenerator,
+    "Goal": GoalGenerator,
+    "ServiceRequest": ServiceRequestGenerator,
+    "DocumentReference": DocumentReferenceGenerator,
+    "Medication": MedicationGenerator,
+    "Measure": MeasureGenerator,
+    "MeasureReport": MeasureReportGenerator,
+}
 
 
 @app.command("generate")
@@ -94,6 +140,205 @@ def generate(
                 json.dump(r, f, indent=2 if pretty else None)
 
         rprint(f"[green]Written to {output_dir}/[/green] (individual files)")
+
+    else:
+        rprint(f"[red]Unknown format: {format}[/red]")
+        raise typer.Exit(1)
+
+
+@app.command("generate-resource")
+def generate_resource(
+    resource_type: str = typer.Argument(None, help="Resource type to generate (e.g., Patient, Observation)"),
+    output: Path = typer.Argument(None, help="Output JSON file path"),
+    count: int = typer.Option(1, "--count", "-n", help="Number of resources to generate"),
+    seed: int = typer.Option(None, "--seed", "-s", help="Random seed for reproducible data"),
+    format: str = typer.Option("bundle", "--format", "-f", help="Output format: bundle, ndjson, or json"),
+    pretty: bool = typer.Option(True, "--pretty/--no-pretty", help="Pretty-print JSON output"),
+    list_types: bool = typer.Option(False, "--list", "-l", help="List available resource types"),
+    patient_ref: str = typer.Option(None, "--patient-ref", help="Patient reference (e.g., Patient/123)"),
+    practitioner_ref: str = typer.Option(None, "--practitioner-ref", help="Practitioner reference"),
+    organization_ref: str = typer.Option(None, "--organization-ref", help="Organization reference"),
+    encounter_ref: str = typer.Option(None, "--encounter-ref", help="Encounter reference"),
+    hierarchy_depth: int = typer.Option(None, "--hierarchy-depth", help="For Location: generate hierarchy (1-6)"),
+    load: bool = typer.Option(False, "--load", help="Load generated resources to FHIR server"),
+    url: str = typer.Option("http://localhost:8080", "--url", "-u", help="FHIR server URL (used with --load)"),
+) -> None:
+    """Generate individual FHIR resources of a specific type.
+
+    Examples:
+        # List available resource types
+        fhir server generate-resource --list
+
+        # Generate 10 patients
+        fhir server generate-resource Patient ./patients.json -n 10
+
+        # Generate observations for a patient
+        fhir server generate-resource Observation ./obs.json -n 5 --patient-ref Patient/123
+
+        # Generate location hierarchy (Site → Building → Wing → Ward)
+        fhir server generate-resource Location ./locations.json --hierarchy-depth 4
+
+        # Generate with reproducible seed
+        fhir server generate-resource Condition ./conditions.json -n 20 --seed 42
+
+        # Generate and load to server in one step
+        fhir server generate-resource Patient ./patients.json -n 10 --load --url http://localhost:8080
+    """
+    # Handle --list option
+    if list_types:
+        rprint("[bold]Available Resource Types:[/bold]")
+        table = Table()
+        table.add_column("Resource Type", style="cyan")
+        table.add_column("Generator Class")
+        for rt, gen_class in sorted(GENERATORS.items()):
+            table.add_row(rt, gen_class.__name__)
+        rprint(table)
+        return
+
+    # Validate arguments
+    if not resource_type:
+        rprint("[red]Error:[/red] Resource type is required. Use --list to see available types.")
+        raise typer.Exit(1)
+
+    if not output:
+        rprint("[red]Error:[/red] Output file path is required.")
+        raise typer.Exit(1)
+
+    if resource_type not in GENERATORS:
+        rprint(f"[red]Error:[/red] Unknown resource type '{resource_type}'")
+        rprint("Use --list to see available types.")
+        raise typer.Exit(1)
+
+    # Get generator class and instantiate
+    generator_class = GENERATORS[resource_type]
+    generator = generator_class(seed=seed)
+
+    rprint(f"[bold]Generating {resource_type} resource(s)...[/bold]")
+    if seed:
+        rprint(f"  Random seed: {seed}")
+
+    resources: list[dict[str, Any]] = []
+
+    # Special handling for Location hierarchy
+    if resource_type == "Location" and hierarchy_depth:
+        rprint(f"  Generating location hierarchy with depth {hierarchy_depth}")
+        resources = generator.generate_hierarchy(
+            managing_organization_ref=organization_ref,
+            depth=hierarchy_depth,
+        )
+    else:
+        # Build kwargs for generate method based on resource type
+        kwargs: dict[str, Any] = {}
+
+        # Add references if provided
+        if patient_ref:
+            kwargs["patient_ref"] = patient_ref
+        if practitioner_ref:
+            kwargs["practitioner_ref"] = practitioner_ref
+        if organization_ref and resource_type == "Location":
+            kwargs["managing_organization_ref"] = organization_ref
+        elif organization_ref:
+            kwargs["organization_ref"] = organization_ref
+        if encounter_ref:
+            kwargs["encounter_ref"] = encounter_ref
+
+        # Generate resources
+        for _ in range(count):
+            resource = generator.generate(**kwargs)
+            resources.append(resource)
+
+    rprint(f"  Generated {len(resources)} resource(s)")
+
+    # Write output using same logic as generate command
+    _write_resources(resources, output, format, pretty)
+
+    # Optionally load to server
+    if load:
+        _load_resources_to_server(resources, url)
+
+
+def _load_resources_to_server(resources: list[dict[str, Any]], url: str) -> None:
+    """Load resources to a FHIR server via batch transaction."""
+    import uuid
+
+    import httpx
+
+    rprint(f"\n[bold]Loading {len(resources)} resource(s) to {url}...[/bold]")
+
+    # Create batch bundle
+    batch_bundle = {
+        "resourceType": "Bundle",
+        "id": str(uuid.uuid4()),
+        "type": "batch",
+        "entry": [
+            {
+                "resource": r,
+                "request": {
+                    "method": "POST",
+                    "url": r.get("resourceType", ""),
+                },
+            }
+            for r in resources
+        ],
+    }
+
+    try:
+        with httpx.Client(timeout=60.0) as client:
+            response = client.post(
+                url,
+                json=batch_bundle,
+                headers={"Content-Type": "application/fhir+json"},
+            )
+
+        if response.status_code in (200, 201):
+            result = response.json()
+            success = sum(
+                1 for e in result.get("entry", []) if e.get("response", {}).get("status", "").startswith("20")
+            )
+            rprint(f"[green]Loaded successfully:[/green] {success}/{len(resources)} resources created")
+        else:
+            rprint(f"[red]Load failed:[/red] {response.status_code}")
+            rprint(response.text[:500])
+            raise typer.Exit(1)
+
+    except httpx.RequestError as e:
+        rprint(f"[red]Connection error:[/red] {e}")
+        raise typer.Exit(1)
+
+
+def _write_resources(
+    resources: list[dict[str, Any]],
+    output: Path,
+    format: str,
+    pretty: bool,
+) -> None:
+    """Write resources to file in specified format."""
+    import uuid
+
+    if format == "bundle":
+        bundle = {
+            "resourceType": "Bundle",
+            "id": str(uuid.uuid4()),
+            "type": "collection",
+            "total": len(resources),
+            "entry": [{"fullUrl": f"urn:uuid:{r.get('id', uuid.uuid4())}", "resource": r} for r in resources],
+        }
+        with open(output, "w") as f:
+            json.dump(bundle, f, indent=2 if pretty else None)
+        rprint(f"[green]Written to {output}[/green] (Bundle format)")
+
+    elif format == "ndjson":
+        with open(output, "w") as f:
+            for r in resources:
+                f.write(json.dumps(r) + "\n")
+        rprint(f"[green]Written to {output}[/green] (NDJSON format)")
+
+    elif format == "json":
+        # Single resource or array
+        data = resources[0] if len(resources) == 1 else resources
+        with open(output, "w") as f:
+            json.dump(data, f, indent=2 if pretty else None)
+        rprint(f"[green]Written to {output}[/green] (JSON format)")
 
     else:
         rprint(f"[red]Unknown format: {format}[/red]")
