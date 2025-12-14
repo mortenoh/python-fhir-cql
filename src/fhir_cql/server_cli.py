@@ -19,6 +19,8 @@ from fhir_cql.server.generator import (
     ClinicalImpressionGenerator,
     CodeSystemGenerator,
     CommunicationGenerator,
+    CompositionGenerator,
+    ConceptMapGenerator,
     ConditionGenerator,
     ConsentGenerator,
     CoverageGenerator,
@@ -122,6 +124,9 @@ GENERATORS: dict[str, type] = {
     # Terminology
     "ValueSet": ValueSetGenerator,
     "CodeSystem": CodeSystemGenerator,
+    "ConceptMap": ConceptMapGenerator,
+    # Documents (Clinical)
+    "Composition": CompositionGenerator,
     # Groups
     "Group": GroupGenerator,
     # Forms & Consent
@@ -677,8 +682,12 @@ def populate(
     # Terminology resources
     vs_gen = ValueSetGenerator(faker, seed)
     cs_gen = CodeSystemGenerator(faker, seed)
+    cm_gen = ConceptMapGenerator(faker, seed)
     track(vs_gen.generate())
     track(cs_gen.generate())
+    # Generate all pre-defined ConceptMaps (SNOMED→ICD-10, LOINC→Local, RxNorm→NDC)
+    for concept_map in cm_gen.generate_all_templates():
+        track(concept_map)
 
     # Questionnaires (standalone forms)
     quest_gen = QuestionnaireGenerator(faker, seed)
@@ -756,6 +765,7 @@ def populate(
     svc_req_gen = ServiceRequestGenerator(faker, seed)
     diag_gen = DiagnosticReportGenerator(faker, seed)
     doc_gen = DocumentReferenceGenerator(faker, seed)
+    comp_gen = CompositionGenerator(faker, seed)
     appt_gen = AppointmentGenerator(faker, seed)
     cov_gen = CoverageGenerator(faker, seed)
     claim_gen = ClaimGenerator(faker, seed)
@@ -994,6 +1004,20 @@ def populate(
 
         # DocumentReference
         track(doc_gen.generate(patient_ref=patient_ref))
+
+        # Composition (clinical document structure)
+        track(
+            comp_gen.generate(
+                patient_ref=patient_ref,
+                encounter_ref=ref(encounters[0]) if encounters else None,
+                author_ref=ref(practitioners[0]),
+                custodian_ref=ref(hospital_org),
+                section_refs={
+                    "11450-4": [ref(c) for c in conditions_for_patient],  # Problem list
+                    "8716-3": [ref(o) for o in observations_for_patient[:3]],  # Vital signs
+                },
+            )
+        )
 
         # Appointment (linked to slot)
         track(

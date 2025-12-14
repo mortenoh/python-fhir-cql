@@ -19,6 +19,8 @@ from .claim import ClaimGenerator
 from .clinical_impression import ClinicalImpressionGenerator
 from .code_system import CodeSystemGenerator
 from .communication import CommunicationGenerator
+from .composition import CompositionGenerator
+from .concept_map import ConceptMapGenerator
 from .condition import ConditionGenerator
 from .consent import ConsentGenerator
 from .coverage import CoverageGenerator
@@ -257,6 +259,9 @@ __all__ = [
     # Terminology
     "ValueSetGenerator",
     "CodeSystemGenerator",
+    "ConceptMapGenerator",
+    # Documents (Clinical)
+    "CompositionGenerator",
     # Groups
     "GroupGenerator",
     # Forms & Consent

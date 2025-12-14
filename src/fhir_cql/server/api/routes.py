@@ -64,6 +64,9 @@ SUPPORTED_TYPES = [
     # Terminology
     "ValueSet",
     "CodeSystem",
+    "ConceptMap",
+    # Documents (Clinical)
+    "Composition",
     # Groups
     "Group",
 ]
@@ -113,6 +116,9 @@ SUMMARY_ELEMENTS: dict[str, list[str]] = {
     # Terminology
     "ValueSet": ["identifier", "url", "name", "status", "title"],
     "CodeSystem": ["identifier", "url", "name", "status", "title"],
+    "ConceptMap": ["identifier", "url", "name", "status", "title", "sourceUri", "targetUri"],
+    # Documents (Clinical)
+    "Composition": ["identifier", "status", "type", "subject", "date", "author", "title"],
     # Groups
     "Group": ["identifier", "active", "type", "actual", "name", "quantity"],
 }
@@ -1644,6 +1650,231 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
             "parameter": [{"name": "result", "valueBoolean": is_member}],
         }
         return JSONResponse(content=result, media_type=FHIR_JSON)
+
+    # =========================================================================
+    # ConceptMap $translate Operation
+    # =========================================================================
+
+    @router.get("/ConceptMap/$translate", tags=["Terminology"])
+    @router.post("/ConceptMap/$translate", tags=["Terminology"])
+    async def translate_code(
+        request: Request,
+        code: str | None = Query(default=None),
+        system: str | None = Query(default=None),
+        target: str | None = Query(default=None),
+        url: str | None = Query(default=None),
+        reverse: bool = Query(default=False),
+    ) -> Response:
+        """Translate a code from one code system to another using ConceptMap.
+
+        Implements the FHIR $translate operation for code translation.
+
+        Parameters:
+            code: The code to translate
+            system: Source code system URI
+            target: Target code system URI (optional)
+            url: ConceptMap URL to use (optional)
+            reverse: Translate in reverse direction
+        """
+        from ..operations import ConceptMapTranslator
+
+        # For POST, get parameters from body
+        if request.method == "POST":
+            try:
+                body = await request.json()
+                for param in body.get("parameter", []):
+                    name = param.get("name")
+                    if name == "code":
+                        code = param.get("valueCode")
+                    elif name == "system":
+                        system = param.get("valueUri")
+                    elif name == "target":
+                        target = param.get("valueUri")
+                    elif name == "url":
+                        url = param.get("valueUri")
+                    elif name == "reverse":
+                        reverse = param.get("valueBoolean", False)
+            except Exception:
+                pass
+
+        if not code or not system:
+            outcome = OperationOutcome.error("Both code and system are required", code="required")
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        translator = ConceptMapTranslator(store)
+        result = translator.translate(
+            code=code,
+            system=system,
+            target=target,
+            concept_map_url=url,
+            reverse=reverse,
+        )
+
+        return JSONResponse(content=result, media_type=FHIR_JSON)
+
+    @router.get("/ConceptMap/{conceptmap_id}/$translate", tags=["Terminology"])
+    @router.post("/ConceptMap/{conceptmap_id}/$translate", tags=["Terminology"])
+    async def translate_code_by_id(
+        request: Request,
+        conceptmap_id: str,
+        code: str | None = Query(default=None),
+        system: str | None = Query(default=None),
+        target: str | None = Query(default=None),
+        reverse: bool = Query(default=False),
+    ) -> Response:
+        """Translate a code using a specific ConceptMap by ID."""
+        from ..operations import ConceptMapTranslator
+
+        # For POST, get parameters from body
+        if request.method == "POST":
+            try:
+                body = await request.json()
+                for param in body.get("parameter", []):
+                    name = param.get("name")
+                    if name == "code":
+                        code = param.get("valueCode")
+                    elif name == "system":
+                        system = param.get("valueUri")
+                    elif name == "target":
+                        target = param.get("valueUri")
+                    elif name == "reverse":
+                        reverse = param.get("valueBoolean", False)
+            except Exception:
+                pass
+
+        if not code or not system:
+            outcome = OperationOutcome.error("Both code and system are required", code="required")
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        # Check if ConceptMap exists
+        concept_map = store.read("ConceptMap", conceptmap_id)
+        if concept_map is None:
+            outcome = OperationOutcome.not_found("ConceptMap", conceptmap_id)
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=404,
+                media_type=FHIR_JSON,
+            )
+
+        translator = ConceptMapTranslator(store)
+        result = translator.translate(
+            code=code,
+            system=system,
+            target=target,
+            concept_map_id=conceptmap_id,
+            reverse=reverse,
+        )
+
+        return JSONResponse(content=result, media_type=FHIR_JSON)
+
+    # =========================================================================
+    # Patient $match Operation
+    # =========================================================================
+
+    @router.post("/Patient/$match", tags=["Operations"])
+    async def patient_match(request: Request) -> Response:
+        """Find Patient records matching an input Patient resource.
+
+        Implements the FHIR Patient $match operation for patient matching/deduplication.
+        Returns a Bundle of matching patients with match scores and grades.
+
+        Request body should be a Parameters resource containing:
+        - resource: The Patient resource to match against
+        - onlyCertainMatches (optional): Only return certain matches
+        - count (optional): Maximum number of matches to return
+        """
+        from ..operations import PatientMatcher
+
+        try:
+            body = await request.json()
+        except Exception:
+            outcome = OperationOutcome.error("Invalid JSON body", code="invalid")
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        # Extract parameters
+        input_patient = None
+        only_certain_matches = False
+        count = 10
+
+        if body.get("resourceType") == "Parameters":
+            for param in body.get("parameter", []):
+                name = param.get("name")
+                if name == "resource" and "resource" in param:
+                    input_patient = param["resource"]
+                elif name == "onlyCertainMatches":
+                    only_certain_matches = param.get("valueBoolean", False)
+                elif name == "count":
+                    count = param.get("valueInteger", 10)
+        elif body.get("resourceType") == "Patient":
+            # Allow direct Patient resource
+            input_patient = body
+
+        if input_patient is None or input_patient.get("resourceType") != "Patient":
+            outcome = OperationOutcome.error(
+                "Request must contain a Patient resource",
+                code="required",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        matcher = PatientMatcher(store)
+        result = matcher.match(
+            input_patient=input_patient,
+            only_certain_matches=only_certain_matches,
+            count=count,
+        )
+
+        return JSONResponse(content=result, media_type=FHIR_JSON)
+
+    # =========================================================================
+    # Composition $document Operation
+    # =========================================================================
+
+    @router.get("/Composition/{composition_id}/$document", tags=["Operations"])
+    async def composition_document(
+        composition_id: str,
+        persist: bool = Query(default=True),
+    ) -> Response:
+        """Generate a Document Bundle from a Composition.
+
+        Implements the FHIR $document operation to create a complete
+        document bundle containing the Composition and all referenced resources.
+
+        Parameters:
+            composition_id: The ID of the Composition resource
+            persist: Whether to persist the generated Bundle (default: True)
+        """
+        from ..operations import DocumentGenerator
+
+        # Check if Composition exists
+        composition = store.read("Composition", composition_id)
+        if composition is None:
+            outcome = OperationOutcome.not_found("Composition", composition_id)
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=404,
+                media_type=FHIR_JSON,
+            )
+
+        generator = DocumentGenerator(store)
+        document = generator.generate_document(composition, persist=persist)
+
+        return JSONResponse(content=document, media_type=FHIR_JSON)
 
     # =========================================================================
     # Validation Operations

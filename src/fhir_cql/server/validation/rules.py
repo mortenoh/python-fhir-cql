@@ -58,6 +58,9 @@ VALID_RESOURCE_TYPES = {
     # Terminology
     "ValueSet",
     "CodeSystem",
+    "ConceptMap",
+    # Documents (Clinical)
+    "Composition",
     # Groups
     "Group",
     # Forms & Consent
@@ -426,6 +429,26 @@ RESOURCE_RULES: dict[str, dict[str, Any]] = {
                 "valueset": "http://hl7.org/fhir/ValueSet/codesystem-content-mode",
                 "strength": "required",
                 "allowed_values": ["not-present", "example", "fragment", "complete", "supplement"],
+            },
+        },
+    },
+    "ConceptMap": {
+        "required": ["status"],
+        "code_bindings": {
+            "status": {
+                "valueset": "http://hl7.org/fhir/ValueSet/publication-status",
+                "strength": "required",
+                "allowed_values": ["draft", "active", "retired", "unknown"],
+            },
+        },
+    },
+    "Composition": {
+        "required": ["status", "type", "date", "author", "title"],
+        "code_bindings": {
+            "status": {
+                "valueset": "http://hl7.org/fhir/ValueSet/composition-status",
+                "strength": "required",
+                "allowed_values": ["preliminary", "final", "amended", "entered-in-error"],
             },
         },
     },

@@ -21,7 +21,7 @@ This project provides complete implementations of:
 - **CLI Tools**: Command-line interfaces for evaluation, AST visualization, validation, and server management
 - **Python API**: Programmatic access to evaluators for integration into applications
 
-**Current test count: 2244+ passing tests**
+**Current test count: 2313+ passing tests**
 
 ## Requirements
 
@@ -147,6 +147,9 @@ all_results = evaluator.evaluate_all_definitions()
 | $expand, $lookup | - | - | - | Yes | - | Yes |
 | $validate-code | - | - | - | Yes | - | Yes |
 | $subsumes | - | - | - | Yes | - | Yes |
+| $translate (ConceptMap) | - | - | - | Yes | - | Yes |
+| $match (Patient) | - | - | - | Yes | - | - |
+| $document (Composition) | - | - | - | Yes | - | - |
 | YAML-based service config | - | - | - | - | Yes | - |
 | Service discovery | - | - | - | - | Yes | - |
 | Card generation | - | - | - | - | Yes | - |
@@ -267,9 +270,9 @@ fhir terminology <command> # Terminology Service commands
 | `16_clinical_calculations.cql` | BMI, eGFR, etc. |
 | `17_type_conversions.cql` | Type conversions |
 
-### FHIR Resources (53 files)
+### FHIR Resources (55 files)
 
-**53 supported resource types** with example JSON files in `examples/fhir/`:
+**55 supported resource types** with example JSON files in `examples/fhir/`:
 
 | Category | Example Resources |
 |----------|-------------------|
@@ -280,10 +283,10 @@ fhir terminology <command> # Terminology Service commands
 | Scheduling | Appointment, Schedule, Slot, HealthcareService |
 | Financial | Coverage, Claim, ExplanationOfBenefit |
 | Devices | Device |
-| Documents | ServiceRequest, DocumentReference, Media |
+| Documents | ServiceRequest, DocumentReference, Media, Composition |
 | Forms & Consent | Questionnaire, QuestionnaireResponse, Consent |
 | Quality Measures | Measure, MeasureReport, Library |
-| Terminology | ValueSet, CodeSystem |
+| Terminology | ValueSet, CodeSystem, ConceptMap |
 | Groups | Group |
 | Communication & Alerts | Communication, Flag |
 | Diagnostics | Specimen |
@@ -309,7 +312,7 @@ See [Supported Resources](docs/fhir-server/resources/index.md) for complete docu
 - [CQL API](docs/cql-api.md)
 - [ELM Guide](docs/elm-guide.md) - ELM loading, evaluation, and CQL-to-ELM export
 - [FHIR Server Guide](docs/fhir-server-guide.md) - REST API, synthetic data, terminology operations
-- [Supported Resources](docs/fhir-server/resources/index.md) - All 53 supported FHIR resource types
+- [Supported Resources](docs/fhir-server/resources/index.md) - All 55 supported FHIR resource types
 - [CDS Hooks Guide](docs/cds-hooks-guide.md) - Building clinical decision support services
 - [FHIRPath & CQL Reference](docs/fhirpath-cql-tutorial.md)
 
