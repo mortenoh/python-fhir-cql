@@ -224,17 +224,112 @@ def create_app(
             )
 
         elif service_id == "drug-interaction-check":
-            cards.append(
-                {
-                    "uuid": "drug-check-card",
-                    "summary": "No drug interactions detected",
-                    "indicator": "info",
-                    "detail": "No potential drug interactions found in the current medication list.",
-                    "source": {
-                        "label": "FHIR CQL Server",
-                    },
-                }
-            )
+            # Known drug interactions (simplified)
+            INTERACTIONS = {
+                ("warfarin", "aspirin"): {
+                    "severity": "warning",
+                    "message": "Increased bleeding risk when combining Warfarin with Aspirin",
+                },
+                ("warfarin", "ibuprofen"): {
+                    "severity": "critical",
+                    "message": "NSAIDs significantly increase bleeding risk with Warfarin",
+                },
+                ("metformin", "contrast"): {
+                    "severity": "warning",
+                    "message": "Hold Metformin before contrast procedures (lactic acidosis risk)",
+                },
+                ("lisinopril", "potassium"): {
+                    "severity": "warning",
+                    "message": "ACE inhibitors + potassium supplements may cause hyperkalemia",
+                },
+                ("simvastatin", "amiodarone"): {
+                    "severity": "warning",
+                    "message": "Increased risk of myopathy/rhabdomyolysis",
+                },
+                ("atorvastatin", "gemfibrozil"): {
+                    "severity": "warning",
+                    "message": "Increased risk of myopathy with statin + fibrate combination",
+                },
+                ("prednisone", "ibuprofen"): {
+                    "severity": "warning",
+                    "message": "Increased GI bleeding risk with corticosteroid + NSAID",
+                },
+                ("glipizide", "fluconazole"): {
+                    "severity": "warning",
+                    "message": "Fluconazole may increase hypoglycemic effect of sulfonylureas",
+                },
+            }
+
+            # Get the medication being ordered from draftOrders
+            draft_orders = context.get("draftOrders", {})
+            new_med_name = ""
+            if draft_orders.get("entry"):
+                for entry in draft_orders["entry"]:
+                    res = entry.get("resource", {})
+                    if res.get("resourceType") == "MedicationRequest":
+                        med_concept = res.get("medicationCodeableConcept", {})
+                        new_med_name = med_concept.get("text", "").lower()
+                        break
+
+            # Get patient's current medications
+            current_meds = []
+            if patient_id:
+                medications, _ = store.search(
+                    "MedicationRequest", {"patient": f"Patient/{patient_id}"}, _count=20
+                )
+                for m in medications:
+                    med = m.get("medicationCodeableConcept", {})
+                    med_name = med.get("text") or (
+                        med.get("coding", [{}])[0].get("display") if med.get("coding") else ""
+                    )
+                    if med_name:
+                        current_meds.append(med_name.lower())
+
+            # Check for interactions
+            interactions_found = []
+            if new_med_name:
+                new_med_key = new_med_name.split()[0].lower()  # First word (drug name)
+                for current in current_meds:
+                    current_key = current.split()[0].lower()
+                    # Check both orderings
+                    pair1 = (new_med_key, current_key)
+                    pair2 = (current_key, new_med_key)
+                    if pair1 in INTERACTIONS:
+                        interactions_found.append((current, INTERACTIONS[pair1]))
+                    elif pair2 in INTERACTIONS:
+                        interactions_found.append((current, INTERACTIONS[pair2]))
+
+            if interactions_found:
+                # Return warning cards for each interaction
+                for current_med, interaction in interactions_found:
+                    cards.append(
+                        {
+                            "uuid": f"interaction-{current_med[:10]}",
+                            "summary": f"⚠️ Drug Interaction: {new_med_name.title()} + {current_med.title()}",
+                            "indicator": interaction["severity"],
+                            "detail": interaction["message"],
+                            "source": {"label": "Drug Interaction Database"},
+                        }
+                    )
+            else:
+                # Show what was checked
+                detail = f"Checked **{new_med_name.title() if new_med_name else 'selected medication'}** against "
+                if current_meds:
+                    detail += f"{len(current_meds)} current medication(s): {', '.join(m.title() for m in current_meds[:5])}"
+                    if len(current_meds) > 5:
+                        detail += f" (+{len(current_meds) - 5} more)"
+                else:
+                    detail += "no current medications on file"
+
+                cards.append(
+                    {
+                        "uuid": "drug-check-card",
+                        "summary": "✓ No drug interactions detected",
+                        "indicator": "info",
+                        "detail": detail,
+                        "source": {"label": "Drug Interaction Database"},
+                    }
+                )
 
         else:
             return {"cards": [], "systemActions": []}

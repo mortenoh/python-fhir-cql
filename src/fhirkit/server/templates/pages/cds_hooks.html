@@ -100,16 +100,34 @@
                                 </label>
                                 <select id="order-medication" class="w-full text-sm border-gray-300 rounded-md">
                                     <option value="">-- Select medication --</option>
-                                    <option value="lisinopril">Lisinopril 10mg</option>
-                                    <option value="metformin">Metformin 500mg</option>
-                                    <option value="atorvastatin">Atorvastatin 20mg</option>
-                                    <option value="omeprazole">Omeprazole 20mg</option>
-                                    <option value="amlodipine">Amlodipine 5mg</option>
-                                    <option value="warfarin">Warfarin 5mg</option>
-                                    <option value="aspirin">Aspirin 81mg</option>
-                                    <option value="ibuprofen">Ibuprofen 400mg</option>
+                                    <optgroup label="⚠️ High Interaction Risk">
+                                        <option value="warfarin">Warfarin 5mg (anticoagulant)</option>
+                                        <option value="aspirin">Aspirin 81mg (blood thinner)</option>
+                                        <option value="ibuprofen">Ibuprofen 400mg (NSAID)</option>
+                                    </optgroup>
+                                    <optgroup label="Cardiovascular">
+                                        <option value="lisinopril">Lisinopril 10mg (ACE inhibitor)</option>
+                                        <option value="amlodipine">Amlodipine 5mg (calcium blocker)</option>
+                                        <option value="metoprolol">Metoprolol 25mg (beta blocker)</option>
+                                    </optgroup>
+                                    <optgroup label="Cholesterol">
+                                        <option value="atorvastatin">Atorvastatin 20mg (statin)</option>
+                                        <option value="simvastatin">Simvastatin 20mg (statin)</option>
+                                        <option value="gemfibrozil">Gemfibrozil 600mg (fibrate)</option>
+                                    </optgroup>
+                                    <optgroup label="Diabetes">
+                                        <option value="metformin">Metformin 500mg</option>
+                                        <option value="glipizide">Glipizide 5mg (sulfonylurea)</option>
+                                    </optgroup>
+                                    <optgroup label="Other">
+                                        <option value="omeprazole">Omeprazole 20mg (PPI)</option>
+                                        <option value="prednisone">Prednisone 10mg (steroid)</option>
+                                        <option value="fluconazole">Fluconazole 150mg (antifungal)</option>
+                                        <option value="amiodarone">Amiodarone 200mg (antiarrhythmic)</option>
+                                        <option value="potassium">Potassium 20mEq (supplement)</option>
+                                    </optgroup>
                                 </select>
-                                <p class="text-xs text-gray-500 mt-1">Select a medication to check for interactions</p>
+                                <p class="text-xs text-gray-500 mt-1">Try: Warfarin patient + Aspirin/Ibuprofen, or Statin patient + Gemfibrozil</p>
                             </div>
                         </div>
 
