@@ -25,76 +25,111 @@
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Main Content - 4 Column Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <!-- Left Panel: Services List -->
-        <div class="space-y-4">
+        <div class="lg:col-span-3 space-y-4">
             <div class="bg-white shadow rounded-lg overflow-hidden">
                 <div class="px-4 py-3 border-b border-gray-200">
-                    <h2 class="text-lg font-medium text-gray-900">Available Services</h2>
+                    <h2 class="text-lg font-medium text-gray-900">Services</h2>
                 </div>
-                <div id="services-list" class="divide-y divide-gray-200">
+                <div id="services-list" class="divide-y divide-gray-200 max-h-[500px] overflow-auto">
                     <div class="p-4 text-center text-gray-500">
                         <svg class="mx-auto h-8 w-8 animate-spin text-fhir-600" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        <p class="mt-2 text-sm">Loading services...</p>
+                        <p class="mt-2 text-sm">Loading...</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Middle Panel: Request Builder -->
-        <div class="space-y-4">
+        <!-- Middle Panel: Request Builder + Patient Context -->
+        <div class="lg:col-span-5 space-y-4">
+            <!-- Request Form -->
             <div class="bg-white shadow rounded-lg overflow-hidden">
                 <div class="px-4 py-3 border-b border-gray-200">
                     <h2 class="text-lg font-medium text-gray-900">Request</h2>
                 </div>
                 <div id="request-builder" class="p-4">
-                    <div id="no-service-selected" class="text-center text-gray-500 py-8">
-                        <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div id="no-service-selected" class="text-center text-gray-500 py-6">
+                        <svg class="mx-auto h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                        <p class="mt-2 text-sm">Select a service to build a request</p>
+                        <p class="mt-2 text-sm">Select a service to begin</p>
                     </div>
                     <div id="request-form" class="hidden space-y-4">
-                        <!-- Hook Context -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Hook</label>
-                            <input type="text" id="hook-type" readonly
-                                   class="w-full text-sm border-gray-300 rounded-md bg-gray-50">
+                        <!-- Hook Badge -->
+                        <div class="flex items-center justify-between">
+                            <span id="hook-badge" class="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium bg-blue-100 text-blue-700"></span>
+                            <label class="flex items-center text-xs text-gray-500">
+                                <input type="checkbox" id="auto-invoke" class="mr-1.5 rounded border-gray-300">
+                                Auto-invoke on change
+                            </label>
                         </div>
+
+                        <!-- Patient Selection -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Patient ID</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Patient</label>
                             <select id="request-patient" class="w-full text-sm border-gray-300 rounded-md">
                                 <option value="">-- Select Patient --</option>
                             </select>
                         </div>
+
+                        <!-- Patient Context Preview -->
+                        <div id="patient-context" class="hidden">
+                            <div class="bg-gray-50 rounded-lg p-3 space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-medium text-gray-500 uppercase">Patient Context</span>
+                                    <span id="patient-age-gender" class="text-xs text-gray-600"></span>
+                                </div>
+                                <div id="patient-conditions" class="text-xs text-gray-700"></div>
+                                <div id="patient-medications" class="text-xs text-gray-700"></div>
+                            </div>
+                        </div>
+
+                        <!-- Order-specific: Medication Selection -->
+                        <div id="order-context" class="hidden space-y-3">
+                            <div class="border-t border-gray-200 pt-3">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    <svg class="inline w-4 h-4 mr-1 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                                    </svg>
+                                    Medication Being Ordered
+                                </label>
+                                <select id="order-medication" class="w-full text-sm border-gray-300 rounded-md">
+                                    <option value="">-- Select medication --</option>
+                                    <option value="lisinopril">Lisinopril 10mg</option>
+                                    <option value="metformin">Metformin 500mg</option>
+                                    <option value="atorvastatin">Atorvastatin 20mg</option>
+                                    <option value="omeprazole">Omeprazole 20mg</option>
+                                    <option value="amlodipine">Amlodipine 5mg</option>
+                                    <option value="warfarin">Warfarin 5mg</option>
+                                    <option value="aspirin">Aspirin 81mg</option>
+                                    <option value="ibuprofen">Ibuprofen 400mg</option>
+                                </select>
+                                <p class="text-xs text-gray-500 mt-1">Select a medication to check for interactions</p>
+                            </div>
+                        </div>
+
+                        <!-- Other Context Fields -->
                         <div id="encounter-field" class="hidden">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Encounter ID</label>
                             <input type="text" id="request-encounter" placeholder="Optional"
                                    class="w-full text-sm border-gray-300 rounded-md">
                         </div>
-                        <div id="user-field">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">User ID</label>
-                            <input type="text" id="request-user" placeholder="Practitioner/123"
-                                   class="w-full text-sm border-gray-300 rounded-md">
-                        </div>
 
-                        <!-- Prefetch Toggle -->
-                        <div class="border-t border-gray-200 pt-4">
-                            <label class="flex items-center text-sm">
-                                <input type="checkbox" id="include-prefetch" checked class="mr-2 rounded border-gray-300">
-                                <span class="font-medium text-gray-700">Include prefetch data</span>
-                            </label>
-                            <p class="text-xs text-gray-500 mt-1">Let the server fetch required data</p>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">User ID</label>
+                            <input type="text" id="request-user" value="Practitioner/123"
+                                   class="w-full text-sm border-gray-300 rounded-md">
                         </div>
 
                         <!-- Execute Button -->
                         <div class="pt-2">
                             <button onclick="invokeService()" id="invoke-btn"
-                                    class="w-full inline-flex justify-center items-center rounded-md bg-fhir-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-fhir-700">
+                                    class="w-full inline-flex justify-center items-center rounded-md bg-fhir-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-fhir-700 disabled:opacity-50">
                                 <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                                 </svg>
@@ -105,38 +140,38 @@
                 </div>
             </div>
 
-            <!-- Raw Request/Response -->
+            <!-- Raw JSON Tabs -->
             <div class="bg-white shadow rounded-lg overflow-hidden">
-                <div class="px-4 py-3 border-b border-gray-200">
+                <div class="px-4 py-2 border-b border-gray-200">
                     <div class="flex space-x-4">
                         <button onclick="showTab('request')" id="tab-request"
-                                class="text-sm font-medium text-fhir-600 border-b-2 border-fhir-600 pb-1">Request JSON</button>
+                                class="text-sm font-medium text-fhir-600 border-b-2 border-fhir-600 pb-1">Request</button>
                         <button onclick="showTab('response')" id="tab-response"
-                                class="text-sm font-medium text-gray-500 hover:text-gray-700 pb-1">Response JSON</button>
+                                class="text-sm font-medium text-gray-500 hover:text-gray-700 pb-1">Response</button>
                     </div>
                 </div>
-                <div id="raw-request" class="h-48 overflow-auto">
-                    <pre id="request-json" class="p-4 text-xs json-content">Select a service and fill in the form</pre>
+                <div id="raw-request" class="h-40 overflow-auto">
+                    <pre id="request-json" class="p-3 text-xs json-content">Select a service</pre>
                 </div>
-                <div id="raw-response" class="h-48 overflow-auto hidden">
-                    <pre id="response-json" class="p-4 text-xs json-content">No response yet</pre>
+                <div id="raw-response" class="h-40 overflow-auto hidden">
+                    <pre id="response-json" class="p-3 text-xs json-content">No response yet</pre>
                 </div>
             </div>
         </div>
 
         <!-- Right Panel: Response Cards -->
-        <div class="space-y-4">
+        <div class="lg:col-span-4 space-y-4">
             <div class="bg-white shadow rounded-lg overflow-hidden">
                 <div class="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
                     <h2 class="text-lg font-medium text-gray-900">Response Cards</h2>
                     <span id="response-time" class="text-xs text-gray-500"></span>
                 </div>
                 <div id="cards-panel" class="p-4 space-y-4 max-h-[600px] overflow-auto">
-                    <div id="cards-placeholder" class="text-center text-gray-500 py-8">
-                        <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div id="cards-placeholder" class="text-center text-gray-500 py-6">
+                        <svg class="mx-auto h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                         </svg>
-                        <p class="mt-2 text-sm">Invoke a service to see response cards</p>
+                        <p class="mt-2 text-sm">Invoke a service to see cards</p>
                     </div>
                     <div id="cards-content" class="hidden space-y-4"></div>
                 </div>
@@ -151,9 +186,9 @@
     var services = [];
     var selectedService = null;
     var patients = [];
+    var patientData = {}; // Cache patient clinical data
     var lastResponse = null;
 
-    // Initialize
     document.addEventListener('DOMContentLoaded', function() {
         discoverServices();
         loadPatients();
@@ -161,15 +196,7 @@
 
     async function discoverServices() {
         var listDiv = document.getElementById('services-list');
-        listDiv.innerHTML = `
-            <div class="p-4 text-center text-gray-500">
-                <svg class="mx-auto h-8 w-8 animate-spin text-fhir-600" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <p class="mt-2 text-sm">Loading services...</p>
-            </div>
-        `;
+        listDiv.innerHTML = '<div class="p-4 text-center"><svg class="mx-auto h-6 w-6 animate-spin text-fhir-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg></div>';
 
         try {
             var response = await fetch('/cds-services');
@@ -178,7 +205,7 @@
                 services = data.services || [];
                 renderServices();
             } else {
-                listDiv.innerHTML = '<div class="p-4 text-center text-red-500 text-sm">Failed to load services</div>';
+                listDiv.innerHTML = '<div class="p-4 text-center text-red-500 text-sm">Failed to load</div>';
             }
         } catch (e) {
             listDiv.innerHTML = '<div class="p-4 text-center text-red-500 text-sm">Error: ' + e.message + '</div>';
@@ -189,23 +216,24 @@
         var listDiv = document.getElementById('services-list');
 
         if (services.length === 0) {
-            listDiv.innerHTML = '<div class="p-4 text-center text-gray-500 text-sm">No services available</div>';
+            listDiv.innerHTML = '<div class="p-4 text-center text-gray-500 text-sm">No services</div>';
             return;
         }
 
         var html = '';
         services.forEach(function(service, index) {
-            var hookBadge = getHookBadgeColor(service.hook);
+            var isSelected = selectedService && selectedService.id === service.id;
+            var hookColor = getHookBadgeColor(service.hook);
             html += `
-                <div class="p-4 hover:bg-gray-50 cursor-pointer ${selectedService === service ? 'bg-fhir-50 border-l-4 border-fhir-600' : ''}"
+                <div class="p-3 cursor-pointer transition-colors ${isSelected ? 'bg-fhir-50 border-l-4 border-fhir-600' : 'hover:bg-gray-50 border-l-4 border-transparent'}"
                      onclick="selectService(${index})">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="text-sm font-medium text-gray-900">${service.title || service.id}</h3>
-                            <p class="text-xs text-gray-500 mt-1">${service.description || 'No description'}</p>
+                    <div class="flex justify-between items-start gap-2">
+                        <div class="min-w-0 flex-1">
+                            <h3 class="text-sm font-medium text-gray-900 truncate">${service.title || service.id}</h3>
+                            <p class="text-xs text-gray-500 mt-0.5 line-clamp-2">${service.description || ''}</p>
                         </div>
-                        <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${hookBadge}">
-                            ${service.hook}
+                        <span class="flex-shrink-0 inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium ${hookColor}">
+                            ${service.hook.split('-')[0]}
                         </span>
                     </div>
                 </div>
@@ -234,20 +262,24 @@
                 (bundle.entry || []).forEach(function(entry) {
                     var patient = entry.resource;
                     patients.push(patient);
-                    var name = 'Unknown';
-                    if (patient.name && patient.name[0]) {
-                        var n = patient.name[0];
-                        name = (n.given || []).join(' ') + ' ' + (n.family || '');
-                    }
+                    var name = getPatientName(patient);
                     var option = document.createElement('option');
                     option.value = patient.id;
-                    option.textContent = name.trim() + ' (' + patient.id + ')';
+                    option.textContent = name + ' (' + patient.id.substring(0, 8) + '...)';
                     select.appendChild(option);
                 });
             }
         } catch (e) {
             console.error('Failed to load patients:', e);
         }
+    }
+
+    function getPatientName(patient) {
+        if (patient.name && patient.name[0]) {
+            var n = patient.name[0];
+            return ((n.given || []).join(' ') + ' ' + (n.family || '')).trim();
+        }
+        return 'Unknown';
     }
 
     function selectService(index) {
@@ -257,13 +289,122 @@
         document.getElementById('no-service-selected').classList.add('hidden');
         document.getElementById('request-form').classList.remove('hidden');
 
-        document.getElementById('hook-type').value = selectedService.hook;
+        // Update hook badge
+        var badge = document.getElementById('hook-badge');
+        badge.textContent = selectedService.hook;
+        badge.className = 'inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ' + getHookBadgeColor(selectedService.hook);
 
-        // Show/hide fields based on hook type
-        var showEncounter = ['encounter-start', 'encounter-discharge', 'order-select', 'order-sign'].includes(selectedService.hook);
+        // Show/hide context-specific fields
+        var isOrderHook = ['order-select', 'order-sign'].includes(selectedService.hook);
+        var showEncounter = ['encounter-start', 'encounter-discharge'].includes(selectedService.hook) || isOrderHook;
+
         document.getElementById('encounter-field').classList.toggle('hidden', !showEncounter);
+        document.getElementById('order-context').classList.toggle('hidden', !isOrderHook);
 
         updateRequestPreview();
+
+        // Clear previous response
+        document.getElementById('cards-placeholder').classList.remove('hidden');
+        document.getElementById('cards-content').classList.add('hidden');
+        document.getElementById('response-time').textContent = '';
+    }
+
+    async function loadPatientContext(patientId) {
+        if (!patientId) {
+            document.getElementById('patient-context').classList.add('hidden');
+            return;
+        }
+
+        // Check cache
+        if (patientData[patientId]) {
+            renderPatientContext(patientData[patientId]);
+            return;
+        }
+
+        // Fetch patient data
+        try {
+            var patient = patients.find(p => p.id === patientId);
+            var [condResp, medResp] = await Promise.all([
+                fetch('{{ api_base_path }}/Condition?patient=Patient/' + patientId + '&_count=10'),
+                fetch('{{ api_base_path }}/MedicationRequest?patient=Patient/' + patientId + '&_count=10')
+            ]);
+
+            var conditions = [];
+            var medications = [];
+
+            if (condResp.ok) {
+                var condBundle = await condResp.json();
+                conditions = (condBundle.entry || []).map(e => {
+                    var code = e.resource.code || {};
+                    return code.text || (code.coding && code.coding[0] ? code.coding[0].display : null);
+                }).filter(Boolean);
+            }
+
+            if (medResp.ok) {
+                var medBundle = await medResp.json();
+                medications = (medBundle.entry || []).map(e => {
+                    var med = e.resource.medicationCodeableConcept || {};
+                    return med.text || (med.coding && med.coding[0] ? med.coding[0].display : null);
+                }).filter(Boolean);
+            }
+
+            // Calculate age
+            var age = null;
+            if (patient && patient.birthDate) {
+                var birth = new Date(patient.birthDate);
+                var today = new Date();
+                age = today.getFullYear() - birth.getFullYear();
+                if (today.getMonth() < birth.getMonth() ||
+                    (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) {
+                    age--;
+                }
+            }
+
+            var data = {
+                patient: patient,
+                age: age,
+                gender: patient ? patient.gender : null,
+                conditions: conditions,
+                medications: medications
+            };
+
+            patientData[patientId] = data;
+            renderPatientContext(data);
+
+        } catch (e) {
+            console.error('Failed to load patient context:', e);
+        }
+    }
+
+    function renderPatientContext(data) {
+        var ctx = document.getElementById('patient-context');
+        ctx.classList.remove('hidden');
+
+        // Age/Gender
+        var ageGender = [];
+        if (data.age) ageGender.push(data.age + 'yo');
+        if (data.gender) ageGender.push(data.gender.charAt(0).toUpperCase());
+        document.getElementById('patient-age-gender').textContent = ageGender.join(' ');
+
+        // Conditions
+        var condDiv = document.getElementById('patient-conditions');
+        if (data.conditions.length > 0) {
+            condDiv.innerHTML = '<span class="font-medium text-gray-600">Conditions:</span> ' +
+                data.conditions.slice(0, 3).join(', ') +
+                (data.conditions.length > 3 ? ' +' + (data.conditions.length - 3) + ' more' : '');
+        } else {
+            condDiv.innerHTML = '<span class="text-gray-400">No active conditions</span>';
+        }
+
+        // Medications
+        var medDiv = document.getElementById('patient-medications');
+        if (data.medications.length > 0) {
+            medDiv.innerHTML = '<span class="font-medium text-gray-600">Medications:</span> ' +
+                data.medications.slice(0, 3).join(', ') +
+                (data.medications.length > 3 ? ' +' + (data.medications.length - 3) + ' more' : '');
+        } else {
+            medDiv.innerHTML = '<span class="text-gray-400">No active medications</span>';
+        }
     }
 
     function updateRequestPreview() {
@@ -274,32 +415,54 @@
         var encounterId = document.getElementById('request-encounter').value;
 
         var request = {
-            hookInstance: crypto.randomUUID ? crypto.randomUUID() : 'hook-' + Date.now(),
+            hookInstance: 'hook-' + Date.now(),
             hook: selectedService.hook,
             context: {
                 userId: userId,
                 patientId: patientId
-            }
+            },
+            prefetch: {}
         };
 
         if (encounterId) {
             request.context.encounterId = encounterId;
         }
 
-        if (document.getElementById('include-prefetch').checked && selectedService.prefetch) {
-            request.prefetch = {};
-            // Note: actual prefetch will be done server-side
+        // Add medication for order hooks
+        var orderMed = document.getElementById('order-medication').value;
+        if (orderMed && ['order-select', 'order-sign'].includes(selectedService.hook)) {
+            request.context.draftOrders = {
+                resourceType: 'Bundle',
+                entry: [{
+                    resource: {
+                        resourceType: 'MedicationRequest',
+                        medicationCodeableConcept: {
+                            text: document.getElementById('order-medication').selectedOptions[0].text
+                        }
+                    }
+                }]
+            };
         }
 
-        document.getElementById('request-json').textContent = JSON.stringify(request, null, 2);
         document.getElementById('request-json').innerHTML = highlightJSON(JSON.stringify(request, null, 2));
     }
 
-    // Update preview when form changes
-    document.getElementById('request-patient').addEventListener('change', updateRequestPreview);
+    // Event listeners
+    document.getElementById('request-patient').addEventListener('change', function() {
+        loadPatientContext(this.value);
+        updateRequestPreview();
+        if (document.getElementById('auto-invoke').checked && this.value) {
+            invokeService();
+        }
+    });
     document.getElementById('request-user').addEventListener('input', updateRequestPreview);
     document.getElementById('request-encounter').addEventListener('input', updateRequestPreview);
-    document.getElementById('include-prefetch').addEventListener('change', updateRequestPreview);
+    document.getElementById('order-medication').addEventListener('change', function() {
+        updateRequestPreview();
+        if (document.getElementById('auto-invoke').checked) {
+            invokeService();
+        }
+    });
 
     async function invokeService() {
         if (!selectedService) return;
@@ -314,27 +477,39 @@
         var encounterId = document.getElementById('request-encounter').value;
 
         var request = {
-            hookInstance: crypto.randomUUID ? crypto.randomUUID() : 'hook-' + Date.now(),
+            hookInstance: 'hook-' + Date.now(),
             hook: selectedService.hook,
             context: {
                 userId: userId,
                 patientId: patientId
-            }
+            },
+            prefetch: {}
         };
 
         if (encounterId) {
             request.context.encounterId = encounterId;
         }
 
+        // Add medication for order hooks
+        var orderMed = document.getElementById('order-medication').value;
+        if (orderMed && ['order-select', 'order-sign'].includes(selectedService.hook)) {
+            request.context.draftOrders = {
+                resourceType: 'Bundle',
+                entry: [{
+                    resource: {
+                        resourceType: 'MedicationRequest',
+                        medicationCodeableConcept: {
+                            text: document.getElementById('order-medication').selectedOptions[0].text
+                        }
+                    }
+                }]
+            };
+        }
+
         // Show loading
-        document.getElementById('invoke-btn').disabled = true;
-        document.getElementById('invoke-btn').innerHTML = `
-            <svg class="animate-spin w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Invoking...
-        `;
+        var btn = document.getElementById('invoke-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<svg class="animate-spin w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>Invoking...';
 
         var startTime = performance.now();
 
@@ -351,9 +526,7 @@
             var data = await response.json();
             lastResponse = data;
 
-            document.getElementById('response-json').textContent = JSON.stringify(data, null, 2);
             document.getElementById('response-json').innerHTML = highlightJSON(JSON.stringify(data, null, 2));
-
             renderCards(data);
 
         } catch (e) {
@@ -361,13 +534,8 @@
             document.getElementById('cards-placeholder').classList.remove('hidden');
             document.getElementById('cards-content').classList.add('hidden');
         } finally {
-            document.getElementById('invoke-btn').disabled = false;
-            document.getElementById('invoke-btn').innerHTML = `
-                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                Invoke Service
-            `;
+            btn.disabled = false;
+            btn.innerHTML = '<svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>Invoke Service';
         }
     }
 
@@ -379,12 +547,7 @@
         if (cards.length === 0) {
             placeholder.classList.remove('hidden');
             content.classList.add('hidden');
-            placeholder.innerHTML = `
-                <svg class="mx-auto h-12 w-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p class="mt-2 text-sm text-gray-500">No decision support cards returned</p>
-            `;
+            placeholder.innerHTML = '<svg class="mx-auto h-10 w-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><p class="mt-2 text-sm text-gray-500">No alerts - looking good!</p>';
             return;
         }
 
@@ -393,87 +556,78 @@
 
         var html = '';
         cards.forEach(function(card) {
-            var indicatorColor = getIndicatorColor(card.indicator);
+            var colors = getIndicatorColor(card.indicator);
             html += `
-                <div class="border rounded-lg overflow-hidden ${indicatorColor.border}">
-                    <div class="px-4 py-3 ${indicatorColor.bg}">
-                        <div class="flex items-start">
-                            <div class="flex-shrink-0">
-                                ${getIndicatorIcon(card.indicator)}
-                            </div>
-                            <div class="ml-3 flex-1">
-                                <h3 class="text-sm font-medium ${indicatorColor.text}">${card.summary}</h3>
-                                ${card.detail ? '<p class="mt-1 text-sm text-gray-600">' + card.detail + '</p>' : ''}
+                <div class="border rounded-lg overflow-hidden ${colors.border}">
+                    <div class="px-4 py-3 ${colors.bg}">
+                        <div class="flex items-start gap-3">
+                            <div class="flex-shrink-0 mt-0.5">${getIndicatorIcon(card.indicator)}</div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-sm font-medium ${colors.text}">${card.summary}</h3>
+                                ${card.detail ? '<div class="mt-2 text-sm text-gray-700 prose prose-sm max-w-none">' + formatDetail(card.detail) + '</div>' : ''}
                             </div>
                         </div>
                     </div>
                     ${card.links && card.links.length > 0 ? renderLinks(card.links) : ''}
                     ${card.suggestions && card.suggestions.length > 0 ? renderSuggestions(card.suggestions) : ''}
-                    ${card.source ? '<div class="px-4 py-2 bg-gray-50 text-xs text-gray-500">Source: ' + card.source.label + '</div>' : ''}
+                    ${card.source ? '<div class="px-4 py-2 bg-gray-50 text-xs text-gray-500 border-t">Source: ' + card.source.label + '</div>' : ''}
                 </div>
             `;
         });
         content.innerHTML = html;
     }
 
+    function formatDetail(detail) {
+        // Convert markdown-style bold and newlines
+        return detail
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\n/g, '<br>');
+    }
+
     function getIndicatorColor(indicator) {
         switch (indicator) {
-            case 'critical':
-                return { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800' };
-            case 'warning':
-                return { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-800' };
-            case 'info':
-            default:
-                return { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-800' };
+            case 'critical': return { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800' };
+            case 'warning': return { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-800' };
+            default: return { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-800' };
         }
     }
 
     function getIndicatorIcon(indicator) {
         switch (indicator) {
             case 'critical':
-                return '<svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" /></svg>';
+                return '<svg class="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" /></svg>';
             case 'warning':
-                return '<svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg>';
+                return '<svg class="h-5 w-5 text-amber-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg>';
             default:
-                return '<svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" /></svg>';
+                return '<svg class="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" /></svg>';
         }
     }
 
     function renderLinks(links) {
-        var html = '<div class="px-4 py-2 border-t border-gray-200 space-y-1">';
+        var html = '<div class="px-4 py-2 border-t space-y-1">';
         links.forEach(function(link) {
             html += '<a href="' + link.url + '" target="_blank" class="text-sm text-fhir-600 hover:text-fhir-700 flex items-center">';
-            html += '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>';
-            html += link.label;
-            html += '</a>';
+            html += '<svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>';
+            html += link.label + '</a>';
         });
-        html += '</div>';
-        return html;
+        return html + '</div>';
     }
 
     function renderSuggestions(suggestions) {
-        var html = '<div class="px-4 py-2 border-t border-gray-200 space-y-2">';
+        var html = '<div class="px-4 py-2 border-t space-y-2">';
         html += '<p class="text-xs font-medium text-gray-500 uppercase">Suggestions</p>';
-        suggestions.forEach(function(suggestion) {
-            html += '<button class="w-full text-left px-3 py-2 rounded bg-gray-100 hover:bg-gray-200 text-sm">';
-            html += suggestion.label;
-            html += '</button>';
+        suggestions.forEach(function(s) {
+            var rec = s.isRecommended ? ' ring-2 ring-fhir-500' : '';
+            html += '<button class="w-full text-left px-3 py-2 rounded bg-gray-100 hover:bg-gray-200 text-sm' + rec + '">';
+            if (s.isRecommended) html += '<span class="text-xs text-fhir-600 font-medium">Recommended: </span>';
+            html += s.label + '</button>';
         });
-        html += '</div>';
-        return html;
+        return html + '</div>';
     }
 
     function showTab(tab) {
-        document.getElementById('tab-request').classList.toggle('text-fhir-600', tab === 'request');
-        document.getElementById('tab-request').classList.toggle('border-b-2', tab === 'request');
-        document.getElementById('tab-request').classList.toggle('border-fhir-600', tab === 'request');
-        document.getElementById('tab-request').classList.toggle('text-gray-500', tab !== 'request');
-
-        document.getElementById('tab-response').classList.toggle('text-fhir-600', tab === 'response');
-        document.getElementById('tab-response').classList.toggle('border-b-2', tab === 'response');
-        document.getElementById('tab-response').classList.toggle('border-fhir-600', tab === 'response');
-        document.getElementById('tab-response').classList.toggle('text-gray-500', tab !== 'response');
-
+        document.getElementById('tab-request').className = 'text-sm font-medium pb-1 ' + (tab === 'request' ? 'text-fhir-600 border-b-2 border-fhir-600' : 'text-gray-500 hover:text-gray-700');
+        document.getElementById('tab-response').className = 'text-sm font-medium pb-1 ' + (tab === 'response' ? 'text-fhir-600 border-b-2 border-fhir-600' : 'text-gray-500 hover:text-gray-700');
         document.getElementById('raw-request').classList.toggle('hidden', tab !== 'request');
         document.getElementById('raw-response').classList.toggle('hidden', tab !== 'response');
     }
