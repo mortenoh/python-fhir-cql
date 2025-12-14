@@ -220,7 +220,7 @@ fhir terminology <command> # Terminology Service commands
 | `fhir serve` | Start the FHIR R4 server |
 | `fhir serve --patients 100` | Start with synthetic patient data |
 | `fhir server generate Patient -n 10` | Generate specific resource types |
-| `fhir server populate` | Populate server with all 34 linked resource types |
+| `fhir server populate` | Populate server with all 45 linked resource types |
 | `fhir server load <file>` | Load resources into running server |
 | `fhir server stats` | Show server resource statistics |
 | `fhir server info` | Show server capability statement |
@@ -267,15 +267,15 @@ fhir terminology <command> # Terminology Service commands
 | `16_clinical_calculations.cql` | BMI, eGFR, etc. |
 | `17_type_conversions.cql` | Type conversions |
 
-### FHIR Resources (45 files)
+### FHIR Resources (53 files)
 
-**37 supported resource types** with example JSON files in `examples/fhir/`:
+**45 supported resource types** with example JSON files in `examples/fhir/`:
 
 | Category | Example Resources |
 |----------|-------------------|
 | Administrative | Patient, Practitioner, PractitionerRole, Organization, Location, RelatedPerson |
-| Clinical | Encounter, Condition, Observation, Procedure, DiagnosticReport, AllergyIntolerance, Immunization |
-| Medications | Medication, MedicationRequest |
+| Clinical | Encounter, Condition, Observation, Procedure, DiagnosticReport, AllergyIntolerance, Immunization, ClinicalImpression, FamilyMemberHistory |
+| Medications | Medication, MedicationRequest, MedicationAdministration, MedicationStatement |
 | Care Management | CarePlan, CareTeam, Goal, Task |
 | Scheduling | Appointment, Schedule, Slot |
 | Financial | Coverage, Claim, ExplanationOfBenefit |
@@ -285,6 +285,9 @@ fhir terminology <command> # Terminology Service commands
 | Quality Measures | Measure, MeasureReport, Library |
 | Terminology | ValueSet, CodeSystem |
 | Groups | Group |
+| Communication & Alerts | Communication, Flag |
+| Diagnostics | Specimen |
+| Orders | NutritionOrder |
 | Infrastructure | Bundle |
 
 See [Supported Resources](docs/fhir-server/resources/index.md) for complete documentation.
@@ -304,7 +307,7 @@ See [Supported Resources](docs/fhir-server/resources/index.md) for complete docu
 - [CQL API](docs/cql-api.md)
 - [ELM Guide](docs/elm-guide.md) - ELM loading, evaluation, and CQL-to-ELM export
 - [FHIR Server Guide](docs/fhir-server-guide.md) - REST API, synthetic data, terminology operations
-- [Supported Resources](docs/fhir-server/resources/index.md) - All 34 supported FHIR resource types
+- [Supported Resources](docs/fhir-server/resources/index.md) - All 45 supported FHIR resource types
 - [CDS Hooks Guide](docs/cds-hooks-guide.md) - Building clinical decision support services
 - [FHIRPath & CQL Reference](docs/fhirpath-cql-tutorial.md)
 

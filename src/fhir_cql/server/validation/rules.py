@@ -23,9 +23,13 @@ VALID_RESOURCE_TYPES = {
     "DiagnosticReport",
     "AllergyIntolerance",
     "Immunization",
+    "ClinicalImpression",
+    "FamilyMemberHistory",
     # Medications
     "Medication",
     "MedicationRequest",
+    "MedicationAdministration",
+    "MedicationStatement",
     # Care Management
     "CarePlan",
     "CareTeam",
@@ -53,6 +57,17 @@ VALID_RESOURCE_TYPES = {
     "CodeSystem",
     # Groups
     "Group",
+    # Forms & Consent
+    "Questionnaire",
+    "QuestionnaireResponse",
+    "Consent",
+    # Communication & Alerts
+    "Communication",
+    "Flag",
+    # Diagnostics
+    "Specimen",
+    # Orders
+    "NutritionOrder",
     # Infrastructure
     "Bundle",
     "OperationOutcome",

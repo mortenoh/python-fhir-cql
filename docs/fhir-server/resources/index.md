@@ -4,13 +4,13 @@ This page provides an overview of all FHIR R4 resource types supported by the py
 
 ## Resource Categories
 
-The server supports **37 resource types** organized into the following categories:
+The server supports **45 resource types** organized into the following categories:
 
 | Category | Resources | Count |
 |----------|-----------|-------|
 | [Administrative](#administrative-resources) | Patient, Practitioner, PractitionerRole, Organization, Location, RelatedPerson | 6 |
-| [Clinical](#clinical-resources) | Encounter, Condition, Observation, Procedure, DiagnosticReport, AllergyIntolerance, Immunization | 7 |
-| [Medications](#medication-resources) | Medication, MedicationRequest | 2 |
+| [Clinical](#clinical-resources) | Encounter, Condition, Observation, Procedure, DiagnosticReport, AllergyIntolerance, Immunization, ClinicalImpression, FamilyMemberHistory | 9 |
+| [Medications](#medication-resources) | Medication, MedicationRequest, MedicationAdministration, MedicationStatement | 4 |
 | [Care Management](#care-management-resources) | CarePlan, CareTeam, Goal, Task | 4 |
 | [Scheduling](#scheduling-resources) | Appointment, Schedule, Slot | 3 |
 | [Financial](#financial-resources) | Coverage, Claim, ExplanationOfBenefit | 3 |
@@ -20,6 +20,9 @@ The server supports **37 resource types** organized into the following categorie
 | [Quality Measures](#quality-measure-resources) | Measure, MeasureReport, Library | 3 |
 | [Terminology](#terminology-resources) | ValueSet, CodeSystem | 2 |
 | [Groups](#group-resources) | Group | 1 |
+| [Communication & Alerts](#communication--alerts-resources) | Communication, Flag | 2 |
+| [Diagnostics](#diagnostics-resources) | Specimen | 1 |
+| [Orders](#orders-resources) | NutritionOrder | 1 |
 
 ---
 
@@ -331,6 +334,81 @@ See [detailed documentation](immunization.md)
 
 ---
 
+### ClinicalImpression
+
+Clinical assessments and diagnoses made by practitioners.
+
+**Key Fields:**
+- `status` - in-progress | completed | entered-in-error
+- `subject` - Reference to Patient
+- `encounter` - Reference to Encounter
+- `effectiveDateTime` - When assessment was made
+- `assessor` - Practitioner who made assessment
+- `summary` - Textual summary
+- `finding` - Specific findings/diagnoses
+- `prognosisCodeableConcept` - Prognosis codes
+
+**Common Search Parameters:**
+- `patient`, `subject` - By patient
+- `encounter` - By encounter
+- `status` - Assessment status
+- `assessor` - By assessor
+
+**Example:**
+```json
+{
+  "resourceType": "ClinicalImpression",
+  "id": "ci-001",
+  "status": "completed",
+  "subject": {"reference": "Patient/patient-001"},
+  "effectiveDateTime": "2024-06-15T10:30:00Z",
+  "assessor": {"reference": "Practitioner/practitioner-001"},
+  "summary": "Patient presents with well-controlled Type 2 Diabetes"
+}
+```
+
+[FHIR R4 Specification](https://hl7.org/fhir/R4/clinicalimpression.html)
+
+---
+
+### FamilyMemberHistory
+
+Health history of patient's family members relevant for understanding genetic and familial disease risk.
+
+**Key Fields:**
+- `status` - partial | completed | entered-in-error | health-unknown
+- `patient` - Reference to Patient
+- `relationship` - Family relationship (father, mother, sibling, etc.)
+- `sex` - Sex of family member
+- `ageAge` / `deceasedAge` - Age information
+- `condition` - Conditions with onset ages
+
+**Common Search Parameters:**
+- `patient` - By patient
+- `status` - History status
+- `relationship` - By relationship type
+
+**Example:**
+```json
+{
+  "resourceType": "FamilyMemberHistory",
+  "id": "fmh-001",
+  "status": "completed",
+  "patient": {"reference": "Patient/patient-001"},
+  "relationship": {"coding": [{"code": "FTH", "display": "Father"}]},
+  "condition": [
+    {
+      "code": {"coding": [{"code": "73211009", "display": "Diabetes mellitus"}]},
+      "onsetAge": {"value": 55, "unit": "years"}
+    }
+  ]
+}
+```
+
+[FHIR R4 Specification](https://hl7.org/fhir/R4/familymemberhistory.html)
+
+---
+
 ## Medication Resources
 
 ### Medication
@@ -362,6 +440,81 @@ Prescriptions and medication orders.
 - `authoredon` - Prescription date
 
 [FHIR R4 Specification](https://hl7.org/fhir/R4/medicationrequest.html)
+
+---
+
+### MedicationAdministration
+
+Record of medication being administered to a patient.
+
+**Key Fields:**
+- `status` - in-progress | not-done | on-hold | completed | entered-in-error | stopped | unknown
+- `medicationCodeableConcept` - Medication given
+- `subject` - Reference to Patient
+- `context` - Reference to Encounter
+- `effectiveDateTime` / `effectivePeriod` - When administered
+- `performer` - Who administered
+- `dosage` - Dosage details
+- `request` - Reference to MedicationRequest
+
+**Common Search Parameters:**
+- `patient`, `subject` - By patient
+- `effective-time` - Administration time
+- `status` - Administration status
+- `code` - Medication code
+
+**Example:**
+```json
+{
+  "resourceType": "MedicationAdministration",
+  "id": "ma-001",
+  "status": "completed",
+  "medicationCodeableConcept": {
+    "coding": [{"system": "http://www.nlm.nih.gov/research/umls/rxnorm", "code": "860975", "display": "Metformin 500mg"}]
+  },
+  "subject": {"reference": "Patient/patient-001"},
+  "effectiveDateTime": "2024-06-15T08:00:00Z"
+}
+```
+
+[FHIR R4 Specification](https://hl7.org/fhir/R4/medicationadministration.html)
+
+---
+
+### MedicationStatement
+
+Record of what a patient reports they are taking.
+
+**Key Fields:**
+- `status` - active | completed | entered-in-error | intended | stopped | on-hold | unknown | not-taken
+- `medicationCodeableConcept` - Medication being taken
+- `subject` - Reference to Patient
+- `effectiveDateTime` / `effectivePeriod` - When taking
+- `informationSource` - Who provided the information
+- `derivedFrom` - Reference to MedicationRequest
+- `dosage` - Dosage details
+
+**Common Search Parameters:**
+- `patient`, `subject` - By patient
+- `effective` - Effective time
+- `status` - Statement status
+- `code` - Medication code
+
+**Example:**
+```json
+{
+  "resourceType": "MedicationStatement",
+  "id": "ms-001",
+  "status": "active",
+  "medicationCodeableConcept": {
+    "coding": [{"system": "http://www.nlm.nih.gov/research/umls/rxnorm", "code": "197361", "display": "Aspirin 81mg"}]
+  },
+  "subject": {"reference": "Patient/patient-001"},
+  "effectiveDateTime": "2024-06-01"
+}
+```
+
+[FHIR R4 Specification](https://hl7.org/fhir/R4/medicationstatement.html)
 
 ---
 
@@ -890,6 +1043,161 @@ Groups of patients or other entities.
 ```
 
 [FHIR R4 Specification](https://hl7.org/fhir/R4/group.html)
+
+---
+
+## Communication & Alerts Resources
+
+### Communication
+
+Messages exchanged between providers and patients.
+
+**Key Fields:**
+- `status` - preparation | in-progress | not-done | on-hold | stopped | completed | entered-in-error | unknown
+- `category` - alert | notification | reminder | instruction
+- `priority` - routine | urgent | asap | stat
+- `subject` - Reference to Patient
+- `encounter` - Reference to Encounter
+- `sender` - Who sent the message
+- `recipient` - Who received it
+- `payload` - Message content
+
+**Common Search Parameters:**
+- `patient`, `subject` - By patient
+- `sender` - By sender
+- `recipient` - By recipient
+- `status` - Message status
+- `category` - Message category
+
+**Example:**
+```json
+{
+  "resourceType": "Communication",
+  "id": "comm-001",
+  "status": "completed",
+  "category": [{"coding": [{"code": "notification", "display": "Notification"}]}],
+  "subject": {"reference": "Patient/patient-001"},
+  "sender": {"reference": "Practitioner/practitioner-001"},
+  "payload": [{"contentString": "Your lab results are available"}]
+}
+```
+
+[FHIR R4 Specification](https://hl7.org/fhir/R4/communication.html)
+
+---
+
+### Flag
+
+Patient safety alerts and warnings.
+
+**Key Fields:**
+- `status` - active | inactive | entered-in-error
+- `category` - clinical | administrative | behavioral | safety | research
+- `code` - Flag type (fall risk, allergy alert, DNR, etc.)
+- `subject` - Reference to Patient
+- `period` - When flag is active
+- `author` - Who created the flag
+
+**Common Search Parameters:**
+- `patient`, `subject` - By patient
+- `status` - Flag status
+- `author` - By author
+
+**Example:**
+```json
+{
+  "resourceType": "Flag",
+  "id": "flag-001",
+  "status": "active",
+  "category": [{"coding": [{"code": "safety", "display": "Safety"}]}],
+  "code": {"coding": [{"code": "fall-risk", "display": "Fall Risk"}]},
+  "subject": {"reference": "Patient/patient-001"}
+}
+```
+
+[FHIR R4 Specification](https://hl7.org/fhir/R4/flag.html)
+
+---
+
+## Diagnostics Resources
+
+### Specimen
+
+Laboratory specimens for analysis.
+
+**Key Fields:**
+- `status` - available | unavailable | unsatisfactory | entered-in-error
+- `type` - Specimen type (blood, urine, tissue, swab)
+- `subject` - Reference to Patient
+- `receivedTime` - When specimen was received
+- `collection` - Collection details (collector, collectedDateTime, bodySite)
+- `container` - Container information
+- `request` - Reference to ServiceRequest
+
+**Common Search Parameters:**
+- `patient`, `subject` - By patient
+- `type` - Specimen type
+- `status` - Specimen status
+- `collector` - By collector
+
+**Example:**
+```json
+{
+  "resourceType": "Specimen",
+  "id": "sp-001",
+  "status": "available",
+  "type": {"coding": [{"code": "119297000", "display": "Blood specimen"}]},
+  "subject": {"reference": "Patient/patient-001"},
+  "collection": {
+    "collectedDateTime": "2024-06-15T08:00:00Z",
+    "bodySite": {"coding": [{"code": "53120007", "display": "Arm"}]}
+  }
+}
+```
+
+[FHIR R4 Specification](https://hl7.org/fhir/R4/specimen.html)
+
+---
+
+## Orders Resources
+
+### NutritionOrder
+
+Diet and nutrition orders for patients.
+
+**Key Fields:**
+- `status` - draft | active | on-hold | revoked | completed | entered-in-error | unknown
+- `intent` - proposal | plan | directive | order
+- `patient` - Reference to Patient
+- `encounter` - Reference to Encounter
+- `dateTime` - When order was created
+- `orderer` - Practitioner who ordered
+- `oralDiet` - Oral diet details (type, schedule, nutrient, texture)
+- `enteralFormula` - Enteral/tube feeding details
+
+**Common Search Parameters:**
+- `patient` - By patient
+- `encounter` - By encounter
+- `status` - Order status
+- `datetime` - Order date
+- `orderer` - By ordering practitioner
+
+**Example:**
+```json
+{
+  "resourceType": "NutritionOrder",
+  "id": "no-001",
+  "status": "active",
+  "intent": "order",
+  "patient": {"reference": "Patient/patient-001"},
+  "dateTime": "2024-06-15T10:00:00Z",
+  "oralDiet": {
+    "type": [{"coding": [{"code": "diabetic", "display": "Diabetic Diet"}]}]
+  }
+}
+```
+
+[FHIR R4 Specification](https://hl7.org/fhir/R4/nutritionorder.html)
 
 ---
 

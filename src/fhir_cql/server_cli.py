@@ -14,7 +14,9 @@ from fhir_cql.server.generator import (
     CarePlanGenerator,
     CareTeamGenerator,
     ClaimGenerator,
+    ClinicalImpressionGenerator,
     CodeSystemGenerator,
+    CommunicationGenerator,
     ConditionGenerator,
     ConsentGenerator,
     CoverageGenerator,
@@ -23,6 +25,8 @@ from fhir_cql.server.generator import (
     DocumentReferenceGenerator,
     EncounterGenerator,
     ExplanationOfBenefitGenerator,
+    FamilyMemberHistoryGenerator,
+    FlagGenerator,
     GoalGenerator,
     GroupGenerator,
     ImmunizationGenerator,
@@ -30,8 +34,11 @@ from fhir_cql.server.generator import (
     LocationGenerator,
     MeasureGenerator,
     MeasureReportGenerator,
+    MedicationAdministrationGenerator,
     MedicationGenerator,
     MedicationRequestGenerator,
+    MedicationStatementGenerator,
+    NutritionOrderGenerator,
     ObservationGenerator,
     OrganizationGenerator,
     PatientGenerator,
@@ -44,6 +51,7 @@ from fhir_cql.server.generator import (
     ScheduleGenerator,
     ServiceRequestGenerator,
     SlotGenerator,
+    SpecimenGenerator,
     TaskGenerator,
     ValueSetGenerator,
 )
@@ -71,9 +79,13 @@ GENERATORS: dict[str, type] = {
     "DiagnosticReport": DiagnosticReportGenerator,
     "AllergyIntolerance": AllergyIntoleranceGenerator,
     "Immunization": ImmunizationGenerator,
+    "ClinicalImpression": ClinicalImpressionGenerator,
+    "FamilyMemberHistory": FamilyMemberHistoryGenerator,
     # Medications
     "Medication": MedicationGenerator,
     "MedicationRequest": MedicationRequestGenerator,
+    "MedicationAdministration": MedicationAdministrationGenerator,
+    "MedicationStatement": MedicationStatementGenerator,
     # Care Management
     "CarePlan": CarePlanGenerator,
     "CareTeam": CareTeamGenerator,
@@ -105,6 +117,13 @@ GENERATORS: dict[str, type] = {
     "Questionnaire": QuestionnaireGenerator,
     "QuestionnaireResponse": QuestionnaireResponseGenerator,
     "Consent": ConsentGenerator,
+    # Communication & Alerts
+    "Communication": CommunicationGenerator,
+    "Flag": FlagGenerator,
+    # Diagnostics
+    "Specimen": SpecimenGenerator,
+    # Orders
+    "NutritionOrder": NutritionOrderGenerator,
 }
 
 
@@ -703,6 +722,8 @@ def populate(
     task_gen = TaskGenerator(faker, seed)
     med_gen = MedicationGenerator(faker, seed)
     med_req_gen = MedicationRequestGenerator(faker, seed)
+    med_admin_gen = MedicationAdministrationGenerator(faker, seed)
+    med_stmt_gen = MedicationStatementGenerator(faker, seed)
     proc_gen = ProcedureGenerator(faker, seed)
     svc_req_gen = ServiceRequestGenerator(faker, seed)
     diag_gen = DiagnosticReportGenerator(faker, seed)
@@ -713,6 +734,12 @@ def populate(
     eob_gen = ExplanationOfBenefitGenerator(faker, seed)
     consent_gen = ConsentGenerator(faker, seed)
     quest_resp_gen = QuestionnaireResponseGenerator(faker, seed)
+    comm_gen = CommunicationGenerator(faker, seed)
+    flag_gen = FlagGenerator(faker, seed)
+    specimen_gen = SpecimenGenerator(faker, seed)
+    family_hist_gen = FamilyMemberHistoryGenerator(faker, seed)
+    clin_imp_gen = ClinicalImpressionGenerator(faker, seed)
+    nutr_order_gen = NutritionOrderGenerator(faker, seed)
 
     patient_refs: list[str] = []
 
@@ -856,11 +883,30 @@ def populate(
         track(med_gen.generate())
 
         # MedicationRequest
-        track(
+        med_request = track(
             med_req_gen.generate(
                 patient_ref=patient_ref,
                 practitioner_ref=ref(practitioners[0]),
                 encounter_ref=ref(encounters[0]) if encounters else None,
+            )
+        )
+
+        # MedicationAdministration (record of med being given)
+        track(
+            med_admin_gen.generate(
+                patient_ref=patient_ref,
+                encounter_ref=ref(encounters[0]) if encounters else None,
+                practitioner_ref=ref(practitioners[0]),
+                medication_request_ref=ref(med_request),
+            )
+        )
+
+        # MedicationStatement (what patient reports taking)
+        track(
+            med_stmt_gen.generate(
+                patient_ref=patient_ref,
+                encounter_ref=ref(encounters[0]) if encounters else None,
+                medication_request_ref=ref(med_request),
             )
         )
 
@@ -874,11 +920,20 @@ def populate(
         )
 
         # ServiceRequest
-        track(
+        service_request = track(
             svc_req_gen.generate(
                 patient_ref=patient_ref,
                 requester_ref=ref(practitioners[0]),
                 encounter_ref=ref(encounters[0]) if encounters else None,
+            )
+        )
+
+        # Specimen (linked to service request)
+        track(
+            specimen_gen.generate(
+                patient_ref=patient_ref,
+                collector_ref=ref(practitioners[0]),
+                service_request_ref=ref(service_request),
             )
         )
 
@@ -902,6 +957,52 @@ def populate(
                 practitioner_ref=ref(practitioners[0]),
                 location_ref=ref(clinic_location) if clinic_location else None,
                 slot_ref=ref(slots[i % len(slots)]) if slots else None,
+            )
+        )
+
+        # ============================================================
+        # TIER 6.5: Additional Clinical Resources
+        # ============================================================
+
+        # Flag (safety alerts)
+        track(
+            flag_gen.generate(
+                patient_ref=patient_ref,
+                author_ref=ref(practitioners[0]),
+                encounter_ref=ref(encounters[0]) if encounters else None,
+            )
+        )
+
+        # Communication (patient/provider messages)
+        track(
+            comm_gen.generate(
+                patient_ref=patient_ref,
+                encounter_ref=ref(encounters[0]) if encounters else None,
+                sender_ref=ref(practitioners[0]),
+                recipient_ref=patient_ref,
+            )
+        )
+
+        # FamilyMemberHistory
+        for _ in range(faker.random_int(1, 3)):
+            track(family_hist_gen.generate(patient_ref=patient_ref))
+
+        # ClinicalImpression (linked to encounter and conditions)
+        track(
+            clin_imp_gen.generate(
+                patient_ref=patient_ref,
+                encounter_ref=ref(encounters[0]) if encounters else None,
+                assessor_ref=ref(practitioners[0]),
+                condition_ref=ref(conditions_for_patient[0]) if conditions_for_patient else None,
+            )
+        )
+
+        # NutritionOrder (diet orders)
+        track(
+            nutr_order_gen.generate(
+                patient_ref=patient_ref,
+                encounter_ref=ref(encounters[0]) if encounters else None,
+                orderer_ref=ref(practitioners[0]),
             )
         )
 

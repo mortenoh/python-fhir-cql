@@ -14,7 +14,9 @@ from .base import FHIRResourceGenerator
 from .care_team import CareTeamGenerator
 from .careplan import CarePlanGenerator
 from .claim import ClaimGenerator
+from .clinical_impression import ClinicalImpressionGenerator
 from .code_system import CodeSystemGenerator
+from .communication import CommunicationGenerator
 from .condition import ConditionGenerator
 from .consent import ConsentGenerator
 from .coverage import CoverageGenerator
@@ -23,6 +25,8 @@ from .diagnostic_report import DiagnosticReportGenerator
 from .document_reference import DocumentReferenceGenerator
 from .encounter import EncounterGenerator
 from .explanation_of_benefit import ExplanationOfBenefitGenerator
+from .family_member_history import FamilyMemberHistoryGenerator
+from .flag import FlagGenerator
 from .goal import GoalGenerator
 from .group import GroupGenerator
 from .immunization import ImmunizationGenerator
@@ -31,7 +35,10 @@ from .location import LocationGenerator
 from .measure import MeasureGenerator
 from .measure_report import MeasureReportGenerator
 from .medication import MedicationGenerator
+from .medication_administration import MedicationAdministrationGenerator
 from .medication_request import MedicationRequestGenerator
+from .medication_statement import MedicationStatementGenerator
+from .nutrition_order import NutritionOrderGenerator
 from .observation import ObservationGenerator
 from .organization import OrganizationGenerator
 from .patient import PatientGenerator
@@ -44,6 +51,7 @@ from .related_person import RelatedPersonGenerator
 from .schedule import ScheduleGenerator
 from .service_request import ServiceRequestGenerator
 from .slot import SlotGenerator
+from .specimen import SpecimenGenerator
 from .task import TaskGenerator
 from .value_set import ValueSetGenerator
 
@@ -206,9 +214,13 @@ __all__ = [
     "DiagnosticReportGenerator",
     "AllergyIntoleranceGenerator",
     "ImmunizationGenerator",
+    "ClinicalImpressionGenerator",
+    "FamilyMemberHistoryGenerator",
     # Medications
     "MedicationGenerator",
     "MedicationRequestGenerator",
+    "MedicationAdministrationGenerator",
+    "MedicationStatementGenerator",
     # Care Management
     "CarePlanGenerator",
     "CareTeamGenerator",
@@ -240,4 +252,11 @@ __all__ = [
     "QuestionnaireGenerator",
     "QuestionnaireResponseGenerator",
     "ConsentGenerator",
+    # Communication & Alerts
+    "CommunicationGenerator",
+    "FlagGenerator",
+    # Diagnostics
+    "SpecimenGenerator",
+    # Orders
+    "NutritionOrderGenerator",
 ]
