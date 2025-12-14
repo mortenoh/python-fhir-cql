@@ -56,12 +56,15 @@
     {% endif %}
 
     <!-- Edit Form -->
-    <form method="post" class="space-y-6">
+    <form method="post" id="resource-form" class="space-y-6">
         <div class="bg-white shadow rounded-lg overflow-hidden">
             <div class="px-4 py-4 sm:px-6 border-b border-gray-200 flex justify-between items-center">
                 <div>
                     <h2 class="text-lg font-medium text-gray-900">Resource JSON</h2>
-                    <p class="mt-1 text-sm text-gray-500">Edit the FHIR resource in JSON format</p>
+                    <p class="mt-1 text-sm text-gray-500">
+                        Edit the FHIR resource in JSON format
+                        <span class="text-fhir-600">(Ctrl+Space for autocomplete)</span>
+                    </p>
                 </div>
                 <div class="flex space-x-2">
                     <button type="button" onclick="formatJSON()"
@@ -75,11 +78,8 @@
                 </div>
             </div>
             <div class="p-4">
-                <textarea name="resource_json"
-                          id="resource-json"
-                          rows="25"
-                          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-fhir-500 focus:ring-fhir-500 font-mono text-sm"
-                          placeholder="Enter FHIR resource JSON...">{{ resource_json }}</textarea>
+                <!-- Monaco Editor Container -->
+                <div id="monaco-editor" class="h-[500px] border border-gray-300 rounded-md"></div>
                 <div id="json-error" class="mt-2 text-sm text-red-600 hidden"></div>
             </div>
         </div>
@@ -99,27 +99,90 @@
 </div>
 
 {% block extra_js %}
+<!-- Monaco Editor Loader -->
+<script src="https://unpkg.com/monaco-editor@0.45.0/min/vs/loader.js"></script>
 <script>
-    function formatJSON() {
-        const textarea = document.getElementById('resource-json');
-        const errorDiv = document.getElementById('json-error');
+    // Store editor reference globally
+    var editor = null;
+    var initialJson = {{ resource_json | tojson | safe }};
 
-        try {
-            const json = JSON.parse(textarea.value);
-            textarea.value = JSON.stringify(json, null, 2);
-            errorDiv.classList.add('hidden');
-        } catch (e) {
-            errorDiv.textContent = 'Invalid JSON: ' + e.message;
-            errorDiv.classList.remove('hidden');
+    // Configure Monaco loader
+    require.config({
+        paths: { vs: 'https://unpkg.com/monaco-editor@0.45.0/min/vs' }
+    });
+
+    // Load Monaco
+    require(['vs/editor/editor.main'], function() {
+        // Fetch schema from API and configure JSON validation
+        fetch('{{ api_base_path }}/schema/{{ resource_type }}')
+            .then(response => response.json())
+            .then(schema => {
+                monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+                    validate: true,
+                    allowComments: false,
+                    schemas: [{
+                        uri: 'http://fhir/schema/{{ resource_type }}',
+                        fileMatch: ['*'],
+                        schema: schema
+                    }],
+                    enableSchemaRequest: false
+                });
+            })
+            .catch(err => {
+                console.warn('Could not load schema for autocomplete:', err);
+            });
+
+        // Create the editor
+        editor = monaco.editor.create(document.getElementById('monaco-editor'), {
+            value: initialJson,
+            language: 'json',
+            theme: 'vs',
+            minimap: { enabled: false },
+            automaticLayout: true,
+            formatOnPaste: true,
+            formatOnType: true,
+            tabSize: 2,
+            scrollBeyondLastLine: false,
+            wordWrap: 'on',
+            lineNumbers: 'on',
+            renderLineHighlight: 'line',
+            folding: true,
+            bracketPairColorization: { enabled: true },
+            quickSuggestions: {
+                other: true,
+                comments: false,
+                strings: true
+            },
+            suggestOnTriggerCharacters: true
+        });
+
+        // Format on load
+        setTimeout(() => {
+            editor.getAction('editor.action.formatDocument').run();
+        }, 100);
+    });
+
+    // Format JSON using Monaco's built-in formatter
+    function formatJSON() {
+        if (editor) {
+            editor.getAction('editor.action.formatDocument').run();
         }
     }
 
+    // Validate JSON
     function validateJSON() {
-        const textarea = document.getElementById('resource-json');
         const errorDiv = document.getElementById('json-error');
 
+        if (!editor) {
+            errorDiv.textContent = 'Editor not loaded';
+            errorDiv.classList.remove('hidden');
+            return;
+        }
+
+        const content = editor.getValue();
+
         try {
-            const json = JSON.parse(textarea.value);
+            const json = JSON.parse(content);
 
             // Check resourceType
             if (!json.resourceType) {
@@ -137,7 +200,7 @@
             fetch('{{ api_base_path }}/{{ resource_type }}/$validate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/fhir+json' },
-                body: textarea.value
+                body: content
             })
             .then(response => response.json())
             .then(data => {
@@ -163,17 +226,20 @@
         }
     }
 
-    // Auto-format on load if JSON is valid
-    document.addEventListener('DOMContentLoaded', function() {
-        const textarea = document.getElementById('resource-json');
-        if (textarea.value.trim()) {
-            try {
-                const json = JSON.parse(textarea.value);
-                textarea.value = JSON.stringify(json, null, 2);
-            } catch (e) {
-                // Leave as-is if invalid
-            }
+    // Handle form submission - inject editor content
+    document.getElementById('resource-form').addEventListener('submit', function(e) {
+        if (!editor) {
+            e.preventDefault();
+            alert('Editor not loaded yet');
+            return;
         }
+
+        // Create hidden input with editor content
+        const hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = 'resource_json';
+        hidden.value = editor.getValue();
+        this.appendChild(hidden);
     });
 </script>
 {% endblock %}

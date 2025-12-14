@@ -117,7 +117,7 @@ def serve(
     rprint(f"  Web UI:       http://{host}:{port}/")
     rprint(f"  FHIR API:     http://{host}:{port}{api_base}")
     rprint(f"  Metadata:     http://{host}:{port}{api_base}/metadata")
-    rprint(f"  API Docs:     http://{host}:{port}{api_base}/docs")
+    rprint(f"  API Docs:     http://{host}:{port}/docs")
     rprint()
     rprint("[bold]Example requests:[/bold]")
     rprint(f"  GET  http://{host}:{port}{api_base}/Patient")

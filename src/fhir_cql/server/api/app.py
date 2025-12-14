@@ -68,11 +68,11 @@ def create_app(
         # Shutdown
         logger.info("Shutting down FHIR server...")
 
-    # Determine docs URLs based on settings
+    # Determine docs URLs based on settings (docs at root, not under FHIR base path)
     api_base = settings.api_base_path.rstrip("/")
-    docs_url = f"{api_base}/docs" if settings.enable_docs else None
-    redoc_url = f"{api_base}/redoc" if settings.enable_docs else None
-    openapi_url = f"{api_base}/openapi.json" if settings.enable_docs else None
+    docs_url = "/docs" if settings.enable_docs else None
+    redoc_url = "/redoc" if settings.enable_docs else None
+    openapi_url = "/openapi.json" if settings.enable_docs else None
 
     app = FastAPI(
         title=settings.server_name,
