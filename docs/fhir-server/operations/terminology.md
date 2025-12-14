@@ -29,10 +29,10 @@ Full terminology support through standard FHIR operations on CodeSystem and Valu
 
 ```bash
 # Start the FHIR server
-uv run fhir server serve
+uv run fhir serve
 
 # With options
-uv run fhir server serve --port 8000 --patients 100
+uv run fhir serve --port 8000 --patients 100
 
 # Or with uvicorn directly
 uvicorn fhir_cql.server.api.app:create_app --factory --reload --port 8000

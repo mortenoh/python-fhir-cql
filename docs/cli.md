@@ -676,7 +676,7 @@ Cards generated: 1
 Start the FHIR R4 server.
 
 ```bash
-fhir server serve [OPTIONS]
+fhir serve [OPTIONS]
 ```
 
 **Options:**
@@ -697,16 +697,16 @@ fhir server serve [OPTIONS]
 
 ```bash
 # Start with synthetic patients
-fhir server serve --patients 100
+fhir serve --patients 100
 
 # With reproducible seed
-fhir server serve --patients 50 --seed 42
+fhir serve --patients 50 --seed 42
 
 # Preload terminology and CQL
-fhir server serve --preload-cql ./cql --preload-valuesets ./valuesets
+fhir serve --preload-cql ./cql --preload-valuesets ./valuesets
 
 # Development mode
-fhir server serve --patients 10 --reload
+fhir serve --patients 10 --reload
 ```
 
 ### generate
@@ -812,7 +812,7 @@ fhir terminology serve [OPTIONS]
 | `-p, --port` | Port to bind to (default: 8080) |
 | `--valueset-dir` | Directory of ValueSet JSON files |
 
-**Note:** The FHIR server includes full terminology support. Use `fhir server serve` with `--preload-valuesets` for integrated terminology operations.
+**Note:** The FHIR server includes full terminology support. Use `fhir serve` with `--preload-valuesets` for integrated terminology operations.
 
 ---
 
@@ -871,7 +871,7 @@ fhir terminology serve [OPTIONS]
 
 | Command | Description |
 |---------|-------------|
-| `fhir server serve` | Start the FHIR R4 server |
+| `fhir serve` | Start the FHIR R4 server |
 | `fhir server generate` | Generate synthetic FHIR data to file |
 | `fhir server load` | Load FHIR resources into running server |
 | `fhir server stats` | Show server resource statistics |

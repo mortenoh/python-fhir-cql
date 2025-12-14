@@ -28,7 +28,7 @@ The `fhir server` command provides a fully functional FHIR R4 REST server design
 
 ```bash
 # Generate 100 patients with related clinical data
-fhir server serve --patients 100
+fhir serve --patients 100
 
 # Output:
 # Starting FHIR R4 Server
@@ -66,12 +66,12 @@ Open http://localhost:8080/docs in your browser to see the interactive Swagger U
 
 ## CLI Reference
 
-### fhir server serve
+### fhir serve
 
 Start the FHIR server.
 
 ```bash
-fhir server serve [OPTIONS]
+fhir serve [OPTIONS]
 ```
 
 #### Options
@@ -92,19 +92,19 @@ fhir server serve [OPTIONS]
 
 ```bash
 # Start with 100 patients on custom port
-fhir server serve --patients 100 --port 9000
+fhir serve --patients 100 --port 9000
 
 # Reproducible data with seed
-fhir server serve --patients 50 --seed 42
+fhir serve --patients 50 --seed 42
 
 # Preload CQL libraries and ValueSets
-fhir server serve --preload-cql ./cql --preload-valuesets ./valuesets
+fhir serve --preload-cql ./cql --preload-valuesets ./valuesets
 
 # Load existing FHIR data
-fhir server serve --preload-data ./patients-bundle.json
+fhir serve --preload-data ./patients-bundle.json
 
 # Development mode with auto-reload
-fhir server serve --patients 10 --reload
+fhir serve --patients 10 --reload
 ```
 
 ### fhir server generate
@@ -675,7 +675,7 @@ Use `--seed` for deterministic data generation:
 
 ```bash
 # These commands produce identical data
-fhir server serve --patients 100 --seed 42
+fhir serve --patients 100 --seed 42
 fhir server generate ./data.json --patients 100 --seed 42
 ```
 
@@ -693,7 +693,7 @@ This is useful for:
 Preload CQL files as Library resources:
 
 ```bash
-fhir server serve --preload-cql ./cql-libraries
+fhir serve --preload-cql ./cql-libraries
 ```
 
 Directory structure:
@@ -716,7 +716,7 @@ curl http://localhost:8080/Library?name=DiabetesManagement
 Preload terminology resources:
 
 ```bash
-fhir server serve --preload-valuesets ./terminology
+fhir serve --preload-valuesets ./terminology
 ```
 
 Supports:
@@ -737,7 +737,7 @@ terminology/
 Preload FHIR resources from a file:
 
 ```bash
-fhir server serve --preload-data ./patients-bundle.json
+fhir serve --preload-data ./patients-bundle.json
 ```
 
 Supports:
@@ -909,7 +909,7 @@ FHIR_SERVER_LOG_LEVEL=DEBUG
 Then start the server:
 
 ```bash
-fhir server serve
+fhir serve
 ```
 
 ### FHIRServerSettings Class
@@ -957,7 +957,7 @@ settings = FHIRServerSettings(
 
 ```bash
 # Start server with synthetic data
-fhir server serve --patients 100 --seed 42 &
+fhir serve --patients 100 --seed 42 &
 
 # Run CQL evaluation against the server
 fhir cql eval "
@@ -970,7 +970,7 @@ fhir cql eval "
 
 ```bash
 # Start FHIR server with data
-fhir server serve --patients 50 --port 8080 &
+fhir serve --patients 50 --port 8080 &
 
 # Start CDS Hooks server pointing to FHIR server
 fhir cds serve --config ./cds-config.yaml --fhir-url http://localhost:8080
@@ -1017,15 +1017,15 @@ docker run -p 8080:8080 fhir-server
 lsof -i :8080
 
 # Use different port
-fhir server serve --port 9000
+fhir serve --port 9000
 ```
 
 #### No data generated
 
 ```bash
 # Ensure --patients is specified
-fhir server serve --patients 100  # Generates data
-fhir server serve                 # Empty server
+fhir serve --patients 100  # Generates data
+fhir serve                 # Empty server
 ```
 
 #### Search returns no results
@@ -1066,7 +1066,7 @@ The server provides built-in API documentation:
 To disable documentation:
 
 ```bash
-fhir server serve --patients 100
+fhir serve --patients 100
 # Set via environment
-FHIR_SERVER_ENABLE_DOCS=false fhir server serve
+FHIR_SERVER_ENABLE_DOCS=false fhir serve
 ```
