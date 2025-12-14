@@ -1217,6 +1217,248 @@
       ]
     },
     {
+      "name": "Questionnaire",
+      "item": [
+        {
+          "name": "Create PHQ-9 Questionnaire",
+          "description": "Create a PHQ-9 depression screening questionnaire",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Questionnaire\",\n  \"id\": \"phq-9\",\n  \"url\": \"http://example.org/Questionnaire/phq-9\",\n  \"name\": \"phq_9\",\n  \"title\": \"Patient Health Questionnaire (PHQ-9)\",\n  \"status\": \"active\",\n  \"subjectType\": [\"Patient\"],\n  \"description\": \"A 9-item depression screening tool\",\n  \"purpose\": \"Depression screening and severity assessment\",\n  \"item\": [\n    {\n      \"linkId\": \"1\",\n      \"text\": \"Little interest or pleasure in doing things\",\n      \"type\": \"choice\",\n      \"answerOption\": [\n        {\"valueInteger\": 0},\n        {\"valueInteger\": 1},\n        {\"valueInteger\": 2},\n        {\"valueInteger\": 3}\n      ]\n    },\n    {\n      \"linkId\": \"2\",\n      \"text\": \"Feeling down, depressed, or hopeless\",\n      \"type\": \"choice\",\n      \"answerOption\": [\n        {\"valueInteger\": 0},\n        {\"valueInteger\": 1},\n        {\"valueInteger\": 2},\n        {\"valueInteger\": 3}\n      ]\n    },\n    {\n      \"linkId\": \"3\",\n      \"text\": \"Trouble falling or staying asleep, or sleeping too much\",\n      \"type\": \"choice\",\n      \"answerOption\": [\n        {\"valueInteger\": 0},\n        {\"valueInteger\": 1},\n        {\"valueInteger\": 2},\n        {\"valueInteger\": 3}\n      ]\n    },\n    {\n      \"linkId\": \"4\",\n      \"text\": \"Feeling tired or having little energy\",\n      \"type\": \"choice\"\n    },\n    {\n      \"linkId\": \"5\",\n      \"text\": \"Poor appetite or overeating\",\n      \"type\": \"choice\"\n    },\n    {\n      \"linkId\": \"6\",\n      \"text\": \"Feeling bad about yourself\",\n      \"type\": \"choice\"\n    },\n    {\n      \"linkId\": \"7\",\n      \"text\": \"Trouble concentrating on things\",\n      \"type\": \"choice\"\n    },\n    {\n      \"linkId\": \"8\",\n      \"text\": \"Moving or speaking slowly, or being fidgety\",\n      \"type\": \"choice\"\n    },\n    {\n      \"linkId\": \"9\",\n      \"text\": \"Thoughts of self-harm\",\n      \"type\": \"choice\"\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/Questionnaire"
+          }
+        },
+        {
+          "name": "Create Pain Assessment Questionnaire",
+          "description": "Create a pain assessment questionnaire",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Questionnaire\",\n  \"id\": \"pain-assessment\",\n  \"url\": \"http://example.org/Questionnaire/pain-assessment\",\n  \"name\": \"pain_assessment\",\n  \"title\": \"Pain Assessment Questionnaire\",\n  \"status\": \"active\",\n  \"subjectType\": [\"Patient\"],\n  \"description\": \"Comprehensive pain evaluation form\",\n  \"item\": [\n    {\"linkId\": \"pain-level\", \"text\": \"Rate your pain level (0-10)\", \"type\": \"integer\"},\n    {\"linkId\": \"pain-location\", \"text\": \"Where is your pain located?\", \"type\": \"string\"},\n    {\n      \"linkId\": \"pain-type\",\n      \"text\": \"Describe your pain\",\n      \"type\": \"choice\",\n      \"answerOption\": [\n        {\"valueString\": \"sharp\"},\n        {\"valueString\": \"dull\"},\n        {\"valueString\": \"burning\"},\n        {\"valueString\": \"aching\"},\n        {\"valueString\": \"throbbing\"}\n      ]\n    },\n    {\"linkId\": \"pain-interferes\", \"text\": \"Does pain interfere with daily activities?\", \"type\": \"boolean\"}\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/Questionnaire"
+          }
+        },
+        {
+          "name": "Read Questionnaire",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/Questionnaire/phq-9"
+          }
+        },
+        {
+          "name": "Search Questionnaires by Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/Questionnaire?status=active"
+          }
+        },
+        {
+          "name": "Search Questionnaires by URL",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/Questionnaire?url=http://example.org/Questionnaire/phq-9"
+          }
+        },
+        {
+          "name": "Search Questionnaires by Title",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/Questionnaire?title=PHQ"
+          }
+        },
+        {
+          "name": "Update Questionnaire",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Questionnaire\",\n  \"id\": \"phq-9\",\n  \"url\": \"http://example.org/Questionnaire/phq-9\",\n  \"name\": \"phq_9\",\n  \"title\": \"Patient Health Questionnaire (PHQ-9) - Updated\",\n  \"status\": \"active\",\n  \"subjectType\": [\"Patient\"],\n  \"description\": \"A 9-item depression screening tool (updated)\"\n}"
+            },
+            "url": "{{baseUrl}}/Questionnaire/phq-9"
+          }
+        },
+        {
+          "name": "Delete Questionnaire",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/Questionnaire/phq-9"
+          }
+        }
+      ]
+    },
+    {
+      "name": "QuestionnaireResponse",
+      "item": [
+        {
+          "name": "Create PHQ-9 Response",
+          "description": "Create a completed PHQ-9 depression screening response",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"QuestionnaireResponse\",\n  \"questionnaire\": \"http://example.org/Questionnaire/phq-9\",\n  \"status\": \"completed\",\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"encounter\": {\"reference\": \"Encounter/{{encounterId}}\"},\n  \"authored\": \"2024-06-15T10:30:00Z\",\n  \"author\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"item\": [\n    {\"linkId\": \"1\", \"text\": \"Little interest or pleasure in doing things\", \"answer\": [{\"valueInteger\": 2}]},\n    {\"linkId\": \"2\", \"text\": \"Feeling down, depressed, or hopeless\", \"answer\": [{\"valueInteger\": 1}]},\n    {\"linkId\": \"3\", \"text\": \"Trouble falling or staying asleep\", \"answer\": [{\"valueInteger\": 2}]},\n    {\"linkId\": \"4\", \"text\": \"Feeling tired or having little energy\", \"answer\": [{\"valueInteger\": 3}]},\n    {\"linkId\": \"5\", \"text\": \"Poor appetite or overeating\", \"answer\": [{\"valueInteger\": 1}]},\n    {\"linkId\": \"6\", \"text\": \"Feeling bad about yourself\", \"answer\": [{\"valueInteger\": 1}]},\n    {\"linkId\": \"7\", \"text\": \"Trouble concentrating on things\", \"answer\": [{\"valueInteger\": 2}]},\n    {\"linkId\": \"8\", \"text\": \"Moving or speaking slowly\", \"answer\": [{\"valueInteger\": 0}]},\n    {\"linkId\": \"9\", \"text\": \"Thoughts of self-harm\", \"answer\": [{\"valueInteger\": 0}]}\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/QuestionnaireResponse"
+          }
+        },
+        {
+          "name": "Create Pain Assessment Response",
+          "description": "Create a completed pain assessment response",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"QuestionnaireResponse\",\n  \"questionnaire\": \"http://example.org/Questionnaire/pain-assessment\",\n  \"status\": \"completed\",\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"authored\": \"2024-06-15T14:00:00Z\",\n  \"author\": {\"reference\": \"Practitioner/{{practitionerId}}\"},\n  \"source\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"item\": [\n    {\"linkId\": \"pain-level\", \"text\": \"Rate your pain level (0-10)\", \"answer\": [{\"valueInteger\": 7}]},\n    {\"linkId\": \"pain-location\", \"text\": \"Where is your pain located?\", \"answer\": [{\"valueString\": \"Lower back\"}]},\n    {\"linkId\": \"pain-type\", \"text\": \"Describe your pain\", \"answer\": [{\"valueString\": \"aching\"}]},\n    {\"linkId\": \"pain-interferes\", \"text\": \"Does pain interfere with daily activities?\", \"answer\": [{\"valueBoolean\": true}]}\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/QuestionnaireResponse"
+          }
+        },
+        {
+          "name": "Create In-Progress Response",
+          "description": "Create a partially completed questionnaire response",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"QuestionnaireResponse\",\n  \"questionnaire\": \"http://example.org/Questionnaire/phq-9\",\n  \"status\": \"in-progress\",\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"authored\": \"2024-06-15T09:00:00Z\",\n  \"author\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"item\": [\n    {\"linkId\": \"1\", \"answer\": [{\"valueInteger\": 1}]},\n    {\"linkId\": \"2\", \"answer\": [{\"valueInteger\": 2}]}\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/QuestionnaireResponse"
+          }
+        },
+        {
+          "name": "Read QuestionnaireResponse",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/QuestionnaireResponse/qr-001"
+          }
+        },
+        {
+          "name": "Search Responses by Patient",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/QuestionnaireResponse?patient=Patient/{{patientId}}"
+          }
+        },
+        {
+          "name": "Search Responses by Questionnaire",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/QuestionnaireResponse?questionnaire=http://example.org/Questionnaire/phq-9"
+          }
+        },
+        {
+          "name": "Search Completed Responses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/QuestionnaireResponse?status=completed"
+          }
+        },
+        {
+          "name": "Search Responses by Date Range",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/QuestionnaireResponse?authored=ge2024-01-01&authored=le2024-12-31"
+          }
+        },
+        {
+          "name": "Patient Compartment - Responses",
+          "description": "Get all questionnaire responses for a patient via compartment search",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/Patient/{{patientId}}/QuestionnaireResponse"
+          }
+        },
+        {
+          "name": "Search with _include Questionnaire",
+          "description": "Get responses with the referenced questionnaire included",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/QuestionnaireResponse?patient=Patient/{{patientId}}&_include=QuestionnaireResponse:questionnaire"
+          }
+        },
+        {
+          "name": "Update QuestionnaireResponse (Complete)",
+          "description": "Update an in-progress response to completed status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"QuestionnaireResponse\",\n  \"id\": \"qr-001\",\n  \"questionnaire\": \"http://example.org/Questionnaire/phq-9\",\n  \"status\": \"completed\",\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"authored\": \"2024-06-15T10:30:00Z\",\n  \"author\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"item\": [\n    {\"linkId\": \"1\", \"answer\": [{\"valueInteger\": 1}]},\n    {\"linkId\": \"2\", \"answer\": [{\"valueInteger\": 2}]},\n    {\"linkId\": \"3\", \"answer\": [{\"valueInteger\": 1}]},\n    {\"linkId\": \"4\", \"answer\": [{\"valueInteger\": 2}]},\n    {\"linkId\": \"5\", \"answer\": [{\"valueInteger\": 0}]},\n    {\"linkId\": \"6\", \"answer\": [{\"valueInteger\": 1}]},\n    {\"linkId\": \"7\", \"answer\": [{\"valueInteger\": 1}]},\n    {\"linkId\": \"8\", \"answer\": [{\"valueInteger\": 0}]},\n    {\"linkId\": \"9\", \"answer\": [{\"valueInteger\": 0}]}\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/QuestionnaireResponse/qr-001"
+          }
+        },
+        {
+          "name": "Delete QuestionnaireResponse",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/QuestionnaireResponse/qr-001"
+          }
+        }
+      ]
+    },
+    {
       "name": "Group",
       "item": [
         {

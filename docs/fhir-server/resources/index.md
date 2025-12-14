@@ -657,6 +657,121 @@ See [detailed documentation](document-reference.md)
 
 ---
 
+## Forms & Consent Resources
+
+### Questionnaire
+
+Structured data collection forms, assessments, and surveys.
+
+See [detailed documentation](questionnaire.md)
+
+**Key Fields:**
+- `url` - Canonical URL
+- `name` - Computer-friendly name
+- `title` - Human-readable title
+- `status` - draft | active | retired | unknown
+- `subjectType` - Resource types (Patient)
+- `item` - Questions and groups
+
+**Common Search Parameters:**
+- `url` - Canonical URL
+- `name` - Computer name
+- `title` - Human-readable title
+- `status` - Publication status
+
+**Example:**
+```json
+{
+  "resourceType": "Questionnaire",
+  "id": "phq-9",
+  "url": "http://example.org/Questionnaire/phq-9",
+  "title": "Patient Health Questionnaire (PHQ-9)",
+  "status": "active",
+  "item": [
+    {"linkId": "1", "text": "Little interest or pleasure", "type": "choice"}
+  ]
+}
+```
+
+[FHIR R4 Specification](https://hl7.org/fhir/R4/questionnaire.html)
+
+---
+
+### QuestionnaireResponse
+
+Completed answers to a Questionnaire.
+
+See [detailed documentation](questionnaire-response.md)
+
+**Key Fields:**
+- `questionnaire` - Reference to the form
+- `status` - in-progress | completed | amended | entered-in-error | stopped
+- `subject` - Patient reference
+- `authored` - When completed
+- `author` - Who completed it
+- `item` - Answer items
+
+**Common Search Parameters:**
+- `questionnaire` - By questionnaire URL
+- `patient`, `subject` - By patient
+- `author` - By author
+- `authored` - By date
+- `status` - Response status
+
+**Example:**
+```json
+{
+  "resourceType": "QuestionnaireResponse",
+  "questionnaire": "http://example.org/Questionnaire/phq-9",
+  "status": "completed",
+  "subject": {"reference": "Patient/patient-001"},
+  "authored": "2024-06-15T10:30:00Z",
+  "item": [
+    {"linkId": "1", "answer": [{"valueInteger": 2}]}
+  ]
+}
+```
+
+[FHIR R4 Specification](https://hl7.org/fhir/R4/questionnaireresponse.html)
+
+---
+
+### Consent
+
+Privacy and treatment consent records.
+
+**Key Fields:**
+- `status` - draft | proposed | active | rejected | inactive | entered-in-error
+- `scope` - patient-privacy | research | treatment
+- `category` - Consent category codes
+- `patient` - Patient reference
+- `dateTime` - When consent was given
+- `performer` - Who provided consent
+- `provision` - Permit/deny rules
+
+**Common Search Parameters:**
+- `patient` - By patient
+- `status` - Consent status
+- `scope` - Consent scope
+- `category` - Consent category
+
+**Example:**
+```json
+{
+  "resourceType": "Consent",
+  "status": "active",
+  "scope": {
+    "coding": [{"system": "http://terminology.hl7.org/CodeSystem/consentscope", "code": "patient-privacy"}]
+  },
+  "patient": {"reference": "Patient/patient-001"},
+  "dateTime": "2024-06-15T10:00:00Z"
+}
+```
+
+[FHIR R4 Specification](https://hl7.org/fhir/R4/consent.html)
+
+---
+
 ## Quality Measure Resources
 
 ### Measure
@@ -817,6 +932,8 @@ Complete example JSON files for all resource types are available in the `example
 | Library | `library.json` |
 | ValueSet | `value_set.json` |
 | CodeSystem | `code_system.json` |
+| Questionnaire | `questionnaire.json` |
+| QuestionnaireResponse | `questionnaire_response.json` |
 | Group | `group.json` |
 | Bundle | `bundle.json`, `bundle_patient_diabetic.json`, `bundle_comprehensive.json` |
 

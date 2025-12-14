@@ -1,0 +1,413 @@
+{
+  "resourceType": "Questionnaire",
+  "id": "phq-9",
+  "meta": {
+    "versionId": "1",
+    "lastUpdated": "2024-06-15T10:00:00Z"
+  },
+  "url": "http://example.org/Questionnaire/phq-9",
+  "identifier": [
+    {
+      "system": "http://example.org/questionnaire-ids",
+      "value": "Q-PHQ-9"
+    }
+  ],
+  "version": "1.0.0",
+  "name": "phq_9",
+  "title": "Patient Health Questionnaire (PHQ-9)",
+  "status": "active",
+  "subjectType": ["Patient"],
+  "date": "2024-01-01",
+  "publisher": "Example Healthcare Organization",
+  "description": "A 9-item depression screening tool used to assess the presence and severity of depression symptoms",
+  "purpose": "Depression screening and severity assessment in primary care and mental health settings",
+  "item": [
+    {
+      "linkId": "1",
+      "text": "Little interest or pleasure in doing things",
+      "type": "choice",
+      "answerOption": [
+        {
+          "valueInteger": 0,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Not at all"
+            }
+          ]
+        },
+        {
+          "valueInteger": 1,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Several days"
+            }
+          ]
+        },
+        {
+          "valueInteger": 2,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "More than half the days"
+            }
+          ]
+        },
+        {
+          "valueInteger": 3,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Nearly every day"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "2",
+      "text": "Feeling down, depressed, or hopeless",
+      "type": "choice",
+      "answerOption": [
+        {
+          "valueInteger": 0,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Not at all"
+            }
+          ]
+        },
+        {
+          "valueInteger": 1,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Several days"
+            }
+          ]
+        },
+        {
+          "valueInteger": 2,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "More than half the days"
+            }
+          ]
+        },
+        {
+          "valueInteger": 3,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Nearly every day"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "3",
+      "text": "Trouble falling or staying asleep, or sleeping too much",
+      "type": "choice",
+      "answerOption": [
+        {
+          "valueInteger": 0,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Not at all"
+            }
+          ]
+        },
+        {
+          "valueInteger": 1,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Several days"
+            }
+          ]
+        },
+        {
+          "valueInteger": 2,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "More than half the days"
+            }
+          ]
+        },
+        {
+          "valueInteger": 3,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Nearly every day"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "4",
+      "text": "Feeling tired or having little energy",
+      "type": "choice",
+      "answerOption": [
+        {
+          "valueInteger": 0,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Not at all"
+            }
+          ]
+        },
+        {
+          "valueInteger": 1,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Several days"
+            }
+          ]
+        },
+        {
+          "valueInteger": 2,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "More than half the days"
+            }
+          ]
+        },
+        {
+          "valueInteger": 3,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Nearly every day"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "5",
+      "text": "Poor appetite or overeating",
+      "type": "choice",
+      "answerOption": [
+        {
+          "valueInteger": 0,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Not at all"
+            }
+          ]
+        },
+        {
+          "valueInteger": 1,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Several days"
+            }
+          ]
+        },
+        {
+          "valueInteger": 2,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "More than half the days"
+            }
+          ]
+        },
+        {
+          "valueInteger": 3,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Nearly every day"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "6",
+      "text": "Feeling bad about yourself - or that you are a failure or have let yourself or your family down",
+      "type": "choice",
+      "answerOption": [
+        {
+          "valueInteger": 0,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Not at all"
+            }
+          ]
+        },
+        {
+          "valueInteger": 1,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Several days"
+            }
+          ]
+        },
+        {
+          "valueInteger": 2,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "More than half the days"
+            }
+          ]
+        },
+        {
+          "valueInteger": 3,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Nearly every day"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "7",
+      "text": "Trouble concentrating on things, such as reading the newspaper or watching television",
+      "type": "choice",
+      "answerOption": [
+        {
+          "valueInteger": 0,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Not at all"
+            }
+          ]
+        },
+        {
+          "valueInteger": 1,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Several days"
+            }
+          ]
+        },
+        {
+          "valueInteger": 2,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "More than half the days"
+            }
+          ]
+        },
+        {
+          "valueInteger": 3,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Nearly every day"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "8",
+      "text": "Moving or speaking so slowly that other people could have noticed. Or the opposite - being so fidgety or restless that you have been moving around a lot more than usual",
+      "type": "choice",
+      "answerOption": [
+        {
+          "valueInteger": 0,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Not at all"
+            }
+          ]
+        },
+        {
+          "valueInteger": 1,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Several days"
+            }
+          ]
+        },
+        {
+          "valueInteger": 2,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "More than half the days"
+            }
+          ]
+        },
+        {
+          "valueInteger": 3,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Nearly every day"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "9",
+      "text": "Thoughts that you would be better off dead, or of hurting yourself in some way",
+      "type": "choice",
+      "answerOption": [
+        {
+          "valueInteger": 0,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Not at all"
+            }
+          ]
+        },
+        {
+          "valueInteger": 1,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Several days"
+            }
+          ]
+        },
+        {
+          "valueInteger": 2,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "More than half the days"
+            }
+          ]
+        },
+        {
+          "valueInteger": 3,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionDisplay",
+              "valueString": "Nearly every day"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
