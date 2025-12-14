@@ -409,6 +409,16 @@ RESOURCE_RULES: dict[str, dict[str, Any]] = {
             },
         },
     },
+    "Group": {
+        "required": ["type", "actual"],
+        "code_bindings": {
+            "type": {
+                "valueset": "http://hl7.org/fhir/ValueSet/group-type",
+                "strength": "required",
+                "allowed_values": ["person", "animal", "practitioner", "device", "medication", "substance"],
+            },
+        },
+    },
 }
 
 

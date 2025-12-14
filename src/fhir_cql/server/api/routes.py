@@ -41,6 +41,7 @@ SUPPORTED_TYPES = [
     "MeasureReport",
     "ValueSet",
     "CodeSystem",
+    "Group",
     "Library",
 ]
 
@@ -194,6 +195,416 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
             ],
         }
         return JSONResponse(content=config, media_type="application/json")
+
+    # =========================================================================
+    # Bulk Data Export Operations
+    # =========================================================================
+
+    @router.get("/$export", tags=["Bulk Data"])
+    async def system_export(
+        request: Request,
+        _type: str | None = Query(default=None, alias="_type"),
+        _since: str | None = Query(default=None, alias="_since"),
+    ) -> Response:
+        """Initiate system-level bulk data export.
+
+        Exports all resources from the server.
+
+        Headers required:
+        - Accept: application/fhir+ndjson
+        - Prefer: respond-async
+
+        Parameters:
+            _type: Comma-separated list of resource types to export
+            _since: Only export resources updated after this datetime
+
+        Returns:
+            202 Accepted with Content-Location header for status polling
+        """
+        from .bulk import ALL_EXPORT_TYPES, create_export_job, run_export
+
+        # Validate headers
+        prefer = request.headers.get("Prefer", "")
+        if "respond-async" not in prefer:
+            outcome = OperationOutcome.error(
+                "Bulk export requires 'Prefer: respond-async' header",
+                code="required",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        # Parse resource types
+        resource_types = _type.split(",") if _type else ALL_EXPORT_TYPES
+
+        # Parse since datetime
+        since = None
+        if _since:
+            try:
+                from datetime import datetime
+
+                since = datetime.fromisoformat(_since.replace("Z", "+00:00"))
+            except ValueError:
+                outcome = OperationOutcome.error(
+                    f"Invalid _since datetime: {_since}",
+                    code="invalid",
+                )
+                return JSONResponse(
+                    content=outcome.model_dump(exclude_none=True),
+                    status_code=400,
+                    media_type=FHIR_JSON,
+                )
+
+        # Create and start export job
+        job = create_export_job(resource_types, patient_ids=None, since=since)
+        # Run export immediately for in-memory store (fast)
+        await run_export(job, store)
+
+        return Response(
+            status_code=202,
+            headers={
+                "Content-Location": f"{get_base_url(request)}/bulk-status/{job.id}",
+            },
+        )
+
+    @router.get("/Patient/$export", tags=["Bulk Data"])
+    async def patient_export(
+        request: Request,
+        _type: str | None = Query(default=None, alias="_type"),
+        _since: str | None = Query(default=None, alias="_since"),
+    ) -> Response:
+        """Initiate patient-level bulk data export.
+
+        Exports Patient resources and related clinical data.
+
+        Headers required:
+        - Accept: application/fhir+ndjson
+        - Prefer: respond-async
+
+        Parameters:
+            _type: Comma-separated list of resource types to export
+            _since: Only export resources updated after this datetime
+
+        Returns:
+            202 Accepted with Content-Location header for status polling
+        """
+        from .bulk import PATIENT_EXPORT_TYPES, create_export_job, run_export
+
+        # Validate headers
+        prefer = request.headers.get("Prefer", "")
+        if "respond-async" not in prefer:
+            outcome = OperationOutcome.error(
+                "Bulk export requires 'Prefer: respond-async' header",
+                code="required",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        # Parse resource types
+        resource_types = _type.split(",") if _type else PATIENT_EXPORT_TYPES
+
+        # Parse since datetime
+        since = None
+        if _since:
+            try:
+                from datetime import datetime
+
+                since = datetime.fromisoformat(_since.replace("Z", "+00:00"))
+            except ValueError:
+                outcome = OperationOutcome.error(
+                    f"Invalid _since datetime: {_since}",
+                    code="invalid",
+                )
+                return JSONResponse(
+                    content=outcome.model_dump(exclude_none=True),
+                    status_code=400,
+                    media_type=FHIR_JSON,
+                )
+
+        # Create and start export job
+        job = create_export_job(resource_types, patient_ids=None, since=since)
+        # Run export immediately for in-memory store (fast)
+        await run_export(job, store)
+
+        return Response(
+            status_code=202,
+            headers={
+                "Content-Location": f"{get_base_url(request)}/bulk-status/{job.id}",
+            },
+        )
+
+    @router.get("/Group/{group_id}/$export", tags=["Bulk Data"])
+    async def group_export(
+        request: Request,
+        group_id: str,
+        _type: str | None = Query(default=None, alias="_type"),
+        _since: str | None = Query(default=None, alias="_since"),
+    ) -> Response:
+        """Initiate group-level bulk data export.
+
+        Exports resources for all patients in the specified Group.
+
+        Headers required:
+        - Accept: application/fhir+ndjson
+        - Prefer: respond-async
+
+        Parameters:
+            group_id: The Group resource ID
+            _type: Comma-separated list of resource types to export
+            _since: Only export resources updated after this datetime
+
+        Returns:
+            202 Accepted with Content-Location header for status polling
+        """
+        from .bulk import PATIENT_EXPORT_TYPES, create_export_job, run_export
+
+        # Validate headers
+        prefer = request.headers.get("Prefer", "")
+        if "respond-async" not in prefer:
+            outcome = OperationOutcome.error(
+                "Bulk export requires 'Prefer: respond-async' header",
+                code="required",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        # Get the Group and extract patient IDs
+        group = store.read("Group", group_id)
+        if not group:
+            outcome = OperationOutcome.not_found("Group", group_id)
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=404,
+                media_type=FHIR_JSON,
+            )
+
+        patient_ids = []
+        for member in group.get("member", []):
+            ref = member.get("entity", {}).get("reference", "")
+            if ref.startswith("Patient/"):
+                patient_ids.append(ref.split("/")[1])
+
+        if not patient_ids:
+            outcome = OperationOutcome.error(
+                f"Group/{group_id} has no Patient members",
+                code="not-found",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=422,
+                media_type=FHIR_JSON,
+            )
+
+        # Parse resource types
+        resource_types = _type.split(",") if _type else PATIENT_EXPORT_TYPES
+
+        # Parse since datetime
+        since = None
+        if _since:
+            try:
+                from datetime import datetime
+
+                since = datetime.fromisoformat(_since.replace("Z", "+00:00"))
+            except ValueError:
+                outcome = OperationOutcome.error(
+                    f"Invalid _since datetime: {_since}",
+                    code="invalid",
+                )
+                return JSONResponse(
+                    content=outcome.model_dump(exclude_none=True),
+                    status_code=400,
+                    media_type=FHIR_JSON,
+                )
+
+        # Create and start export job
+        job = create_export_job(resource_types, patient_ids=patient_ids, since=since)
+        # Run export immediately for in-memory store (fast)
+        await run_export(job, store)
+
+        return Response(
+            status_code=202,
+            headers={
+                "Content-Location": f"{get_base_url(request)}/bulk-status/{job.id}",
+            },
+        )
+
+    @router.get("/bulk-status/{job_id}", tags=["Bulk Data"])
+    async def export_status(
+        request: Request,
+        job_id: str,
+    ) -> Response:
+        """Check the status of a bulk export job.
+
+        Returns:
+            - 202 Accepted if in progress (with X-Progress header)
+            - 200 OK with output manifest if complete
+            - 500 Error if job failed
+        """
+        from .bulk import get_export_job
+
+        job = get_export_job(job_id)
+        if not job:
+            outcome = OperationOutcome.error(
+                f"Export job {job_id} not found",
+                code="not-found",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=404,
+                media_type=FHIR_JSON,
+            )
+
+        if job.status == "error":
+            outcome = OperationOutcome.error(
+                f"Export job failed: {job.error}",
+                code="exception",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=500,
+                media_type=FHIR_JSON,
+            )
+
+        if job.status in ("accepted", "in-progress"):
+            return Response(
+                status_code=202,
+                headers={
+                    "X-Progress": f"{job.progress}%",
+                    "Retry-After": "1",
+                },
+            )
+
+        # Job is complete - return manifest
+        base = get_base_url(request)
+        output = []
+        for resource_type, resources in job.output_files.items():
+            if resources:
+                output.append({
+                    "type": resource_type,
+                    "url": f"{base}/bulk-output/{job.id}/{resource_type}.ndjson",
+                    "count": len(resources),
+                })
+
+        manifest = {
+            "transactionTime": job.request_time.isoformat() + "Z",
+            "request": f"{base}/$export",
+            "requiresAccessToken": False,
+            "output": output,
+            "error": [],
+        }
+
+        return JSONResponse(
+            content=manifest,
+            media_type="application/json",
+        )
+
+    @router.get("/bulk-output/{job_id}/{filename}", tags=["Bulk Data"])
+    async def export_output(
+        request: Request,
+        job_id: str,
+        filename: str,
+    ) -> Response:
+        """Download bulk export output file.
+
+        Returns NDJSON formatted data for the specified resource type.
+
+        Parameters:
+            job_id: The export job ID
+            filename: The output file name (e.g., "Patient.ndjson")
+        """
+        from .bulk import get_export_job, resources_to_ndjson
+
+        job = get_export_job(job_id)
+        if not job:
+            outcome = OperationOutcome.error(
+                f"Export job {job_id} not found",
+                code="not-found",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=404,
+                media_type=FHIR_JSON,
+            )
+
+        if job.status != "complete":
+            outcome = OperationOutcome.error(
+                "Export job is not yet complete",
+                code="transient",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        # Extract resource type from filename
+        if not filename.endswith(".ndjson"):
+            outcome = OperationOutcome.error(
+                "Invalid filename format. Expected {type}.ndjson",
+                code="invalid",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        resource_type = filename.replace(".ndjson", "")
+        resources = job.output_files.get(resource_type)
+
+        if resources is None:
+            outcome = OperationOutcome.error(
+                f"No output file for resource type: {resource_type}",
+                code="not-found",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=404,
+                media_type=FHIR_JSON,
+            )
+
+        ndjson = resources_to_ndjson(resources)
+
+        return Response(
+            content=ndjson,
+            status_code=200,
+            media_type="application/fhir+ndjson",
+        )
+
+    @router.delete("/bulk-status/{job_id}", tags=["Bulk Data"])
+    async def delete_export(
+        request: Request,
+        job_id: str,
+    ) -> Response:
+        """Delete/cancel a bulk export job.
+
+        Removes the export job and any generated output files.
+
+        Returns:
+            204 No Content on success
+        """
+        from .bulk import delete_export_job
+
+        if delete_export_job(job_id):
+            return Response(status_code=204)
+
+        outcome = OperationOutcome.error(
+            f"Export job {job_id} not found",
+            code="not-found",
+        )
+        return JSONResponse(
+            content=outcome.model_dump(exclude_none=True),
+            status_code=404,
+            media_type=FHIR_JSON,
+        )
 
     # =========================================================================
     # Patient Operations
@@ -427,8 +838,37 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
                 if patient:
                     patients = [patient]
             elif subject.startswith("Group/"):
-                # TODO: Handle Group members
-                pass
+                # Handle Group members
+                group_id = subject.split("/")[1]
+                group = store.read("Group", group_id)
+                if not group:
+                    outcome = OperationOutcome.not_found("Group", group_id)
+                    return JSONResponse(
+                        content=outcome.model_dump(exclude_none=True),
+                        status_code=404,
+                        media_type=FHIR_JSON,
+                    )
+
+                # Extract Patient members from the Group
+                for member in group.get("member", []):
+                    entity = member.get("entity", {})
+                    ref = entity.get("reference", "")
+                    if ref.startswith("Patient/"):
+                        member_patient_id = ref.split("/")[1]
+                        member_patient = store.read("Patient", member_patient_id)
+                        if member_patient:
+                            patients.append(member_patient)
+
+                if not patients:
+                    outcome = OperationOutcome.error(
+                        f"Group/{group_id} has no Patient members or members not found",
+                        code="not-found",
+                    )
+                    return JSONResponse(
+                        content=outcome.model_dump(exclude_none=True),
+                        status_code=422,
+                        media_type=FHIR_JSON,
+                    )
             else:
                 # Try as bare patient ID
                 patient = store.read("Patient", subject)
@@ -609,6 +1049,57 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
             content=result.to_operation_outcome(),
             media_type=FHIR_JSON,
         )
+
+    # =========================================================================
+    # Patient-specific $diff (must be before compartment route)
+    # =========================================================================
+
+    @router.get("/Patient/{patient_id}/$diff", tags=["Operations"])
+    async def diff_patient_versions(
+        request: Request,
+        patient_id: str,
+        version: str = Query(..., description="Version ID to compare against current"),
+    ) -> Response:
+        """Compare current Patient version with a previous version.
+
+        This specific route is needed to take precedence over the compartment route.
+        """
+        from .diff import compute_diff, diff_to_parameters
+
+        # Get current version
+        current = store.read("Patient", patient_id)
+        if not current:
+            outcome = OperationOutcome.not_found("Patient", patient_id)
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=404,
+                media_type=FHIR_JSON,
+            )
+
+        # Get previous version from history
+        history = store.history("Patient", patient_id)
+        previous = None
+        for hist_resource in history:
+            if hist_resource.get("meta", {}).get("versionId") == version:
+                previous = hist_resource
+                break
+
+        if not previous:
+            outcome = OperationOutcome.error(
+                f"Version {version} not found for Patient/{patient_id}",
+                code="not-found",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=404,
+                media_type=FHIR_JSON,
+            )
+
+        # Compute diff
+        diff = compute_diff(previous, current)
+        result = diff_to_parameters(diff)
+
+        return JSONResponse(content=result, media_type=FHIR_JSON)
 
     @router.get("/Patient/{patient_id}/{resource_type}", tags=["Compartment"])
     async def compartment_search(
@@ -1235,6 +1726,173 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
         )
 
     # =========================================================================
+    # Diff Operations
+    # =========================================================================
+
+    @router.get("/{resource_type}/{resource_id}/$diff", tags=["Operations"])
+    async def diff_versions(
+        request: Request,
+        resource_type: str,
+        resource_id: str,
+        version: str = Query(..., description="Version ID to compare against current"),
+    ) -> Response:
+        """Compare current version with a previous version.
+
+        Returns the differences as JSON Patch-style operations in a
+        Parameters resource.
+
+        Parameters:
+            resource_type: The resource type
+            resource_id: The resource ID
+            version: Version ID to compare against current version
+        """
+        from .diff import compute_diff, diff_to_parameters
+
+        if resource_type not in SUPPORTED_TYPES:
+            outcome = OperationOutcome.error(
+                f"Resource type '{resource_type}' is not supported",
+                code="not-supported",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        # Get current version
+        current = store.read(resource_type, resource_id)
+        if not current:
+            outcome = OperationOutcome.not_found(resource_type, resource_id)
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=404,
+                media_type=FHIR_JSON,
+            )
+
+        # Get previous version from history
+        history = store.history(resource_type, resource_id)
+        previous = None
+        for hist_resource in history:
+            if hist_resource.get("meta", {}).get("versionId") == version:
+                previous = hist_resource
+                break
+
+        if not previous:
+            outcome = OperationOutcome.error(
+                f"Version {version} not found for {resource_type}/{resource_id}",
+                code="not-found",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=404,
+                media_type=FHIR_JSON,
+            )
+
+        # Compute diff
+        diff = compute_diff(previous, current)
+        result = diff_to_parameters(diff)
+
+        return JSONResponse(content=result, media_type=FHIR_JSON)
+
+    @router.post("/{resource_type}/$diff", tags=["Operations"])
+    async def diff_resources(
+        request: Request,
+        resource_type: str,
+    ) -> Response:
+        """Compare two resources provided in Parameters body.
+
+        The request body should be a Parameters resource with:
+        - source: The original resource
+        - target: The resource to compare against
+
+        Returns the differences as JSON Patch-style operations.
+        """
+        from .diff import compute_diff, diff_to_parameters
+
+        if resource_type not in SUPPORTED_TYPES:
+            outcome = OperationOutcome.error(
+                f"Resource type '{resource_type}' is not supported",
+                code="not-supported",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        try:
+            body = await request.json()
+        except Exception as e:
+            outcome = OperationOutcome.error(f"Invalid JSON: {e}", code="invalid")
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        # Extract source and target from Parameters
+        source = None
+        target = None
+
+        if body.get("resourceType") != "Parameters":
+            outcome = OperationOutcome.error(
+                "Request body must be a Parameters resource",
+                code="invalid",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        for param in body.get("parameter", []):
+            name = param.get("name")
+            if name == "source" and "resource" in param:
+                source = param["resource"]
+            elif name == "target" and "resource" in param:
+                target = param["resource"]
+
+        if not source or not target:
+            outcome = OperationOutcome.error(
+                "Parameters must contain 'source' and 'target' resources",
+                code="required",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        # Validate resource types match
+        if source.get("resourceType") != resource_type:
+            outcome = OperationOutcome.error(
+                f"Source resource type ({source.get('resourceType')}) does not match URL ({resource_type})",
+                code="invalid",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        if target.get("resourceType") != resource_type:
+            outcome = OperationOutcome.error(
+                f"Target resource type ({target.get('resourceType')}) does not match URL ({resource_type})",
+                code="invalid",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        # Compute diff
+        diff = compute_diff(source, target)
+        result = diff_to_parameters(diff)
+
+        return JSONResponse(content=result, media_type=FHIR_JSON)
+
+    # =========================================================================
     # Resource Operations
     # =========================================================================
 
@@ -1567,6 +2225,11 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
 
         The server assigns an ID to the resource.
         Returns 201 Created with Location header.
+
+        Supports conditional create with If-None-Exist header:
+        - If no match: creates the resource (201)
+        - If one match: returns the existing resource (200)
+        - If multiple matches: returns 412 Precondition Failed
         """
         if resource_type not in SUPPORTED_TYPES:
             outcome = OperationOutcome.error(
@@ -1601,6 +2264,45 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
                 media_type=FHIR_JSON,
             )
 
+        # Handle conditional create with If-None-Exist header
+        if_none_exist = request.headers.get("If-None-Exist")
+        if if_none_exist:
+            # Parse search parameters from header value
+            from urllib.parse import parse_qs
+
+            search_params: dict[str, Any] = {}
+            for key, values in parse_qs(if_none_exist).items():
+                search_params[key] = values[0] if len(values) == 1 else values
+
+            # Search for existing matches
+            matches, total = store.search(resource_type, search_params, _count=2, _offset=0)
+
+            if total == 1:
+                # Return existing resource (200 OK, not 201)
+                existing = matches[0]
+                version = existing.get("meta", {}).get("versionId", "1")
+                return JSONResponse(
+                    content=existing,
+                    status_code=200,
+                    media_type=FHIR_JSON,
+                    headers={
+                        "Location": f"{get_base_url(request)}/{resource_type}/{existing['id']}",
+                        "ETag": f'W/"{version}"',
+                    },
+                )
+            elif total > 1:
+                # Multiple matches - 412 Precondition Failed
+                outcome = OperationOutcome.error(
+                    f"Conditional create failed: {total} resources match the criteria",
+                    code="duplicate",
+                )
+                return JSONResponse(
+                    content=outcome.model_dump(exclude_none=True),
+                    status_code=412,
+                    media_type=FHIR_JSON,
+                )
+            # else: no matches, proceed with create
+
         # Create resource
         created = store.create(body)
         resource_id = created["id"]
@@ -1615,6 +2317,133 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
                 "ETag": f'W/"{version}"',
             },
         )
+
+    @router.put("/{resource_type}", tags=["Conditional Update"])
+    async def conditional_update(
+        request: Request,
+        resource_type: str,
+    ) -> Response:
+        """Update a resource by search criteria (conditional update).
+
+        Search parameters are provided as query parameters.
+        - If no match: creates a new resource (201)
+        - If one match: updates the matched resource (200)
+        - If multiple matches: returns 412 Precondition Failed
+        """
+        if resource_type not in SUPPORTED_TYPES:
+            outcome = OperationOutcome.error(
+                f"Resource type '{resource_type}' is not supported",
+                code="not-supported",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        # Get search params from query string
+        search_params: dict[str, Any] = {}
+        for key, value in request.query_params.multi_items():
+            if key.startswith("_"):
+                continue  # Skip special params
+            if key in search_params:
+                existing = search_params[key]
+                if isinstance(existing, list):
+                    existing.append(value)
+                else:
+                    search_params[key] = [existing, value]
+            else:
+                search_params[key] = value
+
+        if not search_params:
+            outcome = OperationOutcome.error(
+                "Conditional update requires search parameters",
+                code="required",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        try:
+            body = await request.json()
+        except Exception as e:
+            outcome = OperationOutcome.error(f"Invalid JSON: {e}", code="invalid")
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        # Validate resource type
+        if body.get("resourceType") != resource_type:
+            outcome = OperationOutcome.error(
+                f"Resource type in body ({body.get('resourceType')}) does not match URL ({resource_type})",
+                code="invalid",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        # Search for matching resources
+        matches, total = store.search(resource_type, search_params, _count=2, _offset=0)
+
+        if total == 0:
+            # No match - create new resource
+            created = store.create(body)
+            resource_id = created["id"]
+            version = created.get("meta", {}).get("versionId", "1")
+            return JSONResponse(
+                content=created,
+                status_code=201,
+                media_type=FHIR_JSON,
+                headers={
+                    "Location": f"{get_base_url(request)}/{resource_type}/{resource_id}",
+                    "ETag": f'W/"{version}"',
+                },
+            )
+        elif total == 1:
+            # Single match - update the resource
+            existing = matches[0]
+            resource_id = existing["id"]
+
+            # Validate ID in body if present
+            if body.get("id") and body.get("id") != resource_id:
+                outcome = OperationOutcome.error(
+                    f"Resource ID in body ({body.get('id')}) does not match matched resource ({resource_id})",
+                    code="invalid",
+                )
+                return JSONResponse(
+                    content=outcome.model_dump(exclude_none=True),
+                    status_code=400,
+                    media_type=FHIR_JSON,
+                )
+
+            updated = store.update(resource_type, resource_id, body)
+            version = updated.get("meta", {}).get("versionId", "1")
+            return JSONResponse(
+                content=updated,
+                status_code=200,
+                media_type=FHIR_JSON,
+                headers={
+                    "Location": f"{get_base_url(request)}/{resource_type}/{resource_id}",
+                    "ETag": f'W/"{version}"',
+                },
+            )
+        else:
+            # Multiple matches - 412 Precondition Failed
+            outcome = OperationOutcome.error(
+                f"Conditional update failed: {total} resources match the criteria",
+                code="multiple-matches",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=412,
+                media_type=FHIR_JSON,
+            )
 
     @router.put("/{resource_type}/{resource_id}", tags=["Update"])
     async def update(
@@ -1811,6 +2640,65 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
                 "ETag": f'W/"{version}"',
             },
         )
+
+    @router.delete("/{resource_type}", tags=["Conditional Delete"])
+    async def conditional_delete(
+        request: Request,
+        resource_type: str,
+    ) -> Response:
+        """Delete resources by search criteria (conditional delete).
+
+        Search parameters are provided as query parameters.
+        Deletes all resources that match the criteria.
+        Returns 204 No Content on success.
+        """
+        if resource_type not in SUPPORTED_TYPES:
+            outcome = OperationOutcome.error(
+                f"Resource type '{resource_type}' is not supported",
+                code="not-supported",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        # Get search params from query string
+        search_params: dict[str, Any] = {}
+        for key, value in request.query_params.multi_items():
+            if key.startswith("_"):
+                continue  # Skip special params
+            if key in search_params:
+                existing = search_params[key]
+                if isinstance(existing, list):
+                    existing.append(value)
+                else:
+                    search_params[key] = [existing, value]
+            else:
+                search_params[key] = value
+
+        if not search_params:
+            outcome = OperationOutcome.error(
+                "Conditional delete requires search parameters to prevent accidental deletion of all resources",
+                code="required",
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        # Search for matching resources
+        matches, total = store.search(resource_type, search_params, _count=10000, _offset=0)
+
+        # Delete all matches
+        deleted_count = 0
+        for resource in matches:
+            if store.delete(resource_type, resource["id"]):
+                deleted_count += 1
+
+        # Return 204 regardless of whether any were deleted (FHIR spec)
+        return Response(status_code=204)
 
     @router.delete("/{resource_type}/{resource_id}", tags=["Delete"])
     async def delete(

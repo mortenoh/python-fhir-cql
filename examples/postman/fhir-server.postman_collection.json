@@ -29,6 +29,16 @@
       "key": "encounterId",
       "value": "encounter-001",
       "type": "string"
+    },
+    {
+      "key": "groupId",
+      "value": "group-001",
+      "type": "string"
+    },
+    {
+      "key": "exportJobId",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -985,6 +995,60 @@
           }
         },
         {
+          "name": "Measure $evaluate-measure (Group Subject)",
+          "description": "Evaluate a measure for all patients in a Group",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Measure/measure-001/$evaluate-measure?subject=Group/{{groupId}}&periodStart=2024-01-01&periodEnd=2024-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["Measure", "measure-001", "$evaluate-measure"],
+              "query": [
+                {"key": "subject", "value": "Group/{{groupId}}"},
+                {"key": "periodStart", "value": "2024-01-01"},
+                {"key": "periodEnd", "value": "2024-12-31"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Patient $diff (Version)",
+          "description": "Compare current version with a previous version",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/Patient/{{patientId}}/$diff?version=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["Patient", "{{patientId}}", "$diff"],
+              "query": [
+                {"key": "version", "value": "1"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Patient $diff (Two Resources)",
+          "description": "Compare two Patient resources provided in body",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"},
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Parameters\",\n  \"parameter\": [\n    {\n      \"name\": \"source\",\n      \"resource\": {\n        \"resourceType\": \"Patient\",\n        \"id\": \"1\",\n        \"name\": [{\"family\": \"Original\"}],\n        \"gender\": \"male\"\n      }\n    },\n    {\n      \"name\": \"target\",\n      \"resource\": {\n        \"resourceType\": \"Patient\",\n        \"id\": \"1\",\n        \"name\": [{\"family\": \"Modified\"}],\n        \"gender\": \"male\",\n        \"active\": true\n      }\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/Patient/$diff"
+          }
+        },
+        {
           "name": "ValueSet $expand",
           "description": "Expand a ValueSet to get all codes",
           "request": {
@@ -1148,6 +1212,201 @@
               {"key": "Accept", "value": "application/fhir+json"}
             ],
             "url": "{{baseUrl}}/Patient?_has:Condition:subject:code=44054006&_revinclude=Condition:subject"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Group",
+      "item": [
+        {
+          "name": "Create Group",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Group\",\n  \"type\": \"person\",\n  \"actual\": true,\n  \"name\": \"Diabetes Patient Group\",\n  \"member\": [\n    {\"entity\": {\"reference\": \"Patient/{{patientId}}\"}}\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/Group"
+          }
+        },
+        {
+          "name": "Read Group",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/Group/{{groupId}}"
+          }
+        },
+        {
+          "name": "Search Groups",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/Group?type=person"
+          }
+        },
+        {
+          "name": "Update Group",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Group\",\n  \"id\": \"{{groupId}}\",\n  \"type\": \"person\",\n  \"actual\": true,\n  \"name\": \"Updated Patient Group\",\n  \"member\": [\n    {\"entity\": {\"reference\": \"Patient/{{patientId}}\"}}\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/Group/{{groupId}}"
+          }
+        },
+        {
+          "name": "Delete Group",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/Group/{{groupId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Conditional Operations",
+      "item": [
+        {
+          "name": "Conditional Create (If-None-Exist)",
+          "description": "Create Patient only if no match exists for the identifier",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"},
+              {"key": "If-None-Exist", "value": "identifier=http://hospital.org|12345"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Patient\",\n  \"identifier\": [{\n    \"system\": \"http://hospital.org\",\n    \"value\": \"12345\"\n  }],\n  \"name\": [{\"family\": \"Conditional\", \"given\": [\"Test\"]}],\n  \"gender\": \"male\"\n}"
+            },
+            "url": "{{baseUrl}}/Patient"
+          }
+        },
+        {
+          "name": "Conditional Update (by identifier)",
+          "description": "Update Patient by search criteria instead of ID",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Patient\",\n  \"identifier\": [{\n    \"system\": \"http://hospital.org\",\n    \"value\": \"12345\"\n  }],\n  \"name\": [{\"family\": \"Updated\", \"given\": [\"Conditional\"]}],\n  \"gender\": \"male\"\n}"
+            },
+            "url": "{{baseUrl}}/Patient?identifier=http://hospital.org|12345"
+          }
+        },
+        {
+          "name": "Conditional Delete (by identifier)",
+          "description": "Delete all Patients matching the search criteria",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/Patient?identifier=http://hospital.org|12345"
+          }
+        },
+        {
+          "name": "Conditional Delete (Observations by status)",
+          "description": "Delete all cancelled Observations",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/Observation?status=cancelled"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bulk Data Export",
+      "item": [
+        {
+          "name": "System $export",
+          "description": "Export all resources from the server",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+ndjson"},
+              {"key": "Prefer", "value": "respond-async"}
+            ],
+            "url": "{{baseUrl}}/$export"
+          }
+        },
+        {
+          "name": "System $export (with type filter)",
+          "description": "Export specific resource types",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+ndjson"},
+              {"key": "Prefer", "value": "respond-async"}
+            ],
+            "url": "{{baseUrl}}/$export?_type=Patient,Observation,Condition"
+          }
+        },
+        {
+          "name": "Patient $export",
+          "description": "Export all Patient data and related clinical resources",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+ndjson"},
+              {"key": "Prefer", "value": "respond-async"}
+            ],
+            "url": "{{baseUrl}}/Patient/$export"
+          }
+        },
+        {
+          "name": "Group $export",
+          "description": "Export data for all patients in a Group",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+ndjson"},
+              {"key": "Prefer", "value": "respond-async"}
+            ],
+            "url": "{{baseUrl}}/Group/{{groupId}}/$export"
+          }
+        },
+        {
+          "name": "Check Export Status",
+          "description": "Check the status of a bulk export job",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/bulk-status/{{exportJobId}}"
+          }
+        },
+        {
+          "name": "Download Export Output",
+          "description": "Download NDJSON output file for a resource type",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+ndjson"}
+            ],
+            "url": "{{baseUrl}}/bulk-output/{{exportJobId}}/Patient.ndjson"
+          }
+        },
+        {
+          "name": "Delete Export Job",
+          "description": "Cancel/delete a bulk export job",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/bulk-status/{{exportJobId}}"
           }
         }
       ]

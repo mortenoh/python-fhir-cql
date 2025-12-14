@@ -120,11 +120,18 @@ class ConditionGenerator(FHIRResourceGenerator):
         # Add abatement date for resolved conditions
         if clinical_status_code in ("resolved", "inactive", "remission"):
             onset = date.fromisoformat(onset_date)
-            abatement_date = self._generate_date(
-                start_date=onset + timedelta(days=30),
-                end_date=date.today(),
-            )
-            condition["abatementDateTime"] = abatement_date
+            min_abatement = onset + timedelta(days=30)
+            today = date.today()
+            # Only add abatement if enough time has passed
+            if min_abatement <= today:
+                abatement_date = self._generate_date(
+                    start_date=min_abatement,
+                    end_date=today,
+                )
+                condition["abatementDateTime"] = abatement_date
+            else:
+                # Condition resolved recently, use today's date
+                condition["abatementDateTime"] = today.isoformat()
 
         # Add severity for some conditions
         if self.faker.random.random() < 0.3:
