@@ -1,0 +1,144 @@
+{
+  "resourceType": "Group",
+  "id": "group-example-001",
+  "meta": {
+    "versionId": "1",
+    "lastUpdated": "2024-01-15T12:00:00Z"
+  },
+  "identifier": [
+    {
+      "system": "http://example.org/groups",
+      "value": "GRP-DIAB-STUDY-001"
+    }
+  ],
+  "active": true,
+  "type": "person",
+  "actual": true,
+  "code": {
+    "coding": [
+      {
+        "system": "http://example.org/group-types",
+        "code": "study-cohort",
+        "display": "Study Cohort"
+      }
+    ],
+    "text": "Diabetes Research Study Cohort"
+  },
+  "name": "Diabetes Management Study - Cohort A",
+  "quantity": 3,
+  "managingEntity": {
+    "reference": "Organization/organization-001",
+    "display": "General Hospital Research Department"
+  },
+  "characteristic": [
+    {
+      "code": {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "73211009",
+            "display": "Diabetes mellitus"
+          }
+        ]
+      },
+      "valueCodeableConcept": {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "44054006",
+            "display": "Type 2 diabetes mellitus"
+          }
+        ]
+      },
+      "exclude": false
+    },
+    {
+      "code": {
+        "coding": [
+          {
+            "system": "http://loinc.org",
+            "code": "30525-0",
+            "display": "Age"
+          }
+        ]
+      },
+      "valueRange": {
+        "low": {
+          "value": 40,
+          "unit": "years",
+          "system": "http://unitsofmeasure.org",
+          "code": "a"
+        },
+        "high": {
+          "value": 65,
+          "unit": "years",
+          "system": "http://unitsofmeasure.org",
+          "code": "a"
+        }
+      },
+      "exclude": false
+    },
+    {
+      "code": {
+        "coding": [
+          {
+            "system": "http://loinc.org",
+            "code": "4548-4",
+            "display": "Hemoglobin A1c"
+          }
+        ]
+      },
+      "valueRange": {
+        "low": {
+          "value": 7.0,
+          "unit": "%",
+          "system": "http://unitsofmeasure.org",
+          "code": "%"
+        },
+        "high": {
+          "value": 10.0,
+          "unit": "%",
+          "system": "http://unitsofmeasure.org",
+          "code": "%"
+        }
+      },
+      "exclude": false,
+      "period": {
+        "start": "2023-01-01",
+        "end": "2024-01-01"
+      }
+    }
+  ],
+  "member": [
+    {
+      "entity": {
+        "reference": "Patient/patient-001",
+        "display": "John Smith"
+      },
+      "period": {
+        "start": "2024-01-01"
+      },
+      "inactive": false
+    },
+    {
+      "entity": {
+        "reference": "Patient/patient-002",
+        "display": "Jane Doe"
+      },
+      "period": {
+        "start": "2024-01-05"
+      },
+      "inactive": false
+    },
+    {
+      "entity": {
+        "reference": "Patient/patient-003",
+        "display": "Robert Johnson"
+      },
+      "period": {
+        "start": "2024-01-10"
+      },
+      "inactive": false
+    }
+  ]
+}

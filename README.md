@@ -266,23 +266,26 @@ fhir terminology <command> # Terminology Service commands
 | `16_clinical_calculations.cql` | BMI, eGFR, etc. |
 | `17_type_conversions.cql` | Type conversions |
 
-### FHIR Resources (14 files)
+### FHIR Resources (45 files)
 
-| File | Description |
-|------|-------------|
-| `patient.json` | Complete Patient resource |
-| `patient_john_smith.json` | Detailed patient |
-| `patient_diabetic.json` | Diabetic patient |
-| `condition.json` | Condition resource |
-| `condition_diabetes.json` | Diabetes condition |
-| `observation_bp.json` | Blood pressure |
-| `observation_lab.json` | Lab result |
-| `observation_hba1c.json` | HbA1c result |
-| `observation_glucose.json` | Blood glucose |
-| `observation_blood_pressure.json` | BP panel |
-| `medication_request.json` | Prescription |
-| `bundle.json` | Resource bundle |
-| `bundle_patient_diabetic.json` | Complete diabetic patient bundle |
+**34 supported resource types** with example JSON files in `examples/fhir/`:
+
+| Category | Example Resources |
+|----------|-------------------|
+| Administrative | Patient, Practitioner, PractitionerRole, Organization, Location, RelatedPerson |
+| Clinical | Encounter, Condition, Observation, Procedure, DiagnosticReport, AllergyIntolerance, Immunization |
+| Medications | Medication, MedicationRequest |
+| Care Management | CarePlan, CareTeam, Goal, Task |
+| Scheduling | Appointment, Schedule, Slot |
+| Financial | Coverage, Claim, ExplanationOfBenefit |
+| Devices | Device |
+| Documents | ServiceRequest, DocumentReference |
+| Quality Measures | Measure, MeasureReport, Library |
+| Terminology | ValueSet, CodeSystem |
+| Groups | Group |
+| Infrastructure | Bundle |
+
+See [Supported Resources](docs/fhir-server/resources/index.md) for complete documentation.
 
 ## Documentation
 
@@ -299,6 +302,7 @@ fhir terminology <command> # Terminology Service commands
 - [CQL API](docs/cql-api.md)
 - [ELM Guide](docs/elm-guide.md) - ELM loading, evaluation, and CQL-to-ELM export
 - [FHIR Server Guide](docs/fhir-server-guide.md) - REST API, synthetic data, terminology operations
+- [Supported Resources](docs/fhir-server/resources/index.md) - All 34 supported FHIR resource types
 - [CDS Hooks Guide](docs/cds-hooks-guide.md) - Building clinical decision support services
 - [FHIRPath & CQL Reference](docs/fhirpath-cql-tutorial.md)
 

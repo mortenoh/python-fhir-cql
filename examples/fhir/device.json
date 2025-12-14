@@ -1,0 +1,79 @@
+{
+  "resourceType": "Device",
+  "id": "device-example-001",
+  "meta": {
+    "versionId": "1",
+    "lastUpdated": "2024-01-10T09:00:00Z"
+  },
+  "identifier": [
+    {
+      "system": "http://example.org/devices",
+      "value": "DEV-12345"
+    }
+  ],
+  "udiCarrier": [
+    {
+      "deviceIdentifier": "09876543210987",
+      "carrierHRF": "(01)09876543210987(17)240101(10)LOT123(21)SN12345"
+    }
+  ],
+  "status": "active",
+  "distinctIdentifier": "unique-device-12345",
+  "manufacturer": "Acme Medical Devices Inc.",
+  "manufactureDate": "2023-06-15",
+  "expirationDate": "2028-06-15",
+  "lotNumber": "LOT-2023-456",
+  "serialNumber": "SN-2023-12345",
+  "deviceName": [
+    {
+      "name": "Acme Blood Pressure Monitor Pro",
+      "type": "user-friendly-name"
+    },
+    {
+      "name": "ACME-BPM-PRO-2000",
+      "type": "model-name"
+    }
+  ],
+  "modelNumber": "BPM-PRO-2000",
+  "type": {
+    "coding": [
+      {
+        "system": "http://snomed.info/sct",
+        "code": "43770009",
+        "display": "Sphygmomanometer"
+      }
+    ],
+    "text": "Blood Pressure Monitor"
+  },
+  "patient": {
+    "reference": "Patient/patient-001"
+  },
+  "owner": {
+    "reference": "Organization/organization-001"
+  },
+  "location": {
+    "reference": "Location/location-example-001"
+  },
+  "contact": [
+    {
+      "system": "phone",
+      "value": "1-800-ACME-MED"
+    }
+  ],
+  "note": [
+    {
+      "text": "Device assigned to patient for home monitoring"
+    }
+  ],
+  "safety": [
+    {
+      "coding": [
+        {
+          "system": "urn:oid:2.16.840.1.113883.3.26.1.1",
+          "code": "mr-safe",
+          "display": "MR Safe"
+        }
+      ]
+    }
+  ]
+}

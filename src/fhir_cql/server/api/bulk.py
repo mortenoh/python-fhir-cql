@@ -92,11 +92,7 @@ async def run_export(job: ExportJob, store: Any) -> None:
 
             # Filter by _since if specified
             if job.since:
-                resources = [
-                    r
-                    for r in resources
-                    if _resource_updated_after(r, job.since)
-                ]
+                resources = [r for r in resources if _resource_updated_after(r, job.since)]
 
             # Store resources for this type
             if resources:

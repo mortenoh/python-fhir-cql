@@ -21,53 +21,100 @@ FHIR_JSON = "application/fhir+json"
 
 # Supported resource types
 SUPPORTED_TYPES = [
+    # Administrative
     "Patient",
     "Practitioner",
+    "PractitionerRole",
     "Organization",
+    "Location",
+    "RelatedPerson",
+    # Clinical
     "Encounter",
     "Condition",
     "Observation",
-    "MedicationRequest",
     "Procedure",
     "DiagnosticReport",
     "AllergyIntolerance",
     "Immunization",
+    # Medications
+    "Medication",
+    "MedicationRequest",
+    # Care Management
     "CarePlan",
+    "CareTeam",
     "Goal",
+    "Task",
+    # Scheduling
+    "Appointment",
+    "Schedule",
+    "Slot",
+    # Financial
+    "Coverage",
+    "Claim",
+    "ExplanationOfBenefit",
+    # Devices
+    "Device",
+    # Documents
     "ServiceRequest",
     "DocumentReference",
-    "Medication",
+    # Quality Measures
     "Measure",
     "MeasureReport",
+    "Library",
+    # Terminology
     "ValueSet",
     "CodeSystem",
+    # Groups
     "Group",
-    "Library",
 ]
 
 # Summary elements per resource type (per FHIR spec)
 SUMMARY_ELEMENTS: dict[str, list[str]] = {
+    # Administrative
     "Patient": ["identifier", "active", "name", "telecom", "gender", "birthDate", "address"],
     "Practitioner": ["identifier", "active", "name", "telecom", "address"],
+    "PractitionerRole": ["identifier", "active", "practitioner", "organization", "code", "specialty"],
     "Organization": ["identifier", "active", "name", "type", "telecom", "address"],
+    "Location": ["identifier", "status", "name", "type", "telecom", "address"],
+    "RelatedPerson": ["identifier", "active", "patient", "relationship", "name"],
+    # Clinical
     "Encounter": ["identifier", "status", "class", "type", "subject", "period"],
     "Condition": ["identifier", "clinicalStatus", "verificationStatus", "code", "subject", "onsetDateTime"],
     "Observation": ["identifier", "status", "category", "code", "subject", "effectiveDateTime", "valueQuantity"],
-    "MedicationRequest": ["identifier", "status", "intent", "medicationCodeableConcept", "subject", "authoredOn"],
     "Procedure": ["identifier", "status", "code", "subject", "performedDateTime", "performedPeriod"],
     "DiagnosticReport": ["identifier", "status", "category", "code", "subject", "effectiveDateTime", "issued"],
     "AllergyIntolerance": ["identifier", "clinicalStatus", "verificationStatus", "code", "patient", "onsetDateTime"],
     "Immunization": ["identifier", "status", "vaccineCode", "patient", "occurrenceDateTime"],
+    # Medications
+    "Medication": ["identifier", "code", "status"],
+    "MedicationRequest": ["identifier", "status", "intent", "medicationCodeableConcept", "subject", "authoredOn"],
+    # Care Management
     "CarePlan": ["identifier", "status", "intent", "category", "subject", "period"],
+    "CareTeam": ["identifier", "status", "name", "subject", "period"],
     "Goal": ["identifier", "lifecycleStatus", "category", "description", "subject"],
+    "Task": ["identifier", "status", "intent", "code", "focus", "for", "authoredOn"],
+    # Scheduling
+    "Appointment": ["identifier", "status", "serviceType", "start", "end", "participant"],
+    "Schedule": ["identifier", "active", "serviceType", "actor", "planningHorizon"],
+    "Slot": ["identifier", "status", "schedule", "start", "end"],
+    # Financial
+    "Coverage": ["identifier", "status", "type", "beneficiary", "payor", "period"],
+    "Claim": ["identifier", "status", "type", "use", "patient", "created"],
+    "ExplanationOfBenefit": ["identifier", "status", "type", "use", "patient", "created", "outcome"],
+    # Devices
+    "Device": ["identifier", "status", "type", "patient", "manufacturer", "serialNumber"],
+    # Documents
     "ServiceRequest": ["identifier", "status", "intent", "code", "subject", "authoredOn"],
     "DocumentReference": ["identifier", "status", "type", "subject", "date", "author"],
-    "Medication": ["identifier", "code", "status"],
+    # Quality Measures
     "Measure": ["identifier", "url", "name", "status", "title", "date"],
     "MeasureReport": ["identifier", "status", "type", "measure", "subject", "date"],
+    "Library": ["identifier", "url", "name", "status", "title", "date"],
+    # Terminology
     "ValueSet": ["identifier", "url", "name", "status", "title"],
     "CodeSystem": ["identifier", "url", "name", "status", "title"],
-    "Library": ["identifier", "url", "name", "status", "title", "date"],
+    # Groups
+    "Group": ["identifier", "active", "type", "actual", "name", "quantity"],
 }
 
 
@@ -487,11 +534,13 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
         output = []
         for resource_type, resources in job.output_files.items():
             if resources:
-                output.append({
-                    "type": resource_type,
-                    "url": f"{base}/bulk-output/{job.id}/{resource_type}.ndjson",
-                    "count": len(resources),
-                })
+                output.append(
+                    {
+                        "type": resource_type,
+                        "url": f"{base}/bulk-output/{job.id}/{resource_type}.ndjson",
+                        "count": len(resources),
+                    }
+                )
 
         manifest = {
             "transactionTime": job.request_time.isoformat() + "Z",

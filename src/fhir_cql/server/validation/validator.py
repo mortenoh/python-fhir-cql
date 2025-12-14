@@ -285,9 +285,7 @@ class FHIRValidator:
 
         return issues
 
-    def _find_references(
-        self, obj: Any, path: str = ""
-    ) -> list[tuple[str, str]]:
+    def _find_references(self, obj: Any, path: str = "") -> list[tuple[str, str]]:
         """Find all Reference fields in a resource."""
         references = []
 

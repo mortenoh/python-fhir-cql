@@ -86,9 +86,7 @@ def compute_diff(source: dict[str, Any], target: dict[str, Any]) -> list[dict[st
     return operations
 
 
-def diff_to_parameters(
-    operations: list[dict[str, Any]], include_values: bool = True
-) -> dict[str, Any]:
+def diff_to_parameters(operations: list[dict[str, Any]], include_values: bool = True) -> dict[str, Any]:
     """Convert diff operations to a FHIR Parameters resource.
 
     Args:

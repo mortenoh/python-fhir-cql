@@ -5,7 +5,6 @@ import pytest
 from fhir_cql.server.validation import FHIRValidator, ValidationIssue, ValidationResult
 from fhir_cql.server.validation.rules import RESOURCE_RULES, VALID_RESOURCE_TYPES
 
-
 # =============================================================================
 # Unit Tests for FHIRValidator
 # =============================================================================
@@ -214,9 +213,7 @@ class TestFHIRValidator:
             "resourceType": "MedicationRequest",
             "status": "active",
             "intent": "order",
-            "medicationCodeableConcept": {
-                "coding": [{"system": "http://snomed.info/sct", "code": "123456"}]
-            },
+            "medicationCodeableConcept": {"coding": [{"system": "http://snomed.info/sct", "code": "123456"}]},
             "subject": {"reference": "Patient/123"},
         }
         result = validator.validate(med_request)
@@ -352,9 +349,9 @@ class TestResourceRules:
 
         for resource_type in SUPPORTED_TYPES:
             # All types should be in VALID_RESOURCE_TYPES or have rules
-            assert (
-                resource_type in VALID_RESOURCE_TYPES or resource_type in RESOURCE_RULES
-            ), f"Missing rules for {resource_type}"
+            assert resource_type in VALID_RESOURCE_TYPES or resource_type in RESOURCE_RULES, (
+                f"Missing rules for {resource_type}"
+            )
 
     def test_bundle_validation(self):
         """Test Bundle requires type."""
@@ -552,9 +549,7 @@ class TestValidateEndpoint:
         assert response.status_code == 200
         outcome = response.json()
         assert outcome["resourceType"] == "OperationOutcome"
-        assert any(
-            "invalid-status" in i.get("diagnostics", "") for i in outcome["issue"]
-        )
+        assert any("invalid-status" in i.get("diagnostics", "") for i in outcome["issue"])
 
     def test_validate_reference_to_nonexistent_resource(self, client):
         """Test validation warns about nonexistent references."""
@@ -571,8 +566,7 @@ class TestValidateEndpoint:
         assert outcome["resourceType"] == "OperationOutcome"
         # Should have warning for missing reference
         assert any(
-            i.get("severity") == "warning" and "not found" in i.get("diagnostics", "").lower()
-            for i in outcome["issue"]
+            i.get("severity") == "warning" and "not found" in i.get("diagnostics", "").lower() for i in outcome["issue"]
         )
 
     def test_validate_condition_with_valid_clinical_status(self, client):

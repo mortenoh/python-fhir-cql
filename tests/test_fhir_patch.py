@@ -8,7 +8,6 @@ from fhir_cql.server.api.patch import PatchError, apply_json_patch
 from fhir_cql.server.config.settings import FHIRServerSettings
 from fhir_cql.server.storage.fhir_store import FHIRStore
 
-
 # =============================================================================
 # Unit Tests for apply_json_patch
 # =============================================================================

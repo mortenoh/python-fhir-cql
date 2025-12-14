@@ -8,27 +8,52 @@ from typing import Any
 
 # Valid resource types
 VALID_RESOURCE_TYPES = {
+    # Administrative
     "Patient",
     "Practitioner",
+    "PractitionerRole",
     "Organization",
+    "Location",
+    "RelatedPerson",
+    # Clinical
     "Encounter",
     "Condition",
     "Observation",
-    "MedicationRequest",
     "Procedure",
     "DiagnosticReport",
     "AllergyIntolerance",
     "Immunization",
+    # Medications
+    "Medication",
+    "MedicationRequest",
+    # Care Management
     "CarePlan",
+    "CareTeam",
     "Goal",
+    "Task",
+    # Scheduling
+    "Appointment",
+    "Schedule",
+    "Slot",
+    # Financial
+    "Coverage",
+    "Claim",
+    "ExplanationOfBenefit",
+    # Devices
+    "Device",
+    # Documents
     "ServiceRequest",
     "DocumentReference",
-    "Medication",
+    # Quality Measures
     "Measure",
     "MeasureReport",
+    "Library",
+    # Terminology
     "ValueSet",
     "CodeSystem",
-    "Library",
+    # Groups
+    "Group",
+    # Infrastructure
     "Bundle",
     "OperationOutcome",
     "Parameters",
@@ -416,6 +441,174 @@ RESOURCE_RULES: dict[str, dict[str, Any]] = {
                 "valueset": "http://hl7.org/fhir/ValueSet/group-type",
                 "strength": "required",
                 "allowed_values": ["person", "animal", "practitioner", "device", "medication", "substance"],
+            },
+        },
+    },
+    # === New Resource Types ===
+    "Coverage": {
+        "required": ["status", "beneficiary"],
+        "code_bindings": {
+            "status": {
+                "valueset": "http://hl7.org/fhir/ValueSet/fm-status",
+                "strength": "required",
+                "allowed_values": ["active", "cancelled", "draft", "entered-in-error"],
+            },
+        },
+    },
+    "Claim": {
+        "required": ["status", "type", "use", "patient", "provider", "priority"],
+        "code_bindings": {
+            "status": {
+                "valueset": "http://hl7.org/fhir/ValueSet/fm-status",
+                "strength": "required",
+                "allowed_values": ["active", "cancelled", "draft", "entered-in-error"],
+            },
+            "use": {
+                "valueset": "http://hl7.org/fhir/ValueSet/claim-use",
+                "strength": "required",
+                "allowed_values": ["claim", "preauthorization", "predetermination"],
+            },
+        },
+    },
+    "ExplanationOfBenefit": {
+        "required": ["status", "type", "use", "patient", "outcome"],
+        "code_bindings": {
+            "status": {
+                "valueset": "http://hl7.org/fhir/ValueSet/explanationofbenefit-status",
+                "strength": "required",
+                "allowed_values": ["active", "cancelled", "draft", "entered-in-error"],
+            },
+            "use": {
+                "valueset": "http://hl7.org/fhir/ValueSet/claim-use",
+                "strength": "required",
+                "allowed_values": ["claim", "preauthorization", "predetermination"],
+            },
+            "outcome": {
+                "valueset": "http://hl7.org/fhir/ValueSet/remittance-outcome",
+                "strength": "required",
+                "allowed_values": ["queued", "complete", "error", "partial"],
+            },
+        },
+    },
+    "Device": {
+        "required": [],
+        "code_bindings": {
+            "status": {
+                "valueset": "http://hl7.org/fhir/ValueSet/device-status",
+                "strength": "required",
+                "allowed_values": ["active", "inactive", "entered-in-error", "unknown"],
+            },
+        },
+    },
+    "Location": {
+        "required": [],
+        "code_bindings": {
+            "status": {
+                "valueset": "http://hl7.org/fhir/ValueSet/location-status",
+                "strength": "required",
+                "allowed_values": ["active", "suspended", "inactive"],
+            },
+            "mode": {
+                "valueset": "http://hl7.org/fhir/ValueSet/location-mode",
+                "strength": "required",
+                "allowed_values": ["instance", "kind"],
+            },
+        },
+    },
+    "Slot": {
+        "required": ["schedule", "status", "start", "end"],
+        "code_bindings": {
+            "status": {
+                "valueset": "http://hl7.org/fhir/ValueSet/slotstatus",
+                "strength": "required",
+                "allowed_values": ["busy", "free", "busy-unavailable", "busy-tentative", "entered-in-error"],
+            },
+        },
+    },
+    "Appointment": {
+        "required": ["status", "participant"],
+        "code_bindings": {
+            "status": {
+                "valueset": "http://hl7.org/fhir/ValueSet/appointmentstatus",
+                "strength": "required",
+                "allowed_values": [
+                    "proposed",
+                    "pending",
+                    "booked",
+                    "arrived",
+                    "fulfilled",
+                    "cancelled",
+                    "noshow",
+                    "entered-in-error",
+                    "checked-in",
+                    "waitlist",
+                ],
+            },
+        },
+    },
+    "Schedule": {
+        "required": ["actor"],
+        "code_bindings": {},
+    },
+    "PractitionerRole": {
+        "required": [],
+        "code_bindings": {},
+    },
+    "RelatedPerson": {
+        "required": ["patient"],
+        "code_bindings": {
+            "gender": {
+                "valueset": "http://hl7.org/fhir/ValueSet/administrative-gender",
+                "strength": "required",
+                "allowed_values": ["male", "female", "other", "unknown"],
+            },
+        },
+    },
+    "CareTeam": {
+        "required": [],
+        "code_bindings": {
+            "status": {
+                "valueset": "http://hl7.org/fhir/ValueSet/care-team-status",
+                "strength": "required",
+                "allowed_values": ["proposed", "active", "suspended", "inactive", "entered-in-error"],
+            },
+        },
+    },
+    "Task": {
+        "required": ["status", "intent"],
+        "code_bindings": {
+            "status": {
+                "valueset": "http://hl7.org/fhir/ValueSet/task-status",
+                "strength": "required",
+                "allowed_values": [
+                    "draft",
+                    "requested",
+                    "received",
+                    "accepted",
+                    "rejected",
+                    "ready",
+                    "cancelled",
+                    "in-progress",
+                    "on-hold",
+                    "failed",
+                    "completed",
+                    "entered-in-error",
+                ],
+            },
+            "intent": {
+                "valueset": "http://hl7.org/fhir/ValueSet/task-intent",
+                "strength": "required",
+                "allowed_values": [
+                    "unknown",
+                    "proposal",
+                    "plan",
+                    "order",
+                    "original-order",
+                    "reflex-order",
+                    "filler-order",
+                    "instance-order",
+                    "option",
+                ],
             },
         },
     },
