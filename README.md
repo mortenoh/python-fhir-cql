@@ -219,7 +219,8 @@ fhir terminology <command> # Terminology Service commands
 |---------|-------------|
 | `fhir serve` | Start the FHIR R4 server |
 | `fhir serve --patients 100` | Start with synthetic patient data |
-| `fhir server generate <file>` | Generate synthetic data to file |
+| `fhir server generate Patient -n 10` | Generate specific resource types |
+| `fhir server populate` | Populate server with all 34 linked resource types |
 | `fhir server load <file>` | Load resources into running server |
 | `fhir server stats` | Show server resource statistics |
 | `fhir server info` | Show server capability statement |

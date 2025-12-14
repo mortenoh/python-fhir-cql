@@ -149,6 +149,94 @@ Run with patient data:
 fhir cql run patient_info.cql --data patient.json
 ```
 
+## Your First FHIR Server
+
+Start a FHIR R4 server with synthetic patient data:
+
+```bash
+# Start with 10 synthetic patients
+fhir serve --patients 10
+
+# Server is now running at http://localhost:8080
+# - API Docs: http://localhost:8080/docs
+# - Metadata: http://localhost:8080/metadata
+```
+
+### Query Your Server
+
+In another terminal, query the server:
+
+```bash
+# Get all patients
+curl http://localhost:8080/Patient
+
+# Get a specific patient
+curl http://localhost:8080/Patient | jq '.entry[0].resource'
+
+# Search by name
+curl "http://localhost:8080/Patient?name=Smith"
+
+# Get patient conditions
+curl "http://localhost:8080/Condition?patient=Patient/patient-001"
+
+# Get observations
+curl "http://localhost:8080/Observation?_count=5"
+```
+
+### Generate Synthetic Data
+
+Generate FHIR resources without starting a server:
+
+```bash
+# Generate 5 patients to stdout
+fhir server generate Patient -n 5
+
+# Generate and pipe to jq
+fhir server generate Patient -n 3 | jq '.entry[].resource.name'
+
+# Generate to file
+fhir server generate Patient ./patients.json -n 10
+
+# Generate observations linked to a patient
+fhir server generate Observation -n 5 --patient-ref Patient/123
+
+# List all 34 available resource types
+fhir server generate --list
+```
+
+### Populate Server with Linked Data
+
+Create a complete dataset with all 34 resource types properly linked together:
+
+```bash
+# Populate with linked resources (3 patients by default)
+fhir server populate
+
+# Populate with more patients
+fhir server populate --patients 10
+
+# Dry run - generate without loading
+fhir server populate --dry-run --output ./population.json
+```
+
+This creates:
+- Organizations, Practitioners, Locations
+- Patients with clinical data (Encounters, Conditions, Observations)
+- Care plans, Care teams, Goals
+- Coverage, Claims, ExplanationOfBenefit
+- Measures with MeasureReports
+- And more - all properly linked!
+
+### Server Statistics
+
+```bash
+# Show resource counts
+fhir server stats
+
+# Show server capabilities
+fhir server info
+```
+
 ## Using the Python API
 
 ### FHIRPath
@@ -261,6 +349,8 @@ fhir cql show examples/cql/08_quality_measure.cql
 ## Next Steps
 
 - Explore the [CLI Reference](cli.md) for all commands
+- Read the [FHIR Server Guide](fhir-server-guide.md) for full server documentation
+- Check the [Supported Resources](fhir-server/resources/index.md) for all 34 resource types with examples
 - Read the [FHIRPath Guide](fhirpath-guide.md) for comprehensive FHIRPath documentation
 - Check the [CQL API](cql-api.md) for Python integration
 - Work through the [Tutorial](fhirpath-cql-tutorial.md) for in-depth examples

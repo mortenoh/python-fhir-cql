@@ -132,7 +132,7 @@ greeting = evaluator.evaluate_definition("Greeting")  # 'Hello, CQL!'
 | FastAPI Server | Complete | REST API for terminology operations |
 | CLI Commands | Complete | serve, validate, member-of, list-valuesets |
 
-**Current test count: 1723+ passing tests**
+**Current test count: 2244+ passing tests**
 
 ## Requirements
 
@@ -157,8 +157,9 @@ greeting = evaluator.evaluate_definition("Greeting")  # 'Hello, CQL!'
 - [FHIRPath & CQL Reference](fhirpath-cql-tutorial.md) - Deep dive reference with examples
 
 ### Server & Services
-- [FHIR Server Guide](fhir-server-guide.md) - Built-in FHIR server with synthetic data generation
-- [Terminology Guide](terminology-guide.md) - Terminology service for code validation
+- [FHIR Server Guide](fhir-server-guide.md) - Built-in FHIR server with synthetic data generation, 34 resource types
+- [Supported Resources](fhir-server/resources/index.md) - All 34 supported FHIR resource types with examples
+- [Terminology Operations](fhir-server/operations/terminology.md) - $expand, $lookup, $validate-code operations
 
 ### Advanced Topics
 - [Measure Evaluation Guide](measure-guide.md) - Clinical quality measure evaluation

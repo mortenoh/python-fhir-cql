@@ -109,36 +109,120 @@ fhir serve --patients 10 --reload
 
 ### fhir server generate
 
-Generate synthetic FHIR data to a file (without starting a server).
+Generate FHIR resources of a specific type. Supports all 34 resource types.
 
 ```bash
-fhir server generate OUTPUT [OPTIONS]
+fhir server generate RESOURCE_TYPE [OUTPUT] [OPTIONS]
+```
+
+#### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `RESOURCE_TYPE` | Type of resource to generate (e.g., Patient, Observation) |
+| `OUTPUT` | Output file path (optional - outputs to stdout if not specified) |
+
+#### Options
+
+| Option | Short | Default | Description |
+|--------|-------|---------|-------------|
+| `--count` | `-n` | `1` | Number of resources to generate |
+| `--seed` | `-s` | None | Random seed for reproducible data |
+| `--format` | `-f` | `bundle` | Output format: `bundle`, `ndjson`, or `json` |
+| `--pretty/--no-pretty` | | `True` | Pretty-print JSON output |
+| `--list` | `-l` | | List available resource types |
+| `--patient-ref` | | None | Patient reference (e.g., Patient/123) |
+| `--practitioner-ref` | | None | Practitioner reference |
+| `--organization-ref` | | None | Organization reference |
+| `--encounter-ref` | | None | Encounter reference |
+| `--hierarchy-depth` | | None | For Location: generate hierarchy (1-6 levels) |
+| `--load` | | `False` | Load generated resources directly to FHIR server |
+| `--url` | `-u` | `http://localhost:8080` | FHIR server URL (used with --load) |
+
+#### Examples
+
+```bash
+# List all available resource types
+fhir server generate --list
+
+# Generate 5 patients to stdout
+fhir server generate Patient -n 5
+
+# Generate patients to file
+fhir server generate Patient ./patients.json -n 10
+
+# Generate observations linked to a patient
+fhir server generate Observation -n 5 --patient-ref Patient/123
+
+# Generate location hierarchy (Site → Building → Wing → Room)
+fhir server generate Location --hierarchy-depth 4
+
+# Generate with reproducible seed
+fhir server generate Condition ./conditions.json -n 20 --seed 42
+
+# Generate and load directly to server
+fhir server generate Patient -n 10 --load --url http://localhost:8080
+
+# Pipe to jq for processing
+fhir server generate Patient -n 3 | jq '.entry[0].resource.name'
+
+# Generate as NDJSON format
+fhir server generate Patient -n 5 -f ndjson
+```
+
+### fhir server populate
+
+Populate a FHIR server with linked examples of all 34 resource types. Creates a complete, realistic dataset with proper references between resources.
+
+```bash
+fhir server populate [OPTIONS]
 ```
 
 #### Options
 
 | Option | Short | Default | Description |
 |--------|-------|---------|-------------|
-| `--patients` | `-n` | `10` | Number of patients to generate |
+| `--url` | `-u` | `http://localhost:8080` | FHIR server URL |
+| `--patients` | `-n` | `3` | Number of patients to generate |
 | `--seed` | `-s` | None | Random seed for reproducible data |
-| `--format` | `-f` | `bundle` | Output format: `bundle`, `ndjson`, or `files` |
-| `--pretty/--no-pretty` | | `True` | Pretty-print JSON output |
+| `--dry-run` | | `False` | Generate but don't load to server |
+| `--output` | `-o` | None | Save generated resources to file |
+
+#### What Gets Generated
+
+Resources are created in dependency order with proper linking:
+
+- **Foundation**: Organizations, Location hierarchy (Site → Building → Wing → Room), Practitioners, ValueSet, CodeSystem
+- **Administrative**: PractitionerRoles, Devices
+- **Scheduling**: Schedules, Slots, Appointments
+- **Per patient**:
+  - Patient, RelatedPerson
+  - Encounters with linked Conditions, Observations
+  - AllergyIntolerance, Immunization
+  - CareTeam, CarePlan, Goal, Task
+  - Medication, MedicationRequest, Procedure, ServiceRequest
+  - DiagnosticReport (linked to Observations), DocumentReference
+  - Coverage, Claim, ExplanationOfBenefit (financial chain)
+- **Quality Measures**: Library → Measure → MeasureReport (per patient + summary)
+- **Groups**: Patient cohort Group with member references
 
 #### Examples
 
 ```bash
-# Generate 100 patients as a FHIR Bundle
-fhir server generate ./data.json --patients 100
+# Populate local server with 3 patients (default)
+fhir server populate
 
-# Generate with reproducible seed
-fhir server generate ./data.json --patients 50 --seed 42
+# Populate with more patients
+fhir server populate --patients 10
 
-# Generate as NDJSON (one resource per line)
-fhir server generate ./data.ndjson --patients 100 --format ndjson
+# Dry run - generate without loading
+fhir server populate --dry-run --output ./population.json
 
-# Generate as individual files organized by type
-fhir server generate ./data --patients 100 --format files
-# Creates: ./data/Patient/*.json, ./data/Condition/*.json, etc.
+# With reproducible seed
+fhir server populate --seed 42 --patients 5
+
+# Populate remote server
+fhir server populate --url http://fhir.example.com --patients 20
 ```
 
 ### fhir server load
@@ -591,18 +675,85 @@ curl "http://localhost:8080/ValueSet/\$validate-code?url=http://example.com/vs&c
 
 ### Supported Resource Types
 
-The server generates these resource types for each patient:
+The server supports **34 FHIR R4 resource types** organized by category:
 
-| Resource Type | Description | Per Patient |
-|---------------|-------------|-------------|
-| Patient | Demographics, identifiers, contacts | 1 |
-| Practitioner | Healthcare providers with NPI | 1 |
-| Organization | Healthcare organizations | 1 |
-| Encounter | Patient visits (ambulatory, ED, inpatient) | 3-10 |
-| Condition | Medical diagnoses with status | 2-6 |
-| Observation | Vitals and lab results | 2-5 per encounter |
-| MedicationRequest | Prescriptions with dosing | 1-5 |
-| Procedure | Medical procedures | 0-3 |
+#### Administrative Resources
+| Resource Type | Description |
+|---------------|-------------|
+| Patient | Demographics, identifiers, contacts, emergency contacts |
+| Practitioner | Healthcare providers with NPI, qualifications |
+| PractitionerRole | Practitioner roles within organizations |
+| Organization | Healthcare organizations with identifiers |
+| Location | Physical locations with hierarchy support |
+| RelatedPerson | Patient contacts and relationships |
+
+#### Clinical Resources
+| Resource Type | Description |
+|---------------|-------------|
+| Encounter | Patient visits (ambulatory, emergency, inpatient, virtual) |
+| Condition | Medical diagnoses with clinical status |
+| Observation | Vitals and lab results with reference ranges |
+| Procedure | Medical procedures with codes |
+| DiagnosticReport | Lab and imaging reports linked to Observations |
+| AllergyIntolerance | Allergies with reactions and severity |
+| Immunization | Vaccination records with codes |
+
+#### Medication Resources
+| Resource Type | Description |
+|---------------|-------------|
+| Medication | Medication definitions |
+| MedicationRequest | Prescriptions with dosing instructions |
+
+#### Care Management Resources
+| Resource Type | Description |
+|---------------|-------------|
+| CarePlan | Care plans with activities and goals |
+| CareTeam | Care team members and roles |
+| Goal | Patient health goals |
+| Task | Workflow tasks |
+
+#### Scheduling Resources
+| Resource Type | Description |
+|---------------|-------------|
+| Schedule | Provider schedules |
+| Slot | Available appointment slots |
+| Appointment | Booked appointments |
+
+#### Financial Resources
+| Resource Type | Description |
+|---------------|-------------|
+| Coverage | Insurance coverage information |
+| Claim | Healthcare claims with line items |
+| ExplanationOfBenefit | EOB with adjudication details |
+
+#### Device Resources
+| Resource Type | Description |
+|---------------|-------------|
+| Device | Medical devices with UDI |
+
+#### Document Resources
+| Resource Type | Description |
+|---------------|-------------|
+| ServiceRequest | Orders and referrals |
+| DocumentReference | Clinical documents and attachments |
+
+#### Quality Measure Resources
+| Resource Type | Description |
+|---------------|-------------|
+| Library | CQL libraries with embedded content |
+| Measure | Quality measure definitions |
+| MeasureReport | Measure evaluation results |
+
+#### Terminology Resources
+| Resource Type | Description |
+|---------------|-------------|
+| ValueSet | Code value sets |
+| CodeSystem | Code system definitions |
+
+#### Group Resources
+| Resource Type | Description |
+|---------------|-------------|
+| Group | Patient cohorts and populations |
 
 ### Clinical Code Systems
 

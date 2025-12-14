@@ -711,32 +711,111 @@ fhir serve --patients 10 --reload
 
 ### generate
 
-Generate synthetic FHIR data to a file.
+Generate FHIR resources of a specific type. Supports all 34 resource types.
 
 ```bash
-fhir server generate OUTPUT [OPTIONS]
+fhir server generate RESOURCE_TYPE [OUTPUT] [OPTIONS]
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `RESOURCE_TYPE` | Type of resource to generate (e.g., Patient, Observation) |
+| `OUTPUT` | Output file path (optional - outputs to stdout if not specified) |
+
+**Options:**
+
+| Option | Description |
+|--------|-------------|
+| `-n, --count` | Number of resources to generate (default: 1) |
+| `-s, --seed` | Random seed for reproducible data |
+| `-f, --format` | Output format: bundle, ndjson, or json |
+| `--pretty/--no-pretty` | Pretty-print JSON output |
+| `-l, --list` | List available resource types |
+| `--patient-ref` | Patient reference (e.g., Patient/123) |
+| `--practitioner-ref` | Practitioner reference |
+| `--organization-ref` | Organization reference |
+| `--encounter-ref` | Encounter reference |
+| `--hierarchy-depth` | For Location: generate hierarchy (1-6 levels) |
+| `--load` | Load generated resources directly to FHIR server |
+| `-u, --url` | FHIR server URL (used with --load) |
+
+**Examples:**
+
+```bash
+# List available resource types
+fhir server generate --list
+
+# Generate 5 patients to stdout
+fhir server generate Patient -n 5
+
+# Generate patients to file
+fhir server generate Patient ./patients.json -n 10
+
+# Generate observations linked to a patient
+fhir server generate Observation -n 5 --patient-ref Patient/123
+
+# Generate location hierarchy (Site → Building → Wing → Room)
+fhir server generate Location --hierarchy-depth 4
+
+# Generate with reproducible seed
+fhir server generate Condition ./conditions.json -n 20 --seed 42
+
+# Generate and load directly to server
+fhir server generate Patient -n 10 --load --url http://localhost:8080
+
+# Pipe to jq for processing
+fhir server generate Patient -n 3 | jq '.entry[0].resource.name'
+
+# Generate as NDJSON format
+fhir server generate Patient -n 5 -f ndjson
+```
+
+### populate
+
+Populate a FHIR server with linked examples of all 34 resource types. Creates a complete, realistic dataset with proper references between resources.
+
+```bash
+fhir server populate [OPTIONS]
 ```
 
 **Options:**
 
 | Option | Description |
 |--------|-------------|
-| `-n, --patients` | Number of patients to generate (default: 10) |
+| `-u, --url` | FHIR server URL (default: http://localhost:8080) |
+| `-n, --patients` | Number of patients to generate (default: 3) |
 | `-s, --seed` | Random seed for reproducible data |
-| `-f, --format` | Output format: bundle, ndjson, or files |
-| `--pretty/--no-pretty` | Pretty-print JSON output |
+| `--dry-run` | Generate but don't load to server |
+| `-o, --output` | Save generated resources to file |
+
+**What gets generated:**
+
+- **Foundation**: Organizations, Location hierarchy, Practitioners, ValueSet, CodeSystem
+- **Administrative**: PractitionerRoles, Devices
+- **Scheduling**: Schedules, Slots, Appointments
+- **Per patient**: Encounters, Conditions, Observations, Medications, Procedures, etc.
+- **Financial**: Coverage, Claims, ExplanationOfBenefit (linked chain)
+- **Quality Measures**: Library → Measure → MeasureReports (per patient + summary)
 
 **Examples:**
 
 ```bash
-# Generate as FHIR Bundle
-fhir server generate ./data.json --patients 100
+# Populate local server with 3 patients (default)
+fhir server populate
 
-# Generate as NDJSON
-fhir server generate ./data.ndjson --patients 100 --format ndjson
+# Populate with more patients
+fhir server populate --patients 10
+
+# Dry run - generate without loading
+fhir server populate --dry-run --output ./population.json
 
 # With reproducible seed
-fhir server generate ./data.json --patients 50 --seed 42
+fhir server populate --seed 42 --patients 5
+
+# Populate remote server
+fhir server populate --url http://fhir.example.com --patients 20
 ```
 
 ### load
@@ -872,7 +951,8 @@ fhir terminology serve [OPTIONS]
 | Command | Description |
 |---------|-------------|
 | `fhir serve` | Start the FHIR R4 server |
-| `fhir server generate` | Generate synthetic FHIR data to file |
+| `fhir server generate` | Generate resources of a specific type |
+| `fhir server populate` | Populate server with all 34 linked resource types |
 | `fhir server load` | Load FHIR resources into running server |
 | `fhir server stats` | Show server resource statistics |
 | `fhir server info` | Show server capability statement |
