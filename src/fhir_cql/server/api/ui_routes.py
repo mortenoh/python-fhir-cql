@@ -4,7 +4,7 @@ import json
 from typing import Any
 
 from fastapi import APIRouter, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 
 from ..storage.fhir_store import FHIRStore
@@ -84,10 +84,12 @@ def create_ui_router(
             category_types = []
             for resource_type in types:
                 if resource_type in SUPPORTED_TYPES:
-                    category_types.append({
-                        "name": resource_type,
-                        "count": store.count(resource_type),
-                    })
+                    category_types.append(
+                        {
+                            "name": resource_type,
+                            "count": store.count(resource_type),
+                        }
+                    )
             if category_types:
                 categories[category] = category_types
 
@@ -104,7 +106,7 @@ def create_ui_router(
         request: Request,
         resource_type: str,
         page: int = 1,
-    ) -> HTMLResponse:
+    ) -> Response:
         """List resources of a specific type."""
         if resource_type not in SUPPORTED_TYPES:
             return RedirectResponse(url=request.url_for("ui_resource_types"))
@@ -112,7 +114,7 @@ def create_ui_router(
         per_page = settings.ui_resources_per_page
 
         # Build search parameters from query string
-        search_params_dict: dict[str, str] = {}
+        search_params_dict: dict[str, str | list[str]] = {}
         for key, value in request.query_params.items():
             if key not in ["page"] and value:
                 search_params_dict[key] = value
@@ -149,7 +151,7 @@ def create_ui_router(
         return templates.TemplateResponse("pages/resource_list.html", context)
 
     @router.get("/{resource_type}/new", response_class=HTMLResponse, name="ui_resource_new")
-    async def resource_new(request: Request, resource_type: str) -> HTMLResponse:
+    async def resource_new(request: Request, resource_type: str) -> Response:
         """Create new resource form."""
         if resource_type not in SUPPORTED_TYPES:
             return RedirectResponse(url=request.url_for("ui_resource_types"))
@@ -173,7 +175,7 @@ def create_ui_router(
         request: Request,
         resource_type: str,
         resource_json: str = Form(...),
-    ) -> HTMLResponse:
+    ) -> Response:
         """Create a new resource."""
         if resource_type not in SUPPORTED_TYPES:
             return RedirectResponse(url=request.url_for("ui_resource_types"))
@@ -219,16 +221,14 @@ def create_ui_router(
         request: Request,
         resource_type: str,
         resource_id: str,
-    ) -> HTMLResponse:
+    ) -> Response:
         """View a specific resource."""
         if resource_type not in SUPPORTED_TYPES:
             return RedirectResponse(url=request.url_for("ui_resource_types"))
 
         resource = store.read(resource_type, resource_id)
         if not resource:
-            return RedirectResponse(
-                url=request.url_for("ui_resource_list", resource_type=resource_type)
-            )
+            return RedirectResponse(url=request.url_for("ui_resource_list", resource_type=resource_type))
 
         # Extract references from resource
         references = _extract_references(resource)
@@ -248,16 +248,14 @@ def create_ui_router(
         request: Request,
         resource_type: str,
         resource_id: str,
-    ) -> HTMLResponse:
+    ) -> Response:
         """Edit resource form."""
         if resource_type not in SUPPORTED_TYPES:
             return RedirectResponse(url=request.url_for("ui_resource_types"))
 
         resource = store.read(resource_type, resource_id)
         if not resource:
-            return RedirectResponse(
-                url=request.url_for("ui_resource_list", resource_type=resource_type)
-            )
+            return RedirectResponse(url=request.url_for("ui_resource_list", resource_type=resource_type))
 
         context = get_context(
             request,
@@ -276,7 +274,7 @@ def create_ui_router(
         resource_type: str,
         resource_id: str,
         resource_json: str = Form(...),
-    ) -> HTMLResponse:
+    ) -> Response:
         """Update a resource."""
         if resource_type not in SUPPORTED_TYPES:
             return RedirectResponse(url=request.url_for("ui_resource_types"))
@@ -339,7 +337,7 @@ def create_ui_router(
         request: Request,
         resource_type: str,
         resource_id: str,
-    ) -> HTMLResponse:
+    ) -> Response:
         """View resource version history."""
         if resource_type not in SUPPORTED_TYPES:
             return RedirectResponse(url=request.url_for("ui_resource_types"))
@@ -383,12 +381,14 @@ def _extract_references(resource: dict[str, Any], path: str = "") -> list[dict[s
                 ref_id = parts[-1]
                 # Remove path suffix like ".subject" -> "subject"
                 clean_path = current_path.replace(".reference", "")
-                references.append({
-                    "path": clean_path,
-                    "type": ref_type,
-                    "id": ref_id,
-                    "reference": value,
-                })
+                references.append(
+                    {
+                        "path": clean_path,
+                        "type": ref_type,
+                        "id": ref_id,
+                        "reference": value,
+                    }
+                )
 
         elif isinstance(value, dict):
             references.extend(_extract_references(value, current_path))

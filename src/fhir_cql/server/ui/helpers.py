@@ -53,7 +53,7 @@ def format_reference(ref: str | dict[str, Any] | None) -> tuple[str, str]:
     if isinstance(ref, dict):
         ref = ref.get("reference", "")
 
-    if not ref or "/" not in ref:
+    if not isinstance(ref, str) or "/" not in ref:
         return "", ""
 
     parts = ref.split("/")

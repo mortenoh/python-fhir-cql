@@ -5,14 +5,16 @@ import time
 import pytest
 from fastapi.testclient import TestClient
 
-from fhir_cql.server import create_app
+from fhir_cql.server.api.app import create_app
 from fhir_cql.server.api.bulk import resources_to_ndjson
+from fhir_cql.server.config.settings import FHIRServerSettings
 
 
 @pytest.fixture
 def client():
     """Create a test client."""
-    app = create_app()
+    settings = FHIRServerSettings(patients=0, enable_docs=False, enable_ui=False, api_base_path="")
+    app = create_app(settings=settings)
     return TestClient(app)
 
 

@@ -6,6 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from fhir_cql.server.api.app import create_app
+from fhir_cql.server.config.settings import FHIRServerSettings
 from fhir_cql.server.storage.fhir_store import FHIRStore
 
 # Simple CQL for testing
@@ -40,7 +41,8 @@ def store():
 @pytest.fixture
 def client(store):
     """Create a test client with the FHIR app."""
-    app = create_app(store=store)
+    settings = FHIRServerSettings(patients=0, enable_docs=False, enable_ui=False, api_base_path="")
+    app = create_app(settings=settings, store=store)
     return TestClient(app)
 
 
@@ -226,7 +228,8 @@ class TestEvaluateMeasure:
     def test_evaluate_measure_no_patients(self, client, store):
         """Test evaluation when no patients exist."""
         # Create app with empty store
-        app = create_app(store=store)
+        settings = FHIRServerSettings(patients=0, enable_docs=False, enable_ui=False, api_base_path="")
+        app = create_app(settings=settings, store=store)
         empty_client = TestClient(app)
 
         # Add library and measure but no patients
