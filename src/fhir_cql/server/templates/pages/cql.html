@@ -87,7 +87,7 @@
                 <div id="cql-editor" class="h-80 border-b border-gray-200"></div>
                 <div class="px-4 py-2 bg-gray-50 flex justify-between items-center">
                     <div class="flex items-center space-x-4">
-                        <button onclick="execute()" id="execute-btn"
+                        <button onclick="runExecution()" id="execute-btn"
                                 class="inline-flex items-center rounded-md bg-fhir-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-fhir-700">
                             <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -1517,7 +1517,7 @@ define "Readmissions Within 30 Days":
 
             // Ctrl+Enter to execute
             cqlEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, function() {
-                execute();
+                runExecution();
             });
         } catch (e) {
             console.error('Failed to initialize Monaco editor:', e);
@@ -1585,7 +1585,7 @@ define "Readmissions Within 30 Days":
         }
     }
 
-    async function execute() {
+    async function runExecution() {
         if (!cqlEditor) {
             console.warn('Editor not ready yet');
             return;

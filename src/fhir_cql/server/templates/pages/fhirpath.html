@@ -173,7 +173,7 @@
                 </div>
                 <div id="expression-editor" class="h-24 border-b border-gray-200"></div>
                 <div class="px-4 py-2 bg-gray-50 flex justify-between items-center">
-                    <button onclick="evaluate()" id="evaluate-btn"
+                    <button onclick="runEvaluation()" id="evaluate-btn"
                             class="inline-flex items-center rounded-md bg-fhir-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-fhir-700">
                         <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -339,7 +339,7 @@
 
         // Ctrl+Enter to evaluate
         expressionEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, function() {
-            evaluate();
+            runEvaluation();
         });
 
         // Resource editor for single mode
@@ -436,7 +436,7 @@
         document.getElementById('search-params').placeholder = placeholder;
     }
 
-    async function evaluate() {
+    async function runEvaluation() {
         if (!expressionEditor) {
             console.warn('Editor not ready yet');
             return;
