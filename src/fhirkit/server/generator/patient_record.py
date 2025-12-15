@@ -164,7 +164,9 @@ class PatientRecordGenerator:
             self._shared_resources.append(lib)
             resources.append(lib)
 
-            measure = self.measure_gen.generate()
+            # Link measure to library via canonical URL
+            library_url = lib.get("url")
+            measure = self.measure_gen.generate(library_ref=library_url)
             self._measures.append(measure)
             self._shared_resources.append(measure)
             resources.append(measure)

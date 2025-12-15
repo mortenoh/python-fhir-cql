@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -366,6 +366,11 @@ def create_app(
             return {"cards": [], "systemActions": []}
 
         return {"cards": cards, "systemActions": []}
+
+    # Favicon endpoint (must be before UI router to prevent catch-all matching)
+    @app.get("/favicon.ico", include_in_schema=False)
+    async def favicon():
+        return Response(status_code=204)
 
     # Setup Web UI if enabled
     if settings.enable_ui:

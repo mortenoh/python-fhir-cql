@@ -290,15 +290,35 @@
             });
         });
 
-        // Copy to clipboard
+        // Copy to clipboard (with fallback for non-secure contexts)
         function copyToClipboard(text, button) {
-            navigator.clipboard.writeText(text).then(function() {
+            const showSuccess = () => {
                 const originalText = button.textContent;
                 button.textContent = 'Copied!';
-                setTimeout(function() {
-                    button.textContent = originalText;
-                }, 2000);
-            });
+                setTimeout(() => { button.textContent = originalText; }, 2000);
+            };
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(showSuccess).catch(() => fallbackCopy(text, showSuccess));
+            } else {
+                fallbackCopy(text, showSuccess);
+            }
+        }
+
+        function fallbackCopy(text, onSuccess) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                if (onSuccess) onSuccess();
+            } catch (e) {
+                console.error('Copy failed:', e);
+            }
+            document.body.removeChild(textarea);
         }
 
         // Confirm delete

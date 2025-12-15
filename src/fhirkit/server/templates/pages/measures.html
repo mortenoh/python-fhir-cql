@@ -480,7 +480,12 @@
 
     function copyResults() {
         if (currentResults !== null) {
-            navigator.clipboard.writeText(JSON.stringify(currentResults, null, 2));
+            const text = JSON.stringify(currentResults, null, 2);
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+            } else {
+                fallbackCopy(text);
+            }
         }
     }
 </script>
