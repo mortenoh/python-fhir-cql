@@ -366,6 +366,97 @@ class FHIRStore(InMemoryDataSource):
                 "version": ["version"],
                 "status": ["status"],
             },
+            "AllergyIntolerance": {
+                "patient": ["patient.reference"],
+                "code": ["code.coding.code", "code.coding"],
+                "clinical-status": ["clinicalStatus.coding.code"],
+                "criticality": ["criticality"],
+            },
+            "Immunization": {
+                "patient": ["patient.reference"],
+                "vaccine-code": ["vaccineCode.coding.code"],
+                "status": ["status"],
+                "date": ["occurrenceDateTime"],
+            },
+            "DiagnosticReport": {
+                "patient": ["subject.reference"],
+                "subject": ["subject.reference"],
+                "code": ["code.coding.code"],
+                "status": ["status"],
+            },
+            "CarePlan": {
+                "patient": ["subject.reference"],
+                "subject": ["subject.reference"],
+                "status": ["status"],
+            },
+            "Goal": {
+                "patient": ["subject.reference"],
+                "subject": ["subject.reference"],
+                "lifecycle-status": ["lifecycleStatus"],
+            },
+            "Coverage": {
+                "patient": ["beneficiary.reference"],
+                "beneficiary": ["beneficiary.reference"],
+                "status": ["status"],
+            },
+            "Claim": {
+                "patient": ["patient.reference"],
+                "status": ["status"],
+            },
+            "ExplanationOfBenefit": {
+                "patient": ["patient.reference"],
+                "status": ["status"],
+            },
+            "Device": {
+                "patient": ["patient.reference"],
+                "status": ["status"],
+            },
+            "ServiceRequest": {
+                "patient": ["subject.reference"],
+                "subject": ["subject.reference"],
+                "status": ["status"],
+            },
+            "DocumentReference": {
+                "patient": ["subject.reference"],
+                "subject": ["subject.reference"],
+                "status": ["status"],
+            },
+            "CareTeam": {
+                "patient": ["subject.reference"],
+                "subject": ["subject.reference"],
+                "status": ["status"],
+            },
+            "Task": {
+                "patient": ["for.reference"],
+                "subject": ["for.reference"],
+                "status": ["status"],
+            },
+            "RelatedPerson": {
+                "patient": ["patient.reference"],
+            },
+            "Appointment": {
+                "patient": ["participant.actor.reference"],
+                "status": ["status"],
+            },
+            "Medication": {
+                "code": ["code.coding.code"],
+                "status": ["status"],
+            },
+            "PractitionerRole": {
+                "practitioner": ["practitioner.reference"],
+                "organization": ["organization.reference"],
+            },
+            "Location": {
+                "name": ["name"],
+                "status": ["status"],
+            },
+            "Schedule": {
+                "actor": ["actor.reference"],
+            },
+            "Slot": {
+                "schedule": ["schedule.reference"],
+                "status": ["status"],
+            },
         }
 
         # Check common first
