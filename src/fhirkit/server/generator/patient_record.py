@@ -253,20 +253,21 @@ class PatientRecordGenerator:
         """
         resources: list[dict[str, Any]] = []
 
-        # Generate or reuse supporting resources
+        # Generate or reuse supporting resources (only add to resources if newly created)
         if self._practitioner is None:
             self._practitioner = self.practitioner_gen.generate()
+            resources.append(self._practitioner)
         if self._organization is None:
             self._organization = self.organization_gen.generate()
+            resources.append(self._organization)
 
         practitioner = self._practitioner
         organization = self._organization
-        resources.extend([practitioner, organization])
 
         practitioner_ref = f"Practitioner/{practitioner['id']}"
         organization_ref = f"Organization/{organization['id']}"
 
-        # Generate infrastructure (locations, schedules, slots) - shared
+        # Generate infrastructure (locations, schedules, slots) - shared, only added once
         infra_resources = self._generate_infrastructure(organization_ref, practitioner_ref)
         resources.extend(infra_resources)
 
