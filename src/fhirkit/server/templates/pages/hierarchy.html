@@ -7,7 +7,7 @@
 /* Tree structure styling */
 .tree-view {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .tree-node {
@@ -15,18 +15,18 @@
 }
 
 .tree-children {
-    margin-left: 20px;
+    margin-left: 16px;
     border-left: 1px dashed #d1d5db;
-    padding-left: 12px;
+    padding-left: 8px;
 }
 
 .tree-item {
     display: flex;
     align-items: center;
-    padding: 8px 12px;
+    padding: 3px 8px;
     cursor: pointer;
-    border-radius: 6px;
-    margin: 2px 0;
+    border-radius: 4px;
+    margin: 1px 0;
     transition: background-color 0.15s;
 }
 
@@ -39,12 +39,12 @@
 }
 
 .tree-toggle {
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 4px;
+    margin-right: 2px;
     color: #6b7280;
     flex-shrink: 0;
     transition: transform 0.15s;
@@ -59,9 +59,9 @@
 }
 
 .tree-icon {
-    width: 20px;
-    height: 20px;
-    margin-right: 8px;
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
     flex-shrink: 0;
 }
 
@@ -74,7 +74,6 @@
 }
 
 .tree-label {
-    flex-grow: 1;
     font-weight: 500;
 }
 
@@ -215,9 +214,9 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Tree Panel -->
-        <div class="lg:col-span-2">
+        <div>
             <div class="bg-white shadow rounded-lg p-6">
                 <div id="unified-tree" class="tree-view">
                     {% if roots %}
@@ -238,7 +237,7 @@
         </div>
 
         <!-- Detail Panel -->
-        <div class="lg:col-span-1">
+        <div>
             <div id="detail-panel" class="bg-white shadow rounded-lg p-6 sticky top-6">
                 <div id="detail-placeholder" class="text-center py-12 text-gray-500">
                     <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
