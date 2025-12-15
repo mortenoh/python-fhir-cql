@@ -719,12 +719,31 @@ class CQLEvaluatorVisitor(cqlVisitor):
 
     def visitCaseExpressionTerm(self, ctx: cqlParser.CaseExpressionTermContext) -> Any:
         """Visit case expression."""
-        # Check if this is a simple case (with comparand) or searched case
-        comparand = None
-        if ctx.expression():
-            comparand = self.visit(ctx.expression())
+        # Get all expressions in the case statement
+        # For simple case: expression(0) is comparand, expression(1) is else
+        # For searched case: expression(0) is else (no comparand)
+        expressions = ctx.expression()
+        if not isinstance(expressions, list):
+            expressions = [expressions] if expressions else []
 
-        for item in ctx.caseExpressionItem():
+        # Determine if this is a simple case (with comparand) or searched case
+        comparand = None
+        else_index = 0
+
+        # Check for comparand by looking at the structure
+        # Simple case has comparand before 'when', searched case starts with 'when'
+        case_items = ctx.caseExpressionItem()
+        if case_items and len(expressions) > 0:
+            # If there are 2 expressions, first is comparand, second is else
+            # If there is 1 expression, it's the else clause
+            if len(expressions) >= 2:
+                comparand = self.visit(expressions[0])
+                else_index = 1
+            elif len(expressions) == 1:
+                # This is the else expression for a searched case
+                else_index = 0
+
+        for item in case_items:
             when_expr = item.expression(0)
             then_expr = item.expression(1)
 
@@ -740,12 +759,8 @@ class CQLEvaluatorVisitor(cqlVisitor):
                     return self.visit(then_expr)
 
         # Return else clause if present
-        else_expr = ctx.expression()
-        if else_expr and ctx.getChildCount() > 0:
-            # Find the else expression (last expression in context)
-            expressions = [child for child in ctx.children if hasattr(child, "expression")]
-            if expressions:
-                return self.visit(expressions[-1])
+        if expressions and else_index < len(expressions):
+            return self.visit(expressions[else_index])
 
         return None
 
@@ -760,6 +775,10 @@ class CQLEvaluatorVisitor(cqlVisitor):
     def visitMemberInvocation(self, ctx: cqlParser.MemberInvocationContext) -> Any:
         """Visit member invocation (identifier access)."""
         name = self._get_identifier_text(ctx.referentialIdentifier())
+
+        # Check if it's the current context type (e.g., "Patient" in Patient context)
+        if self._library and name == self._library.current_context:
+            return self.context.resource
 
         # Check if it's a query alias
         if self.context.has_alias(name):
