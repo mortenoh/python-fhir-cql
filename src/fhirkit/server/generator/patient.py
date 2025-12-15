@@ -294,10 +294,12 @@ class PatientGenerator(FHIRResourceGenerator):
         names = []
 
         # Official name
+        middle_initial = self.faker.first_name()[0] + "."
         official_name: dict[str, Any] = {
             "use": "official",
             "family": last_name,
-            "given": [first_name, self.faker.first_name()[0] + "."],
+            "given": [first_name, middle_initial],
+            "text": f"{first_name} {middle_initial} {last_name}",
         }
 
         # Name suffix (5% of patients)
@@ -328,6 +330,40 @@ class PatientGenerator(FHIRResourceGenerator):
                             date.today() - timedelta(days=365),
                         )
                     },
+                }
+            )
+
+        # Nickname (20% of patients)
+        if self.faker.random.random() < 0.20:
+            # Generate a plausible nickname
+            nicknames = {
+                "William": "Bill",
+                "Robert": "Bob",
+                "Richard": "Dick",
+                "James": "Jim",
+                "Michael": "Mike",
+                "Elizabeth": "Liz",
+                "Margaret": "Maggie",
+                "Katherine": "Kate",
+                "Jennifer": "Jen",
+                "Christopher": "Chris",
+                "Anthony": "Tony",
+                "Joseph": "Joe",
+                "Thomas": "Tom",
+                "Daniel": "Dan",
+                "Matthew": "Matt",
+                "Patricia": "Pat",
+                "Barbara": "Barb",
+                "Susan": "Sue",
+                "Rebecca": "Becky",
+                "Stephanie": "Steph",
+            }
+            nickname = nicknames.get(first_name, first_name[:3] + "y")
+            names.append(
+                {
+                    "use": "nickname",
+                    "given": [nickname],
+                    "text": nickname,
                 }
             )
 

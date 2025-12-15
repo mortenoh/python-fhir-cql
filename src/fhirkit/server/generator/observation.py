@@ -227,6 +227,260 @@ class ObservationGenerator(FHIRResourceGenerator):
 
         return observation
 
+    def generate_blood_pressure(
+        self,
+        patient_ref: str | None = None,
+        encounter_ref: str | None = None,
+        effective_date: str | None = None,
+    ) -> dict[str, Any]:
+        """Generate a Blood Pressure observation with systolic/diastolic components.
+
+        Returns:
+            Blood Pressure observation with components
+        """
+        observation_id = self._generate_id()
+
+        if effective_date is None:
+            effective_dt = self.faker.date_time_between(
+                start_date="-1y",
+                end_date="now",
+                tzinfo=timezone.utc,
+            )
+            effective_date = effective_dt.isoformat()
+
+        # Generate BP values (80% normal, 20% abnormal)
+        if self.faker.random.random() < 0.8:
+            systolic = self.faker.random.uniform(90, 120)
+            diastolic = self.faker.random.uniform(60, 80)
+        else:
+            # Abnormal - hypertensive
+            systolic = self.faker.random.uniform(130, 180)
+            diastolic = self.faker.random.uniform(85, 110)
+
+        observation: dict[str, Any] = {
+            "resourceType": "Observation",
+            "id": observation_id,
+            "meta": self._generate_meta(),
+            "status": "final",
+            "category": [
+                {
+                    "coding": [
+                        {
+                            "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                            "code": "vital-signs",
+                            "display": "Vital Signs",
+                        }
+                    ]
+                }
+            ],
+            "code": {
+                "coding": [
+                    {
+                        "system": LOINC_SYSTEM,
+                        "code": "85354-9",
+                        "display": "Blood pressure panel with all children optional",
+                    }
+                ],
+                "text": "Blood Pressure",
+            },
+            "effectiveDateTime": effective_date,
+            "component": [
+                {
+                    "code": {
+                        "coding": [
+                            {
+                                "system": LOINC_SYSTEM,
+                                "code": "8480-6",
+                                "display": "Systolic blood pressure",
+                            }
+                        ],
+                        "text": "Systolic Blood Pressure",
+                    },
+                    "valueQuantity": self._generate_quantity(round(systolic, 0), "mm[Hg]"),
+                },
+                {
+                    "code": {
+                        "coding": [
+                            {
+                                "system": LOINC_SYSTEM,
+                                "code": "8462-4",
+                                "display": "Diastolic blood pressure",
+                            }
+                        ],
+                        "text": "Diastolic Blood Pressure",
+                    },
+                    "valueQuantity": self._generate_quantity(round(diastolic, 0), "mm[Hg]"),
+                },
+            ],
+        }
+
+        if patient_ref:
+            observation["subject"] = {"reference": patient_ref}
+
+        if encounter_ref:
+            observation["encounter"] = {"reference": encounter_ref}
+
+        return observation
+
+    def generate_smoking_status(
+        self,
+        patient_ref: str | None = None,
+        encounter_ref: str | None = None,
+        effective_date: str | None = None,
+    ) -> dict[str, Any]:
+        """Generate a Smoking Status observation with CodeableConcept value.
+
+        Returns:
+            Smoking status observation
+        """
+        observation_id = self._generate_id()
+
+        if effective_date is None:
+            effective_dt = self.faker.date_time_between(
+                start_date="-1y",
+                end_date="now",
+                tzinfo=timezone.utc,
+            )
+            effective_date = effective_dt.isoformat()
+
+        # Smoking status options (SNOMED CT) with weights
+        smoking_statuses: list[tuple[str, str, float]] = [
+            ("266919005", "Never smoked tobacco", 0.50),
+            ("8517006", "Former smoker", 0.30),
+            ("77176002", "Current smoker", 0.15),
+            ("428041000124106", "Current light tobacco smoker", 0.05),
+        ]
+
+        # Select status based on weights
+        roll = self.faker.random.random()
+        cumulative = 0.0
+        selected_code, selected_display = smoking_statuses[0][0], smoking_statuses[0][1]
+        for code, display, weight in smoking_statuses:
+            cumulative += weight
+            if roll < cumulative:
+                selected_code, selected_display = code, display
+                break
+
+        observation: dict[str, Any] = {
+            "resourceType": "Observation",
+            "id": observation_id,
+            "meta": self._generate_meta(),
+            "status": "final",
+            "category": [
+                {
+                    "coding": [
+                        {
+                            "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                            "code": "social-history",
+                            "display": "Social History",
+                        }
+                    ]
+                }
+            ],
+            "code": {
+                "coding": [
+                    {
+                        "system": LOINC_SYSTEM,
+                        "code": "72166-2",
+                        "display": "Tobacco smoking status",
+                    }
+                ],
+                "text": "Smoking Status",
+            },
+            "effectiveDateTime": effective_date,
+            "valueCodeableConcept": {
+                "coding": [
+                    {
+                        "system": "http://snomed.info/sct",
+                        "code": selected_code,
+                        "display": selected_display,
+                    }
+                ],
+                "text": selected_display,
+            },
+        }
+
+        if patient_ref:
+            observation["subject"] = {"reference": patient_ref}
+
+        if encounter_ref:
+            observation["encounter"] = {"reference": encounter_ref}
+
+        return observation
+
+    def generate_clinical_note(
+        self,
+        patient_ref: str | None = None,
+        encounter_ref: str | None = None,
+        effective_date: str | None = None,
+    ) -> dict[str, Any]:
+        """Generate a Clinical Note observation with string value.
+
+        Returns:
+            Clinical note observation
+        """
+        observation_id = self._generate_id()
+
+        if effective_date is None:
+            effective_dt = self.faker.date_time_between(
+                start_date="-1y",
+                end_date="now",
+                tzinfo=timezone.utc,
+            )
+            effective_date = effective_dt.isoformat()
+
+        # Sample clinical notes
+        notes = [
+            "Patient appears well-nourished and in no acute distress.",
+            "Vital signs stable. No significant findings on examination.",
+            "Patient reports improvement in symptoms since last visit.",
+            "Discussed treatment options with patient and family.",
+            "Follow-up appointment scheduled in 2 weeks.",
+            "Labs reviewed and discussed with patient.",
+            "Patient counseled on medication adherence.",
+            "No new complaints. Continuing current treatment plan.",
+            "Patient tolerating medications well without side effects.",
+            "Recommend continued monitoring of condition.",
+        ]
+
+        observation: dict[str, Any] = {
+            "resourceType": "Observation",
+            "id": observation_id,
+            "meta": self._generate_meta(),
+            "status": "final",
+            "category": [
+                {
+                    "coding": [
+                        {
+                            "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                            "code": "exam",
+                            "display": "Exam",
+                        }
+                    ]
+                }
+            ],
+            "code": {
+                "coding": [
+                    {
+                        "system": LOINC_SYSTEM,
+                        "code": "34109-9",
+                        "display": "Note",
+                    }
+                ],
+                "text": "Clinical Note",
+            },
+            "effectiveDateTime": effective_date,
+            "valueString": self.faker.random_element(notes),
+        }
+
+        if patient_ref:
+            observation["subject"] = {"reference": patient_ref}
+
+        if encounter_ref:
+            observation["encounter"] = {"reference": encounter_ref}
+
+        return observation
+
     def generate_vital_signs_panel(
         self,
         patient_ref: str | None = None,

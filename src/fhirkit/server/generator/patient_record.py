@@ -364,6 +364,31 @@ class PatientRecordGenerator:
                 observations.append(observation)
                 resources.append(observation)
 
+            # Add blood pressure (component observation) - once per encounter
+            bp_obs = self.observation_gen.generate_blood_pressure(
+                patient_ref=patient_ref,
+                encounter_ref=encounter_ref,
+                effective_date=encounter["period"]["start"],
+            )
+            observations.append(bp_obs)
+            resources.append(bp_obs)
+
+        # Add smoking status once per patient (social history)
+        smoking_obs = self.observation_gen.generate_smoking_status(
+            patient_ref=patient_ref,
+            encounter_ref=f"Encounter/{encounters[0]['id']}" if encounters else None,
+        )
+        observations.append(smoking_obs)
+        resources.append(smoking_obs)
+
+        # Add clinical notes (string-valued observations) - one per patient
+        clinical_note = self.observation_gen.generate_clinical_note(
+            patient_ref=patient_ref,
+            encounter_ref=f"Encounter/{encounters[0]['id']}" if encounters else None,
+        )
+        observations.append(clinical_note)
+        resources.append(clinical_note)
+
         # Generate immunizations
         num_imm = self.faker.random_int(min=num_immunizations[0], max=num_immunizations[1])
         for i in range(num_imm):

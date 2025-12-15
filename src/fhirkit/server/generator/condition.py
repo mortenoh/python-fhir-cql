@@ -142,4 +142,22 @@ class ConditionGenerator(FHIRResourceGenerator):
             ]
             condition["severity"] = make_codeable_concept(self.faker.random_element(severities))
 
+        # Add bodySite for 50% of conditions
+        if self.faker.random.random() < 0.5:
+            body_sites = [
+                {"system": "http://snomed.info/sct", "code": "774007", "display": "Head and neck structure"},
+                {"system": "http://snomed.info/sct", "code": "51185008", "display": "Thoracic structure"},
+                {"system": "http://snomed.info/sct", "code": "818983003", "display": "Abdomen"},
+                {"system": "http://snomed.info/sct", "code": "40983000", "display": "Upper arm structure"},
+                {"system": "http://snomed.info/sct", "code": "30021000", "display": "Lower leg structure"},
+                {"system": "http://snomed.info/sct", "code": "72696002", "display": "Knee region structure"},
+                {"system": "http://snomed.info/sct", "code": "368208006", "display": "Left upper quadrant of abdomen"},
+                {"system": "http://snomed.info/sct", "code": "368209003", "display": "Right upper quadrant of abdomen"},
+                {"system": "http://snomed.info/sct", "code": "80891009", "display": "Heart structure"},
+                {"system": "http://snomed.info/sct", "code": "39607008", "display": "Lung structure"},
+                {"system": "http://snomed.info/sct", "code": "64033007", "display": "Kidney structure"},
+                {"system": "http://snomed.info/sct", "code": "181268008", "display": "Spine structure"},
+            ]
+            condition["bodySite"] = [make_codeable_concept(self.faker.random_element(body_sites))]
+
         return condition

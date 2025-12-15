@@ -111,6 +111,25 @@ class MedicationRequestGenerator(FHIRResourceGenerator):
                             "periodUnit": "d",
                         }
                     },
+                    "doseAndRate": [
+                        {
+                            "type": {
+                                "coding": [
+                                    {
+                                        "system": "http://terminology.hl7.org/CodeSystem/dose-rate-type",
+                                        "code": "ordered",
+                                        "display": "Ordered",
+                                    }
+                                ]
+                            },
+                            "doseQuantity": {
+                                "value": self.faker.random_element([1, 2, 5, 10, 20, 25, 50, 100, 250, 500]),
+                                "unit": "mg",
+                                "system": "http://unitsofmeasure.org",
+                                "code": "mg",
+                            },
+                        }
+                    ],
                 }
             ],
             "dispenseRequest": {

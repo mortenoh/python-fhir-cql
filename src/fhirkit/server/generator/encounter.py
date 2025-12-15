@@ -134,4 +134,23 @@ class EncounterGenerator(FHIRResourceGenerator):
         if organization_ref:
             encounter["serviceProvider"] = {"reference": organization_ref}
 
+        # Add reasonCode for 70% of encounters (chief complaint)
+        if self.faker.random.random() < 0.7:
+            reason_codes = [
+                {"system": "http://snomed.info/sct", "code": "386661006", "display": "Fever"},
+                {"system": "http://snomed.info/sct", "code": "21522001", "display": "Abdominal pain"},
+                {"system": "http://snomed.info/sct", "code": "25064002", "display": "Headache"},
+                {"system": "http://snomed.info/sct", "code": "267036007", "display": "Dyspnea"},
+                {"system": "http://snomed.info/sct", "code": "49727002", "display": "Cough"},
+                {"system": "http://snomed.info/sct", "code": "271807003", "display": "Skin eruption"},
+                {"system": "http://snomed.info/sct", "code": "82991003", "display": "Generalized aches and pains"},
+                {"system": "http://snomed.info/sct", "code": "422587007", "display": "Nausea"},
+                {"system": "http://snomed.info/sct", "code": "161891005", "display": "Back pain"},
+                {"system": "http://snomed.info/sct", "code": "29857009", "display": "Chest pain"},
+                {"system": "http://snomed.info/sct", "code": "404640003", "display": "Dizziness"},
+                {"system": "http://snomed.info/sct", "code": "62315008", "display": "Diarrhea"},
+            ]
+            reason = self.faker.random_element(reason_codes)
+            encounter["reasonCode"] = [make_codeable_concept(reason)]
+
         return encounter
