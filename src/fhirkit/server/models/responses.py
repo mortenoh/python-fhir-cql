@@ -254,6 +254,12 @@ class CapabilityStatement(BaseModel):
                         "definition": "http://hl7.org/fhir/OperationDefinition/Patient-everything",
                     }
                 )
+                resource_operations.append(
+                    {
+                        "name": "summary",
+                        "definition": "http://hl7.org/fhir/uv/ips/OperationDefinition/summary",
+                    }
+                )
             elif rtype == "Measure":
                 resource_operations.append(
                     {

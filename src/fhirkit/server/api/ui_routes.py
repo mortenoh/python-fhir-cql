@@ -176,6 +176,12 @@ def create_ui_router(
         )
         return templates.TemplateResponse("pages/tutorials.html", context)
 
+    @router.get("/ips", response_class=HTMLResponse, name="ui_ips")
+    async def ips_page(request: Request) -> HTMLResponse:
+        """International Patient Summary (IPS) generator and viewer."""
+        context = get_context(request)
+        return templates.TemplateResponse("pages/ips.html", context)
+
     # =========================================================================
     # Resource CRUD Routes (catch-all must come AFTER specific routes)
     # =========================================================================

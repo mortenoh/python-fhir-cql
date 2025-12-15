@@ -89,6 +89,10 @@
                                class="{% if '/measures' in request.url.path %}bg-fhir-800 text-white{% else %}text-fhir-100 hover:bg-fhir-600{% endif %} rounded-md px-3 py-2 text-sm font-medium">
                                 Measures
                             </a>
+                            <a href="{{ url_for('ui_ips') }}"
+                               class="{% if '/ips' in request.url.path %}bg-fhir-800 text-white{% else %}text-fhir-100 hover:bg-fhir-600{% endif %} rounded-md px-3 py-2 text-sm font-medium">
+                                IPS
+                            </a>
                         </div>
                     </div>
                     <div class="flex items-center space-x-4">
@@ -147,7 +151,7 @@
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
                 <div class="flex justify-between items-center text-sm text-gray-500">
                     <span>FHIR R4 Server v1.0.0</span>
-                    <span>Powered by python-fhir-cql</span>
+                    <span>Powered by FHIRKit</span>
                 </div>
             </div>
         </footer>

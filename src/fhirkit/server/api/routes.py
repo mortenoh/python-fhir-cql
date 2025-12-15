@@ -1072,6 +1072,136 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
             media_type=FHIR_JSON,
         )
 
+    @router.get("/Patient/{patient_id}/$summary", tags=["Operations"])
+    async def patient_summary(
+        request: Request,
+        patient_id: str,
+        persist: bool = Query(default=False, description="Persist the generated IPS bundle"),
+    ) -> Response:
+        """Generate an International Patient Summary (IPS) for a patient.
+
+        Implements the IPS $summary operation per HL7 IPS IG:
+        http://hl7.org/fhir/uv/ips/OperationDefinition/summary
+
+        Returns a Document Bundle containing an IPS-compliant Composition with
+        sections for allergies, medications, problems, immunizations, procedures,
+        and results, along with all referenced resources.
+
+        Parameters:
+            patient_id: The patient ID
+            persist: Whether to persist the generated Bundle (default false)
+
+        Returns:
+            IPS Document Bundle (application/fhir+json)
+        """
+        from ..operations.ips_summary import IPSSummaryGenerator
+
+        generator = IPSSummaryGenerator(store)
+        bundle = generator.generate(patient_id, persist=persist)
+
+        if bundle is None:
+            outcome = OperationOutcome.not_found("Patient", patient_id)
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=404,
+                media_type=FHIR_JSON,
+            )
+
+        return JSONResponse(
+            content=bundle,
+            media_type=FHIR_JSON,
+        )
+
+    @router.post("/Patient/$summary", tags=["Operations"])
+    async def import_ips(
+        request: Request,
+    ) -> Response:
+        """Import an International Patient Summary (IPS) document.
+
+        Accepts an IPS Document Bundle and extracts all resources into the store.
+        The Patient resource from the IPS will be matched or created, and all
+        clinical resources (allergies, medications, conditions, etc.) will be
+        imported.
+
+        Request Body:
+            IPS Document Bundle (application/fhir+json)
+
+        Returns:
+            OperationOutcome with import summary
+        """
+        try:
+            body = await request.json()
+        except Exception as e:
+            outcome = OperationOutcome.error(f"Invalid JSON: {e}", code="invalid")
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        # Validate it's a document bundle
+        if body.get("resourceType") != "Bundle" or body.get("type") != "document":
+            outcome = OperationOutcome.error(
+                "Expected a Document Bundle (type='document')", code="invalid"
+            )
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        entries = body.get("entry", [])
+        if not entries:
+            outcome = OperationOutcome.error("Bundle has no entries", code="invalid")
+            return JSONResponse(
+                content=outcome.model_dump(exclude_none=True),
+                status_code=400,
+                media_type=FHIR_JSON,
+            )
+
+        # Import all resources
+        imported_count = 0
+        patient_id = None
+
+        for entry in entries:
+            resource = entry.get("resource", {})
+            resource_type = resource.get("resourceType")
+
+            if not resource_type:
+                continue
+
+            # Skip Composition - it's IPS-specific metadata
+            if resource_type == "Composition":
+                continue
+
+            # Track patient ID
+            if resource_type == "Patient":
+                created = store.create(resource)
+                patient_id = created.get("id")
+                imported_count += 1
+            else:
+                # Update references to use actual patient ID if needed
+                store.create(resource)
+                imported_count += 1
+
+        outcome = OperationOutcome(
+            resourceType="OperationOutcome",
+            issue=[
+                {
+                    "severity": "information",
+                    "code": "informational",
+                    "diagnostics": f"Successfully imported {imported_count} resources from IPS document"
+                    + (f" for Patient/{patient_id}" if patient_id else ""),
+                }
+            ],
+        )
+
+        return JSONResponse(
+            content=outcome.model_dump(exclude_none=True),
+            status_code=200,
+            media_type=FHIR_JSON,
+        )
+
     # =========================================================================
     # Measure Operations
     # =========================================================================

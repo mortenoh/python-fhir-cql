@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+
+{% block title %}IPS - International Patient Summary{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between">
+        <div class="min-w-0 flex-1">
+            <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
+                International Patient Summary
+            </h1>
+            <p class="mt-1 text-sm text-gray-500">
+                Generate and view IPS documents following the HL7 IPS Implementation Guide
+            </p>
+        </div>
+        <div class="mt-4 md:mt-0 flex space-x-3">
+            <a href="http://hl7.org/fhir/uv/ips/" target="_blank"
+               class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                IPS IG
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Left Panel: Controls -->
+        <div class="lg:col-span-4 space-y-4">
+            <!-- Generate IPS -->
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-fhir-50 to-white">
+                    <h2 class="text-lg font-medium text-gray-900">Generate IPS</h2>
+                    <p class="text-xs text-gray-500 mt-0.5">Create an IPS document for a patient</p>
+                </div>
+                <div class="p-4 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Select Patient</label>
+                        <select id="patient-select" class="w-full text-sm border-gray-300 rounded-md">
+                            <option value="">-- Select a patient --</option>
+                        </select>
+                    </div>
+
+                    <div id="patient-preview" class="hidden bg-gray-50 rounded-lg p-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-medium text-gray-500 uppercase">Patient Info</span>
+                            <span id="patient-demographics" class="text-xs text-gray-600"></span>
+                        </div>
+                        <div id="patient-name" class="text-sm font-medium text-gray-900 mt-1"></div>
+                    </div>
+
+                    <button onclick="generateIPS()" id="generate-btn"
+                            class="w-full inline-flex justify-center items-center rounded-md bg-fhir-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-fhir-700 disabled:opacity-50">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Generate IPS
+                    </button>
+                </div>
+            </div>
+
+            <!-- Import IPS -->
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-200">
+                    <h2 class="text-lg font-medium text-gray-900">Import IPS</h2>
+                    <p class="text-xs text-gray-500 mt-0.5">Import an IPS document into the server</p>
+                </div>
+                <div class="p-4 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Upload IPS Bundle</label>
+                        <input type="file" id="ips-file" accept=".json"
+                               class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-fhir-50 file:text-fhir-700 hover:file:bg-fhir-100">
+                    </div>
+                    <button onclick="importIPS()" id="import-btn"
+                            class="w-full inline-flex justify-center items-center rounded-md bg-gray-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 disabled:opacity-50">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        Import IPS
+                    </button>
+                </div>
+            </div>
+
+            <!-- IPS Sections Info -->
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-200">
+                    <h2 class="text-sm font-medium text-gray-900">IPS Sections</h2>
+                </div>
+                <div class="p-4">
+                    <ul class="text-xs text-gray-600 space-y-1.5">
+                        <li class="flex items-center"><span class="w-2 h-2 rounded-full bg-red-400 mr-2"></span>Allergies and Intolerances</li>
+                        <li class="flex items-center"><span class="w-2 h-2 rounded-full bg-blue-400 mr-2"></span>Medication Summary</li>
+                        <li class="flex items-center"><span class="w-2 h-2 rounded-full bg-amber-400 mr-2"></span>Active Problems</li>
+                        <li class="flex items-center"><span class="w-2 h-2 rounded-full bg-green-400 mr-2"></span>Immunizations</li>
+                        <li class="flex items-center"><span class="w-2 h-2 rounded-full bg-purple-400 mr-2"></span>History of Procedures</li>
+                        <li class="flex items-center"><span class="w-2 h-2 rounded-full bg-cyan-400 mr-2"></span>Results</li>
+                        <li class="flex items-center"><span class="w-2 h-2 rounded-full bg-pink-400 mr-2"></span>Vital Signs</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: IPS Document View -->
+        <div class="lg:col-span-8 space-y-4">
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-lg font-medium text-gray-900">IPS Document</h2>
+                        <span id="ips-stats" class="text-xs text-gray-500"></span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="showView('rendered')" id="btn-rendered"
+                                class="px-3 py-1 text-sm font-medium rounded-md bg-fhir-100 text-fhir-700">
+                            Rendered
+                        </button>
+                        <button onclick="showView('json')" id="btn-json"
+                                class="px-3 py-1 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100">
+                            JSON
+                        </button>
+                        <button onclick="downloadIPS()" id="download-btn" class="hidden px-3 py-1 text-sm font-medium rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="ips-placeholder" class="p-8 text-center text-gray-500">
+                    <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <p class="mt-2 text-sm">Select a patient and generate an IPS</p>
+                </div>
+
+                <!-- Rendered View -->
+                <div id="ips-rendered" class="hidden p-4 space-y-6 max-h-[700px] overflow-auto">
+                    <!-- Patient Header -->
+                    <div id="ips-header" class="border-b border-gray-200 pb-4">
+                        <h3 id="ips-title" class="text-xl font-bold text-gray-900"></h3>
+                        <p id="ips-date" class="text-sm text-gray-500 mt-1"></p>
+                    </div>
+
+                    <!-- Sections -->
+                    <div id="ips-sections" class="space-y-6"></div>
+                </div>
+
+                <!-- JSON View -->
+                <div id="ips-json" class="hidden h-[700px] overflow-auto">
+                    <pre id="ips-json-content" class="p-4 text-xs json-content"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    var patients = [];
+    var currentIPS = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadPatients();
+    });
+
+    async function loadPatients() {
+        try {
+            var response = await fetch('{{ api_base_path }}/Patient?_count=100');
+            if (response.ok) {
+                var bundle = await response.json();
+                var select = document.getElementById('patient-select');
+                (bundle.entry || []).forEach(function(entry) {
+                    var patient = entry.resource;
+                    patients.push(patient);
+                    var name = getPatientName(patient);
+                    var option = document.createElement('option');
+                    option.value = patient.id;
+                    option.textContent = name + ' (' + patient.id.substring(0, 8) + '...)';
+                    select.appendChild(option);
+                });
+            }
+        } catch (e) {
+            console.error('Failed to load patients:', e);
+        }
+    }
+
+    function getPatientName(patient) {
+        if (patient.name && patient.name[0]) {
+            var n = patient.name[0];
+            return ((n.given || []).join(' ') + ' ' + (n.family || '')).trim();
+        }
+        return 'Unknown';
+    }
+
+    document.getElementById('patient-select').addEventListener('change', function() {
+        var patientId = this.value;
+        var preview = document.getElementById('patient-preview');
+
+        if (patientId) {
+            var patient = patients.find(p => p.id === patientId);
+            if (patient) {
+                document.getElementById('patient-name').textContent = getPatientName(patient);
+
+                var demo = [];
+                if (patient.birthDate) {
+                    var birth = new Date(patient.birthDate);
+                    var age = new Date().getFullYear() - birth.getFullYear();
+                    demo.push(age + 'yo');
+                }
+                if (patient.gender) {
+                    demo.push(patient.gender.charAt(0).toUpperCase());
+                }
+                document.getElementById('patient-demographics').textContent = demo.join(' ');
+                preview.classList.remove('hidden');
+            }
+        } else {
+            preview.classList.add('hidden');
+        }
+    });
+
+    async function generateIPS() {
+        var patientId = document.getElementById('patient-select').value;
+        if (!patientId) {
+            alert('Please select a patient');
+            return;
+        }
+
+        var btn = document.getElementById('generate-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<svg class="animate-spin w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>Generating...';
+
+        try {
+            var response = await fetch('{{ api_base_path }}/Patient/' + patientId + '/$summary');
+            var data = await response.json();
+
+            if (response.ok) {
+                currentIPS = data;
+                renderIPS(data);
+                document.getElementById('ips-placeholder').classList.add('hidden');
+                document.getElementById('download-btn').classList.remove('hidden');
+                showView('rendered');
+            } else {
+                alert('Error: ' + (data.issue?.[0]?.diagnostics || 'Failed to generate IPS'));
+            }
+        } catch (e) {
+            alert('Error: ' + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>Generate IPS';
+        }
+    }
+
+    async function importIPS() {
+        var fileInput = document.getElementById('ips-file');
+        if (!fileInput.files.length) {
+            alert('Please select an IPS file');
+            return;
+        }
+
+        var btn = document.getElementById('import-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<svg class="animate-spin w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>Importing...';
+
+        try {
+            var file = fileInput.files[0];
+            var content = await file.text();
+            var bundle = JSON.parse(content);
+
+            var response = await fetch('{{ api_base_path }}/Patient/$summary', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/fhir+json' },
+                body: JSON.stringify(bundle)
+            });
+
+            var data = await response.json();
+            var message = data.issue?.[0]?.diagnostics || 'Import completed';
+            alert(message);
+
+            // Reload patients
+            document.getElementById('patient-select').innerHTML = '<option value="">-- Select a patient --</option>';
+            patients = [];
+            await loadPatients();
+
+        } catch (e) {
+            alert('Error: ' + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>Import IPS';
+        }
+    }
+
+    function renderIPS(bundle) {
+        // Find composition (first entry)
+        var composition = bundle.entry?.[0]?.resource;
+        if (!composition || composition.resourceType !== 'Composition') {
+            return;
+        }
+
+        // Header
+        document.getElementById('ips-title').textContent = composition.title || 'International Patient Summary';
+        document.getElementById('ips-date').textContent = 'Generated: ' + new Date(composition.date).toLocaleString();
+
+        // Stats
+        var resourceCount = bundle.entry?.length || 0;
+        document.getElementById('ips-stats').textContent = resourceCount + ' resources in bundle';
+
+        // Build resource map for quick lookup
+        var resourceMap = {};
+        (bundle.entry || []).forEach(function(entry) {
+            var r = entry.resource;
+            if (r && r.resourceType && r.id) {
+                resourceMap[r.resourceType + '/' + r.id] = r;
+            }
+        });
+
+        // Render sections
+        var sectionsDiv = document.getElementById('ips-sections');
+        sectionsDiv.innerHTML = '';
+
+        var sectionColors = {
+            '48765-2': 'red',    // Allergies
+            '10160-0': 'blue',   // Medications
+            '11450-4': 'amber',  // Problems
+            '11369-6': 'green',  // Immunizations
+            '47519-4': 'purple', // Procedures
+            '30954-2': 'cyan',   // Results
+            '8716-3': 'pink',    // Vital Signs
+        };
+
+        (composition.section || []).forEach(function(section) {
+            var sectionCode = section.code?.coding?.[0]?.code || '';
+            var color = sectionColors[sectionCode] || 'gray';
+
+            var sectionHtml = '<div class="border rounded-lg overflow-hidden">';
+            sectionHtml += '<div class="px-4 py-2 bg-' + color + '-50 border-b border-' + color + '-100 flex items-center">';
+            sectionHtml += '<span class="w-3 h-3 rounded-full bg-' + color + '-400 mr-2"></span>';
+            sectionHtml += '<h4 class="text-sm font-medium text-' + color + '-900">' + (section.title || 'Section') + '</h4>';
+            sectionHtml += '<span class="ml-auto text-xs text-' + color + '-600">' + (section.entry?.length || 0) + ' items</span>';
+            sectionHtml += '</div>';
+
+            if (section.entry && section.entry.length > 0) {
+                sectionHtml += '<ul class="divide-y divide-gray-100">';
+                section.entry.forEach(function(entry) {
+                    var ref = entry.reference;
+                    var resource = resourceMap[ref];
+                    if (resource) {
+                        var display = getResourceDisplay(resource);
+                        sectionHtml += '<li class="px-4 py-2 text-sm text-gray-700">' + display + '</li>';
+                    }
+                });
+                sectionHtml += '</ul>';
+            } else {
+                sectionHtml += '<div class="px-4 py-3 text-sm text-gray-500 italic">No data available</div>';
+            }
+
+            sectionHtml += '</div>';
+            sectionsDiv.innerHTML += sectionHtml;
+        });
+
+        // JSON view
+        document.getElementById('ips-json-content').innerHTML = highlightJSON(JSON.stringify(bundle, null, 2));
+    }
+
+    function getResourceDisplay(resource) {
+        var type = resource.resourceType;
+        var text = '';
+
+        if (type === 'AllergyIntolerance') {
+            var code = resource.code || {};
+            text = code.text || code.coding?.[0]?.display || 'Unknown allergy';
+            if (resource.criticality) text += ' (' + resource.criticality + ')';
+        } else if (type === 'MedicationRequest') {
+            var med = resource.medicationCodeableConcept || {};
+            text = med.text || med.coding?.[0]?.display || 'Unknown medication';
+            if (resource.status) text += ' - ' + resource.status;
+        } else if (type === 'Condition') {
+            var code = resource.code || {};
+            text = code.text || code.coding?.[0]?.display || 'Unknown condition';
+            var status = resource.clinicalStatus?.coding?.[0]?.code;
+            if (status) text += ' (' + status + ')';
+        } else if (type === 'Immunization') {
+            var vaccine = resource.vaccineCode || {};
+            text = vaccine.text || vaccine.coding?.[0]?.display || 'Unknown vaccine';
+            if (resource.occurrenceDateTime) text += ' (' + resource.occurrenceDateTime.substring(0, 10) + ')';
+        } else if (type === 'Procedure') {
+            var code = resource.code || {};
+            text = code.text || code.coding?.[0]?.display || 'Unknown procedure';
+            if (resource.performedDateTime) text += ' (' + resource.performedDateTime.substring(0, 10) + ')';
+        } else if (type === 'Observation') {
+            var code = resource.code || {};
+            text = code.text || code.coding?.[0]?.display || 'Unknown observation';
+            if (resource.valueQuantity) {
+                text += ': ' + resource.valueQuantity.value + ' ' + (resource.valueQuantity.unit || '');
+            } else if (resource.valueCodeableConcept) {
+                text += ': ' + (resource.valueCodeableConcept.text || resource.valueCodeableConcept.coding?.[0]?.display || '');
+            }
+        } else {
+            text = type + '/' + resource.id;
+        }
+
+        return text;
+    }
+
+    function showView(view) {
+        document.getElementById('ips-rendered').classList.toggle('hidden', view !== 'rendered');
+        document.getElementById('ips-json').classList.toggle('hidden', view !== 'json');
+        document.getElementById('btn-rendered').className = view === 'rendered'
+            ? 'px-3 py-1 text-sm font-medium rounded-md bg-fhir-100 text-fhir-700'
+            : 'px-3 py-1 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100';
+        document.getElementById('btn-json').className = view === 'json'
+            ? 'px-3 py-1 text-sm font-medium rounded-md bg-fhir-100 text-fhir-700'
+            : 'px-3 py-1 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100';
+    }
+
+    function downloadIPS() {
+        if (!currentIPS) return;
+
+        var blob = new Blob([JSON.stringify(currentIPS, null, 2)], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'ips-' + (currentIPS.id || 'document') + '.json';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+</script>
+{% endblock %}
