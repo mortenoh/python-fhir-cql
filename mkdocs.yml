@@ -42,15 +42,18 @@ nav:
   - Getting Started: getting-started.md
   - CLI: cli.md
   - FHIRPath:
-      - Tutorial: fhirpath-tutorial.md
       - Guide: fhirpath-guide.md
+      - Tutorial: fhirpath-tutorial.md
       - Python API: fhirpath-api.md
+      - Reference: fhirpath-reference.md
   - CQL:
+      - Guide: cql-guide.md
       - Tutorial: cql-tutorial.md
       - Python API: cql-api.md
       - Reference: fhirpath-cql-tutorial.md
   - ELM:
       - Guide: elm-guide.md
+      - Tutorial: elm-tutorial.md
       - Python API: elm-api.md
       - Reference: elm-reference.md
   - FHIR Server:

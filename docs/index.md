@@ -144,19 +144,26 @@ greeting = evaluator.evaluate_definition("Greeting")  # 'Hello, CQL!'
 - [Getting Started](getting-started.md) - Installation and first steps
 - [CLI Reference](cli.md) - Command-line tools
 
-### Tutorials (Step-by-Step)
-- [FHIRPath Tutorial](fhirpath-tutorial.md) - Learn FHIRPath from scratch
-- [CQL Tutorial](cql-tutorial.md) - Learn CQL from scratch
+### FHIRPath
+- [Guide](fhirpath-guide.md) - Comprehensive FHIRPath documentation
+- [Tutorial](fhirpath-tutorial.md) - Learn FHIRPath from scratch
+- [Python API](fhirpath-api.md) - Python API for FHIRPath
+- [Reference](fhirpath-reference.md) - Complete FHIRPath function reference
 
-### Reference Guides
-- [FHIRPath Guide](fhirpath-guide.md) - Comprehensive FHIRPath documentation
-- [FHIRPath API](fhirpath-api.md) - Python API for FHIRPath
-- [CQL API](cql-api.md) - Python API for CQL
-- [ELM Guide](elm-guide.md) - ELM loading, evaluation, and CQL-to-ELM export
-- [ELM API](elm-api.md) - Python API for ELM (loading, evaluation, serialization)
-- [ELM Reference](elm-reference.md) - Complete ELM expression types reference (168 types)
-- [CDS Hooks Guide](cds-hooks-guide.md) - Building clinical decision support services
-- [FHIRPath & CQL Reference](fhirpath-cql-tutorial.md) - Deep dive reference with examples
+### CQL
+- [Guide](cql-guide.md) - Comprehensive CQL documentation
+- [Tutorial](cql-tutorial.md) - Learn CQL from scratch
+- [Python API](cql-api.md) - Python API for CQL
+- [Reference](fhirpath-cql-tutorial.md) - Deep dive reference with examples
+
+### ELM
+- [Guide](elm-guide.md) - ELM loading, evaluation, and CQL-to-ELM export
+- [Tutorial](elm-tutorial.md) - Learn ELM from scratch
+- [Python API](elm-api.md) - Python API for ELM (loading, evaluation, serialization)
+- [Reference](elm-reference.md) - Complete ELM expression types reference (168 types)
+
+### CDS Hooks
+- [Guide](cds-hooks-guide.md) - Building clinical decision support services
 
 ### Server & Services
 - [FHIR Server Guide](fhir-server-guide.md) - Built-in FHIR server with synthetic data generation, 37 resource types
