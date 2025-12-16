@@ -150,8 +150,9 @@
 
             <!-- Measure Details -->
             <div class="bg-white shadow rounded-lg overflow-hidden">
-                <div class="px-4 py-3 border-b border-gray-200">
+                <div class="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
                     <h2 class="text-lg font-medium text-gray-900">Measure Details</h2>
+                    <button onclick="copyMeasureJson(this)" class="text-sm text-gray-600 hover:text-gray-900">Copy JSON</button>
                 </div>
                 <div id="measure-details" class="p-4 max-h-64 overflow-auto">
                     <p class="text-sm text-gray-500">Select a measure to see details</p>
@@ -485,6 +486,23 @@
                 navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
             } else {
                 fallbackCopy(text);
+            }
+        }
+    }
+
+    function copyMeasureJson(button) {
+        if (currentMeasure !== null) {
+            const text = JSON.stringify(currentMeasure, null, 2);
+            const originalText = button.textContent;
+            const showSuccess = () => {
+                button.textContent = 'Copied!';
+                setTimeout(() => { button.textContent = originalText; }, 2000);
+            };
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(showSuccess).catch(() => { fallbackCopy(text); showSuccess(); });
+            } else {
+                fallbackCopy(text);
+                showSuccess();
             }
         }
     }
