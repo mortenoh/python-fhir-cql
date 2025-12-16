@@ -373,6 +373,55 @@ def get_resource_display(resource: dict[str, Any]) -> str:
             return codings[0].get("display", f"Task/{resource_id}")
         return f"Task/{resource_id}"
 
+    elif resource_type == "Appointment":
+        desc = resource.get("description")
+        if desc:
+            return desc
+        appt_type = resource.get("appointmentType", {})
+        if appt_type.get("text"):
+            return appt_type["text"]
+        codings = appt_type.get("coding", [])
+        if codings:
+            return codings[0].get("display", f"Appointment/{resource_id}")
+        return f"Appointment/{resource_id}"
+
+    elif resource_type == "Slot":
+        comment = resource.get("comment")
+        if comment:
+            return comment
+        service_types = resource.get("serviceType", [])
+        if service_types:
+            svc_text = service_types[0].get("text")
+            if svc_text:
+                return svc_text
+            codings = service_types[0].get("coding", [])
+            if codings:
+                return codings[0].get("display", f"Slot/{resource_id}")
+        return f"Slot/{resource_id}"
+
+    elif resource_type == "Claim":
+        claim_type = resource.get("type", {})
+        use = resource.get("use", "")
+        parts = []
+        if claim_type.get("text"):
+            parts.append(claim_type["text"])
+        elif claim_type.get("coding"):
+            parts.append(claim_type["coding"][0].get("display", ""))
+        if use:
+            parts.append(use.title())
+        if parts:
+            return " - ".join(filter(None, parts))
+        return f"Claim/{resource_id}"
+
+    elif resource_type == "ExplanationOfBenefit":
+        eob_type = resource.get("type", {})
+        if eob_type.get("text"):
+            return eob_type["text"]
+        codings = eob_type.get("coding", [])
+        if codings:
+            return codings[0].get("display", f"ExplanationOfBenefit/{resource_id}")
+        return f"ExplanationOfBenefit/{resource_id}"
+
     # Default: use resource type and ID
     return f"{resource_type}/{resource_id}"
 
