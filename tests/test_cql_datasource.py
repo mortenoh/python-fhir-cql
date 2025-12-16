@@ -613,8 +613,8 @@ class TestMedicationRequestRetrieval:
 
         assert len(all_meds) == 2
         assert len(active_meds) == 1
-        # With alias in where clause, result is wrapped with alias key
-        assert active_meds[0]["M"]["status"] == "active"
+        # Single-source queries return items directly, not wrapped in alias
+        assert active_meds[0]["status"] == "active"
         assert active_count == 1
 
 

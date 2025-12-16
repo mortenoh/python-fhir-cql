@@ -253,1366 +253,63 @@ define "ListUnion": {1, 2, 3} union {3, 4, 5}
 define "IntervalCheck": Interval[1, 10] contains 5
 `;
 
-    const cqlExamples = {
-        'basic-arithmetic': `library ArithmeticExamples version '1.0.0'
-
-/*
- * CQL Arithmetic Operations
- * -------------------------
- * CQL supports standard math operations plus useful
- * functions for clinical calculations like BMI, eGFR, etc.
- *
- * Try modifying values to see how results change!
- */
-
-// Basic operators: +, -, *, /
-define "Addition": 5 + 3           // Result: 8
-define "Subtraction": 10 - 4       // Result: 6
-define "Multiplication": 6 * 7     // Result: 42
-define "Division": 20 / 4          // Result: 5.0 (decimal)
-
-// Integer operations
-define "Integer Division": 20 div 3  // Result: 6 (whole number only)
-define "Modulo": 17 mod 5            // Result: 2 (remainder)
-define "Power": 2 ^ 10               // Result: 1024
-
-// Useful math functions
-define "Absolute Value": Abs(-15)    // Result: 15
-define "Ceiling": Ceiling(4.2)       // Result: 5 (round up)
-define "Floor": Floor(4.8)           // Result: 4 (round down)
-define "Round": Round(3.567, 2)      // Result: 3.57 (2 decimals)
-
-// Aggregate functions (work on lists)
-define "Minimum": Min({ 3, 1, 4, 1, 5 })   // Result: 1
-define "Maximum": Max({ 3, 1, 4, 1, 5 })   // Result: 5
-define "Sum": Sum({ 1, 2, 3, 4, 5 })       // Result: 15
-define "Average": Avg({ 1, 2, 3, 4, 5 })   // Result: 3.0
-`,
-
-        'basic-strings': `library StringExamples version '1.0.0'
-
-/*
- * CQL String Operations
- * ---------------------
- * Strings in CQL use single quotes: 'Hello'
- * These functions are useful for searching patient names,
- * parsing codes, and formatting display text.
- */
-
-// Creating and combining strings
-define "Simple String": 'Hello, World!'
-define "Concatenation": 'Hello' + ', ' + 'World!'
-
-// Getting string information
-define "Length": Length('Hello')                    // Result: 5
-define "Position Of": PositionOf('World', 'Hello World')  // Result: 6
-
-// Case conversion (useful for case-insensitive matching)
-define "Upper Case": Upper('hello')                 // Result: 'HELLO'
-define "Lower Case": Lower('HELLO')                 // Result: 'hello'
-
-// Extracting parts of strings
-define "Substring": Substring('Hello World', 0, 5) // Result: 'Hello'
-
-// Checking string content
-define "Starts With": StartsWith('Hello World', 'Hello')  // Result: true
-define "Ends With": EndsWith('Hello World', 'World')      // Result: true
-define "Contains": PositionOf('World', 'Hello World') >= 0
-
-// Modifying strings
-define "Replace": Replace('Hello World', 'World', 'CQL')
-
-// Working with delimited data
-define "Split": Split('a,b,c,d', ',')              // Result: ['a','b','c','d']
-define "Combine": Combine({ 'a', 'b', 'c' }, '-')  // Result: 'a-b-c'
-
-// Comparison (alphabetical ordering)
-define "String Equality": 'abc' = 'abc'            // Result: true
-define "String Compare": 'apple' < 'banana'        // Result: true
-`,
-
-        'basic-dates': `library DateExamples version '1.0.0'
-
-/*
- * CQL Date & Time Operations
- * --------------------------
- * Dates are CRITICAL in clinical CQL for:
- * - Calculating patient age
- * - Finding observations in time ranges
- * - Checking medication durations
- *
- * Date literals start with @: @2024-01-15
- */
-
-// Current date/time
-define "Today": Today()       // Current date (no time)
-define "Now": Now()           // Current date AND time
-
-// Date literals (start with @)
-define "Date Literal": @2024-01-15
-define "DateTime Literal": @2024-01-15T10:30:00
-define "Time Literal": @T14:30:00
-
-// Extracting parts of dates
-define "Year": year from @2024-06-15      // Result: 2024
-define "Month": month from @2024-06-15    // Result: 6
-define "Day": day from @2024-06-15        // Result: 15
-
-// Date arithmetic (essential for clinical queries!)
-define "Add Days": @2024-01-01 + 30 days
-define "Add Months": @2024-01-01 + 3 months
-define "Subtract": @2024-12-31 - 1 month
-
-// Duration calculations
-define "Days Between": days between @2024-01-01 and @2024-12-31    // Result: 365
-define "Months Between": months between @2024-01-01 and @2024-12-31
-define "Years Between": years between @2000-01-01 and @2024-01-01  // Result: 24
-
-// Comparisons (for filtering by date)
-define "Date Comparison": @2024-01-01 < @2024-12-31   // Result: true
-define "Is Past": Today() > @2020-01-01               // Result: true
-define "Is Future": @2030-01-01 > Today()             // Result: true
-`,
-
-        'basic-lists': `library ListExamples version '1.0.0'
-
-/*
- * CQL List Operations
- * -------------------
- * Lists are fundamental in CQL because FHIR data is list-based:
- * - [Condition] returns a LIST of conditions
- * - Patient.name is a LIST of names
- *
- * Lists use curly braces: { 1, 2, 3 }
- */
-
-// Creating lists
-define "Number List": { 1, 2, 3, 4, 5 }
-define "String List": { 'apple', 'banana', 'cherry' }
-define "Empty List": { }
-
-// List information
-define "Count": Count({ 1, 2, 3, 4, 5 })   // Result: 5
-define "Is Empty": IsEmpty({ })             // Result: true
-define "Exists": exists { 1, 2, 3 }         // Result: true
-
-// Accessing elements
-define "First": First({ 1, 2, 3, 4, 5 })   // Result: 1
-define "Last": Last({ 1, 2, 3, 4, 5 })     // Result: 5
-define "By Index": ({ 1, 2, 3, 4, 5 })[2]  // Result: 3 (0-indexed)
-define "Take First 3": Take({ 1, 2, 3, 4, 5 }, 3)  // Result: {1,2,3}
-define "Skip First 2": Skip({ 1, 2, 3, 4, 5 }, 2)  // Result: {3,4,5}
-
-// Membership testing
-define "Contains": 3 in { 1, 2, 3, 4, 5 }           // Result: true
-define "Includes All": { 1, 2, 3, 4, 5 } includes { 2, 3 }
-
-// Set operations (removing duplicates)
-define "Union": { 1, 2, 3 } union { 3, 4, 5 }       // Result: {1,2,3,4,5}
-define "Intersect": { 1, 2, 3, 4 } intersect { 3, 4, 5, 6 }  // Result: {3,4}
-define "Except": { 1, 2, 3, 4 } except { 3, 4 }     // Result: {1,2}
-
-// Transforming lists
-define "Distinct": distinct { 1, 1, 2, 2, 3, 3 }   // Result: {1,2,3}
-define "Flatten": flatten { { 1, 2 }, { 3, 4 } }   // Result: {1,2,3,4}
-`,
-
-        'basic-intervals': `library IntervalExamples version '1.0.0'
-
-/*
- * CQL Interval Operations
- * -----------------------
- * Intervals represent ranges - essential for clinical queries:
- * - Measurement periods: Interval[@2024-01-01, @2024-12-31]
- * - Value ranges: blood pressure 90-140 mmHg
- * - Time windows: "in the last 30 days"
- *
- * [ ] = inclusive (closed), ( ) = exclusive (open)
- */
-
-// Creating intervals
-define "Closed": Interval[1, 10]     // Includes 1 and 10
-define "Open": Interval(1, 10)       // Excludes 1 and 10
-define "Half Open": Interval[1, 10)  // Includes 1, excludes 10
-
-// Date intervals (very common in clinical queries)
-define "This Year": Interval[@2024-01-01, @2024-12-31]
-define "Measurement Period": Interval[Today() - 1 year, Today()]
-
-// Getting interval boundaries
-define "Start": start of Interval[1, 10]    // Result: 1
-define "End": end of Interval[1, 10]        // Result: 10
-
-// Testing if value is in interval
-define "5 In Range": 5 in Interval[1, 10]      // Result: true
-define "15 In Range": 15 in Interval[1, 10]    // Result: false
-
-// Comparing intervals
-define "Overlaps": Interval[1, 5] overlaps Interval[4, 8]  // true
-define "Before": Interval[1, 3] before Interval[5, 8]      // true
-define "During": Interval[3, 7] during Interval[1, 10]     // true
-
-// Combining intervals
-define "Union": Interval[1, 5] union Interval[4, 10]       // [1,10]
-define "Intersect": Interval[1, 8] intersect Interval[4, 12]  // [4,8]
-`,
-
-        'patient-demographics': `library PatientDemographics version '1.0.0'
-
-using FHIR version '4.0.1'
-include FHIRHelpers version '4.0.1'
-
-context Patient
-
-define "Patient ID": Patient.id
-define "Patient Name":
-  Patient.name.first().given.first() + ' ' + Patient.name.first().family
-
-define "Given Names": Patient.name.first().given
-define "Family Name": Patient.name.first().family
-define "Full Name": Patient.name.first().text
-
-define "Gender": Patient.gender
-define "Birth Date": Patient.birthDate
-define "Is Male": Patient.gender = 'male'
-define "Is Female": Patient.gender = 'female'
-
-define "MRN":
-  (Patient.identifier I where I.type.coding.code contains 'MR').value
-
-define "SSN":
-  (Patient.identifier I where I.system = 'http://hl7.org/fhir/sid/us-ssn').value
-
-define "Address": Patient.address.first()
-define "City": Patient.address.first().city
-define "State": Patient.address.first().state
-define "Zip": Patient.address.first().postalCode
-
-define "Phone":
-  (Patient.telecom T where T.system = 'phone').value
-define "Email":
-  (Patient.telecom T where T.system = 'email').value
-
-define "Marital Status": Patient.maritalStatus.coding.first().display
-define "Is Deceased": Patient.deceased is not null
-`,
-
-        'patient-age': `library PatientAge version '1.0.0'
-
-using FHIR version '4.0.1'
-include FHIRHelpers version '4.0.1'
-
-context Patient
-
-define "Birth Date": Patient.birthDate
-
-define "Age In Years": AgeInYears()
-define "Age In Months": AgeInMonths()
-define "Age In Days": AgeInDays()
-
-define "Age At Date": AgeInYearsAt(@2024-01-01)
-
-define "Is Infant": AgeInYears() < 1
-define "Is Toddler": AgeInYears() in Interval[1, 3)
-define "Is Child": AgeInYears() in Interval[3, 12)
-define "Is Adolescent": AgeInYears() in Interval[12, 18)
-define "Is Adult": AgeInYears() >= 18
-define "Is Senior": AgeInYears() >= 65
-
-define "Age Group":
-  case
-    when AgeInYears() < 1 then 'Infant'
-    when AgeInYears() < 3 then 'Toddler'
-    when AgeInYears() < 12 then 'Child'
-    when AgeInYears() < 18 then 'Adolescent'
-    when AgeInYears() < 65 then 'Adult'
-    else 'Senior'
-  end
-
-define "Is Working Age": AgeInYears() in Interval[18, 65)
-define "Is Pediatric": AgeInYears() < 18
-define "Is Geriatric": AgeInYears() >= 65
-`,
-
-        'patient-contacts': `library PatientContacts version '1.0.0'
-
-using FHIR version '4.0.1'
-include FHIRHelpers version '4.0.1'
-
-context Patient
-
-define "All Telecom": Patient.telecom
-
-define "Phone Numbers":
-  Patient.telecom T where T.system = 'phone' return T.value
-
-define "Mobile Phone":
-  Patient.telecom T
-    where T.system = 'phone' and T.use = 'mobile'
-    return T.value
-
-define "Home Phone":
-  Patient.telecom T
-    where T.system = 'phone' and T.use = 'home'
-    return T.value
-
-define "Work Phone":
-  Patient.telecom T
-    where T.system = 'phone' and T.use = 'work'
-    return T.value
-
-define "Email Addresses":
-  Patient.telecom T where T.system = 'email' return T.value
-
-define "Primary Email":
-  First(Patient.telecom T where T.system = 'email' and T.use = 'home').value
-
-define "Has Phone": exists (Patient.telecom T where T.system = 'phone')
-define "Has Email": exists (Patient.telecom T where T.system = 'email')
-
-define "Emergency Contacts": Patient.contact
-define "Emergency Contact Name": Patient.contact.first().name.text
-define "Emergency Contact Phone":
-  (Patient.contact.first().telecom) T where T.system = 'phone' return T.value
-`,
-
-        'obs-vitals': `library VitalSigns version '1.0.0'
-
-using FHIR version '4.0.1'
-include FHIRHelpers version '4.0.1'
-
-codesystem "LOINC": 'http://loinc.org'
-
-code "Heart Rate": '8867-4' from "LOINC"
-code "Respiratory Rate": '9279-1' from "LOINC"
-code "Body Temperature": '8310-5' from "LOINC"
-code "Blood Pressure Systolic": '8480-6' from "LOINC"
-code "Blood Pressure Diastolic": '8462-4' from "LOINC"
-code "Oxygen Saturation": '2708-6' from "LOINC"
-code "Body Weight": '29463-7' from "LOINC"
-code "Body Height": '8302-2' from "LOINC"
-code "BMI": '39156-5' from "LOINC"
-
-context Patient
-
-define "All Vital Signs":
-  [Observation: category in "vital-signs"]
-
-define "Heart Rate Observations":
-  [Observation: "Heart Rate"]
-
-define "Latest Heart Rate":
-  Last([Observation: "Heart Rate"] O sort by effective)
-
-define "Latest Heart Rate Value":
-  ("Latest Heart Rate").value as Quantity
-
-define "Blood Pressure Observations":
-  [Observation: "Blood Pressure Systolic"]
-
-define "Latest Systolic BP":
-  (Last([Observation: "Blood Pressure Systolic"] O sort by effective)).value as Quantity
-
-define "Latest Diastolic BP":
-  (Last([Observation: "Blood Pressure Diastolic"] O sort by effective)).value as Quantity
-
-define "Latest Temperature":
-  (Last([Observation: "Body Temperature"] O sort by effective)).value as Quantity
-
-define "Latest Weight":
-  (Last([Observation: "Body Weight"] O sort by effective)).value as Quantity
-
-define "Latest Height":
-  (Last([Observation: "Body Height"] O sort by effective)).value as Quantity
-
-define "Latest BMI":
-  (Last([Observation: "BMI"] O sort by effective)).value as Quantity
-`,
-
-        'obs-labs': `library LabResults version '1.0.0'
-
-using FHIR version '4.0.1'
-include FHIRHelpers version '4.0.1'
-
-codesystem "LOINC": 'http://loinc.org'
-
-code "Hemoglobin A1c": '4548-4' from "LOINC"
-code "LDL Cholesterol": '2089-1' from "LOINC"
-code "HDL Cholesterol": '2085-9' from "LOINC"
-code "Total Cholesterol": '2093-3' from "LOINC"
-code "Triglycerides": '2571-8' from "LOINC"
-code "Creatinine": '2160-0' from "LOINC"
-code "eGFR": '33914-3' from "LOINC"
-code "Glucose": '2345-7' from "LOINC"
-code "Potassium": '2823-3' from "LOINC"
-code "Sodium": '2951-2' from "LOINC"
-code "WBC": '6690-2' from "LOINC"
-code "Hemoglobin": '718-7' from "LOINC"
-code "Platelets": '777-3' from "LOINC"
-
-context Patient
-
-define "All Lab Results":
-  [Observation: category in "laboratory"]
-
-define "HbA1c Results":
-  [Observation: "Hemoglobin A1c"]
-
-define "Latest HbA1c":
-  Last([Observation: "Hemoglobin A1c"] O sort by effective)
-
-define "Latest HbA1c Value":
-  ("Latest HbA1c").value as Quantity
-
-define "HbA1c In Control":
-  ("Latest HbA1c Value").value < 7.0
-
-define "Cholesterol Panel":
-  [Observation: "Total Cholesterol"]
-    union [Observation: "LDL Cholesterol"]
-    union [Observation: "HDL Cholesterol"]
-    union [Observation: "Triglycerides"]
-
-define "Latest LDL":
-  (Last([Observation: "LDL Cholesterol"] O sort by effective)).value as Quantity
-
-define "LDL At Goal":
-  ("Latest LDL").value < 100
-
-define "Latest eGFR":
-  (Last([Observation: "eGFR"] O sort by effective)).value as Quantity
-
-define "Has CKD Stage 3+":
-  ("Latest eGFR").value < 60
-`,
-
-        'obs-latest': `library LatestObservations version '1.0.0'
-
-using FHIR version '4.0.1'
-include FHIRHelpers version '4.0.1'
-
-context Patient
-
-define "All Observations":
-  [Observation]
-
-define "Observation Count":
-  Count([Observation])
-
-define "Latest Observation":
-  Last([Observation] O sort by effective)
-
-define "Latest Observation Date":
-  ("Latest Observation").effective
-
-define "Latest Observation Code":
-  ("Latest Observation").code.coding.first().display
-
-define "Latest Observation Value":
-  ("Latest Observation").value
-
-define "Observations Last 30 Days":
-  [Observation] O
-    where O.effective in Interval[Today() - 30 days, Today()]
-
-define "Observations Last Year":
-  [Observation] O
-    where O.effective in Interval[Today() - 1 year, Today()]
-
-define "Most Recent By Category":
-  from [Observation] O
-    let category: O.category.coding.first().code
-    where O.effective = Max([Observation] O2
-      where O2.category.coding.first().code = category
-      return O2.effective)
-    return {
-      category: category,
-      code: O.code.coding.first().display,
-      value: O.value,
-      date: O.effective
+    // CQL examples are loaded from the API
+    const cqlExamples = {};
+    let examplesLoaded = false;
+
+    async function loadExamplesManifest() {
+        if (examplesLoaded) return;
+        try {
+            const response = await fetch('{{ api_base_path }}/cql/examples');
+            if (response.ok) {
+                const manifest = await response.json();
+                // Index examples by ID for quick lookup
+                (manifest.examples || []).forEach(function(ex) {
+                    cqlExamples[ex.id] = ex;
+                });
+                examplesLoaded = true;
+            }
+        } catch (e) {
+            console.error('Failed to load CQL examples manifest:', e);
+        }
     }
-`,
+    // Load manifest on page load
+    loadExamplesManifest();
 
-        'obs-abnormal': `library AbnormalObservations version '1.0.0'
+    // Inline examples removed - loaded from API via loadExamplesManifest()
 
-using FHIR version '4.0.1'
-include FHIRHelpers version '4.0.1'
-
-context Patient
-
-define "All Observations":
-  [Observation]
-
-define "Observations With Interpretation":
-  [Observation] O where O.interpretation is not null
-
-define "Abnormal Observations":
-  [Observation] O
-    where O.interpretation.coding.code contains 'A'
-      or O.interpretation.coding.code contains 'AA'
-      or O.interpretation.coding.code contains 'H'
-      or O.interpretation.coding.code contains 'HH'
-      or O.interpretation.coding.code contains 'L'
-      or O.interpretation.coding.code contains 'LL'
-
-define "High Values":
-  [Observation] O
-    where O.interpretation.coding.code contains 'H'
-      or O.interpretation.coding.code contains 'HH'
-
-define "Low Values":
-  [Observation] O
-    where O.interpretation.coding.code contains 'L'
-      or O.interpretation.coding.code contains 'LL'
-
-define "Critical Values":
-  [Observation] O
-    where O.interpretation.coding.code contains 'HH'
-      or O.interpretation.coding.code contains 'LL'
-      or O.interpretation.coding.code contains 'AA'
-
-define "Out Of Range":
-  [Observation] O
-    where (O.value as Quantity).value > O.referenceRange.first().high.value
-      or (O.value as Quantity).value < O.referenceRange.first().low.value
-
-define "Recent Abnormal":
-  "Abnormal Observations" O
-    where O.effective in Interval[Today() - 30 days, Today()]
-`,
-
-        'cond-active': `library ActiveConditions version '1.0.0'
-
-using FHIR version '4.0.1'
-include FHIRHelpers version '4.0.1'
-
-context Patient
-
-define "All Conditions":
-  [Condition]
-
-define "Condition Count":
-  Count([Condition])
-
-define "Active Conditions":
-  [Condition] C
-    where C.clinicalStatus.coding.code contains 'active'
-
-define "Resolved Conditions":
-  [Condition] C
-    where C.clinicalStatus.coding.code contains 'resolved'
-
-define "Inactive Conditions":
-  [Condition] C
-    where C.clinicalStatus.coding.code contains 'inactive'
-
-define "Confirmed Conditions":
-  [Condition] C
-    where C.verificationStatus.coding.code contains 'confirmed'
-
-define "Problem List":
-  [Condition] C
-    where C.category.coding.code contains 'problem-list-item'
-      and C.clinicalStatus.coding.code contains 'active'
-
-define "Encounter Diagnoses":
-  [Condition] C
-    where C.category.coding.code contains 'encounter-diagnosis'
-
-define "Active Problem List":
-  "Problem List" C
-    where C.clinicalStatus.coding.code contains 'active'
-
-define "Condition Names":
-  "Active Conditions" C return C.code.coding.first().display
-
-define "Conditions By Onset":
-  "Active Conditions" C sort by onset
-`,
-
-        'cond-diabetes': `library DiabetesCheck version '1.0.0'
-
-using FHIR version '4.0.1'
-include FHIRHelpers version '4.0.1'
-
-codesystem "ICD10": 'http://hl7.org/fhir/sid/icd-10-cm'
-codesystem "SNOMED": 'http://snomed.info/sct'
-
-valueset "Diabetes": 'http://example.org/fhir/ValueSet/diabetes'
-
-code "Type 1 Diabetes ICD": 'E10' from "ICD10"
-code "Type 2 Diabetes ICD": 'E11' from "ICD10"
-code "Diabetes SNOMED": '73211009' from "SNOMED"
-
-context Patient
-
-define "All Diabetes Conditions":
-  [Condition] C
-    where C.code.coding.code contains 'E10'
-      or C.code.coding.code contains 'E11'
-      or C.code.coding.code contains '73211009'
-      or C.code.coding.display contains 'diabetes'
-
-define "Has Diabetes":
-  exists "All Diabetes Conditions"
-
-define "Active Diabetes":
-  "All Diabetes Conditions" C
-    where C.clinicalStatus.coding.code contains 'active'
-
-define "Has Active Diabetes":
-  exists "Active Diabetes"
-
-define "Type 1 Diabetes":
-  [Condition] C where C.code.coding.code contains 'E10'
-
-define "Type 2 Diabetes":
-  [Condition] C where C.code.coding.code contains 'E11'
-
-define "Has Type 1": exists "Type 1 Diabetes"
-define "Has Type 2": exists "Type 2 Diabetes"
-
-define "Diabetes Onset Date":
-  Min("All Diabetes Conditions" C return C.onset)
-
-define "Years With Diabetes":
-  years between "Diabetes Onset Date" and Today()
-`,
-
-        'cond-chronic': `library ChronicConditions version '1.0.0'
-
-using FHIR version '4.0.1'
-include FHIRHelpers version '4.0.1'
-
-context Patient
-
-define "All Active Conditions":
-  [Condition] C
-    where C.clinicalStatus.coding.code contains 'active'
-
-define "Chronic Conditions":
-  "All Active Conditions" C
-    where C.code.coding.display contains 'chronic'
-      or years between C.onset and Today() >= 1
-
-define "Has Hypertension":
-  exists ([Condition] C
-    where C.code.coding.code contains 'I10'
-      or C.code.coding.display contains 'hypertension')
-
-define "Has Heart Disease":
-  exists ([Condition] C
-    where C.code.coding.code contains 'I25'
-      or C.code.coding.display contains 'coronary'
-      or C.code.coding.display contains 'heart disease')
-
-define "Has COPD":
-  exists ([Condition] C
-    where C.code.coding.code contains 'J44'
-      or C.code.coding.display contains 'COPD')
-
-define "Has Asthma":
-  exists ([Condition] C
-    where C.code.coding.code contains 'J45'
-      or C.code.coding.display contains 'asthma')
-
-define "Has CKD":
-  exists ([Condition] C
-    where C.code.coding.code contains 'N18'
-      or C.code.coding.display contains 'kidney disease')
-
-define "Chronic Condition Count":
-  Count("Chronic Conditions")
-
-define "Has Multiple Chronic":
-  "Chronic Condition Count" >= 2
-`,
-
-        'med-active': `library ActiveMedications version '1.0.0'
-
-using FHIR version '4.0.1'
-include FHIRHelpers version '4.0.1'
-
-context Patient
-
-define "All Medication Requests":
-  [MedicationRequest]
-
-define "Active Medications":
-  [MedicationRequest] M
-    where M.status = 'active'
-
-define "Active Medication Count":
-  Count("Active Medications")
-
-define "Medication Names":
-  "Active Medications" M
-    return Coalesce(
-      M.medication.coding.first().display,
-      M.medication.text
-    )
-
-define "Medications With Dosage":
-  "Active Medications" M
-    return {
-      name: M.medication.coding.first().display,
-      dosage: M.dosageInstruction.first().text,
-      frequency: M.dosageInstruction.first().timing.repeat.frequency
-    }
-
-define "On Polypharmacy":
-  "Active Medication Count" >= 5
-
-define "Stopped Medications":
-  [MedicationRequest] M where M.status = 'stopped'
-
-define "Recently Started":
-  "Active Medications" M
-    where M.authoredOn in Interval[Today() - 30 days, Today()]
-
-define "Long Term Medications":
-  "Active Medications" M
-    where M.authoredOn before Today() - 1 year
-`,
-
-        'med-opioids': `library OpioidCheck version '1.0.0'
-
-using FHIR version '4.0.1'
-include FHIRHelpers version '4.0.1'
-
-context Patient
-
-// Common opioid medication codes/names
-define "Opioid Medications":
-  [MedicationRequest] M
-    where M.status = 'active'
-      and (
-        M.medication.coding.display contains 'oxycodone'
-        or M.medication.coding.display contains 'hydrocodone'
-        or M.medication.coding.display contains 'morphine'
-        or M.medication.coding.display contains 'fentanyl'
-        or M.medication.coding.display contains 'tramadol'
-        or M.medication.coding.display contains 'codeine'
-        or M.medication.coding.display contains 'methadone'
-        or M.medication.coding.display contains 'opioid'
-      )
-
-define "On Opioids":
-  exists "Opioid Medications"
-
-define "Opioid Count":
-  Count("Opioid Medications")
-
-define "On Multiple Opioids":
-  "Opioid Count" > 1
-
-define "Benzodiazepines":
-  [MedicationRequest] M
-    where M.status = 'active'
-      and (
-        M.medication.coding.display contains 'diazepam'
-        or M.medication.coding.display contains 'lorazepam'
-        or M.medication.coding.display contains 'alprazolam'
-        or M.medication.coding.display contains 'clonazepam'
-        or M.medication.coding.display contains 'benzodiazepine'
-      )
-
-define "On Benzodiazepines":
-  exists "Benzodiazepines"
-
-define "Opioid Benzo Overlap":
-  "On Opioids" and "On Benzodiazepines"
-
-define "High Risk Combination":
-  "Opioid Benzo Overlap"
-`,
-
-        'med-interactions': `library DrugClassCheck version '1.0.0'
-
-using FHIR version '4.0.1'
-include FHIRHelpers version '4.0.1'
-
-context Patient
-
-define "Active Medications":
-  [MedicationRequest] M where M.status = 'active'
-
-define "Antihypertensives":
-  "Active Medications" M
-    where M.medication.coding.display contains 'lisinopril'
-      or M.medication.coding.display contains 'amlodipine'
-      or M.medication.coding.display contains 'metoprolol'
-      or M.medication.coding.display contains 'losartan'
-      or M.medication.coding.display contains 'hydrochlorothiazide'
-
-define "Statins":
-  "Active Medications" M
-    where M.medication.coding.display contains 'atorvastatin'
-      or M.medication.coding.display contains 'simvastatin'
-      or M.medication.coding.display contains 'rosuvastatin'
-      or M.medication.coding.display contains 'pravastatin'
-
-define "Anticoagulants":
-  "Active Medications" M
-    where M.medication.coding.display contains 'warfarin'
-      or M.medication.coding.display contains 'apixaban'
-      or M.medication.coding.display contains 'rivaroxaban'
-      or M.medication.coding.display contains 'dabigatran'
-
-define "Antiplatelets":
-  "Active Medications" M
-    where M.medication.coding.display contains 'aspirin'
-      or M.medication.coding.display contains 'clopidogrel'
-      or M.medication.coding.display contains 'ticagrelor'
-
-define "NSAIDs":
-  "Active Medications" M
-    where M.medication.coding.display contains 'ibuprofen'
-      or M.medication.coding.display contains 'naproxen'
-      or M.medication.coding.display contains 'diclofenac'
-
-define "On Anticoagulant": exists "Anticoagulants"
-define "On NSAID": exists "NSAIDs"
-define "Bleeding Risk": "On Anticoagulant" and "On NSAID"
-
-define "On Statin": exists "Statins"
-define "Statin Needed": not "On Statin"
-`,
-
-        'measure-ipp': `library MeasureIPP version '1.0.0'
-
-using FHIR version '4.0.1'
-include FHIRHelpers version '4.0.1'
-
-// Example: Diabetes HbA1c Control Measure - Initial Population
-
-parameter "Measurement Period" Interval<DateTime>
-
-context Patient
-
-define "In Measurement Period":
-  "Measurement Period"
-
-define "Age 18 to 75":
-  AgeInYearsAt(start of "Measurement Period") in Interval[18, 75]
-
-define "Has Diabetes Diagnosis":
-  exists ([Condition] C
-    where C.code.coding.code contains 'E10'
-      or C.code.coding.code contains 'E11'
-    and C.clinicalStatus.coding.code contains 'active')
-
-define "Had Qualifying Encounter":
-  exists ([Encounter] E
-    where E.period starts during "Measurement Period"
-    and E.status = 'finished')
-
-define "Initial Population":
-  "Age 18 to 75"
-    and "Has Diabetes Diagnosis"
-    and "Had Qualifying Encounter"
-
-define "In Initial Population":
-  "Initial Population"
-`,
-
-        'measure-denom': `library MeasureDenominator version '1.0.0'
-
-using FHIR version '4.0.1'
-include FHIRHelpers version '4.0.1'
-
-// Example: Diabetes HbA1c Control - Denominator
-
-parameter "Measurement Period" Interval<DateTime>
-
-context Patient
-
-define "Age 18 to 75":
-  AgeInYearsAt(start of "Measurement Period") in Interval[18, 75]
-
-define "Has Diabetes":
-  exists ([Condition] C
-    where (C.code.coding.code contains 'E10' or C.code.coding.code contains 'E11')
-    and C.clinicalStatus.coding.code contains 'active')
-
-define "Initial Population":
-  "Age 18 to 75" and "Has Diabetes"
-
-define "Denominator":
-  "Initial Population"
-
-define "Hospice":
-  exists ([Encounter] E
-    where E.type.coding.code contains 'hospice')
-
-define "Denominator Exclusion":
-  "Hospice"
-
-define "In Denominator":
-  "Denominator" and not "Denominator Exclusion"
-`,
-
-        'measure-numer': `library MeasureNumerator version '1.0.0'
-
-using FHIR version '4.0.1'
-include FHIRHelpers version '4.0.1'
-
-// Example: Diabetes HbA1c Control - Numerator (HbA1c < 8%)
-
-parameter "Measurement Period" Interval<DateTime>
-
-codesystem "LOINC": 'http://loinc.org'
-code "HbA1c": '4548-4' from "LOINC"
-
-context Patient
-
-define "Has Diabetes":
-  exists ([Condition] C
-    where (C.code.coding.code contains 'E10' or C.code.coding.code contains 'E11')
-    and C.clinicalStatus.coding.code contains 'active')
-
-define "Denominator":
-  AgeInYears() >= 18 and "Has Diabetes"
-
-define "HbA1c Tests During Period":
-  [Observation: "HbA1c"] O
-    where O.effective during "Measurement Period"
-    and O.status = 'final'
-
-define "Most Recent HbA1c":
-  Last("HbA1c Tests During Period" O sort by effective)
-
-define "Most Recent HbA1c Value":
-  ("Most Recent HbA1c").value as Quantity
-
-define "HbA1c Less Than 8":
-  ("Most Recent HbA1c Value").value < 8.0
-
-define "Numerator":
-  "Denominator" and "HbA1c Less Than 8"
-
-define "Performance Rate":
-  if "Denominator" then
-    if "Numerator" then 1.0 else 0.0
-  else null
-`,
-
-        'measure-exclusion': `library MeasureExclusions version '1.0.0'
-
-using FHIR version '4.0.1'
-include FHIRHelpers version '4.0.1'
-
-// Common Exclusion Criteria for Quality Measures
-
-parameter "Measurement Period" Interval<DateTime>
-
-context Patient
-
-// Hospice Exclusion
-define "Hospice Care":
-  exists ([Encounter] E
-    where E.type.coding.code contains 'hospice'
-    and E.period overlaps "Measurement Period")
-
-define "Hospice Order":
-  exists ([ServiceRequest] S
-    where S.code.coding.code contains 'hospice'
-    and S.authoredOn during "Measurement Period")
-
-define "Hospice Exclusion":
-  "Hospice Care" or "Hospice Order"
-
-// Palliative Care
-define "Palliative Care":
-  exists ([Encounter] E
-    where E.type.coding.display contains 'palliative'
-    and E.period overlaps "Measurement Period")
-
-// Advanced Illness
-define "Frailty":
-  exists ([Condition] C
-    where C.code.coding.display contains 'frailty'
-    and C.clinicalStatus.coding.code contains 'active')
-
-define "Dementia":
-  exists ([Condition] C
-    where C.code.coding.code contains 'F03'
-    and C.clinicalStatus.coding.code contains 'active')
-
-define "Advanced Illness Exclusion":
-  AgeInYears() >= 66 and ("Frailty" or "Dementia")
-
-// Combined Exclusions
-define "Denominator Exclusion":
-  "Hospice Exclusion"
-    or "Palliative Care"
-    or "Advanced Illness Exclusion"
-`,
-
-        'rule-alerts': `library ClinicalAlerts version '1.0.0'
-
-using FHIR version '4.0.1'
-include FHIRHelpers version '4.0.1'
-
-codesystem "LOINC": 'http://loinc.org'
-code "Potassium": '2823-3' from "LOINC"
-code "Creatinine": '2160-0' from "LOINC"
-code "eGFR": '33914-3' from "LOINC"
-
-context Patient
-
-// Critical Lab Value Alerts
-define "Latest Potassium":
-  Last([Observation: "Potassium"] O sort by effective)
-
-define "Critical Potassium":
-  ("Latest Potassium").value as Quantity
-
-define "Potassium Alert":
-  ("Critical Potassium").value < 3.0 or ("Critical Potassium").value > 6.0
-
-// Kidney Function Alerts
-define "Latest eGFR":
-  (Last([Observation: "eGFR"] O sort by effective)).value as Quantity
-
-define "Severe CKD Alert":
-  ("Latest eGFR").value < 30
-
-define "Moderate CKD Alert":
-  ("Latest eGFR").value < 60 and ("Latest eGFR").value >= 30
-
-// Drug-Disease Interactions
-define "On NSAIDs":
-  exists ([MedicationRequest] M
-    where M.status = 'active'
-    and (M.medication.coding.display contains 'ibuprofen'
-      or M.medication.coding.display contains 'naproxen'))
-
-define "CKD With NSAID Alert":
-  "Moderate CKD Alert" and "On NSAIDs"
-
-// Allergy Alerts
-define "Has Penicillin Allergy":
-  exists ([AllergyIntolerance] A
-    where A.code.coding.display contains 'penicillin')
-
-// Summary
-define "Active Alerts":
-  (if "Potassium Alert" then { 'Critical Potassium' } else { })
-    union (if "Severe CKD Alert" then { 'Severe CKD' } else { })
-    union (if "CKD With NSAID Alert" then { 'NSAID with CKD' } else { })
-`,
-
-        'rule-reminders': `library CareReminders version '1.0.0'
-
-using FHIR version '4.0.1'
-include FHIRHelpers version '4.0.1'
-
-codesystem "LOINC": 'http://loinc.org'
-code "HbA1c": '4548-4' from "LOINC"
-code "LDL": '2089-1' from "LOINC"
-
-context Patient
-
-// Diabetes Care Reminders
-define "Has Diabetes":
-  exists ([Condition] C
-    where (C.code.coding.code contains 'E10' or C.code.coding.code contains 'E11')
-    and C.clinicalStatus.coding.code contains 'active')
-
-define "Last HbA1c Date":
-  (Last([Observation: "HbA1c"] O sort by effective)).effective
-
-define "HbA1c Due":
-  "Has Diabetes" and (
-    "Last HbA1c Date" is null
-    or "Last HbA1c Date" before Today() - 3 months
-  )
-
-// Cholesterol Screening
-define "Last LDL Date":
-  (Last([Observation: "LDL"] O sort by effective)).effective
-
-define "LDL Due":
-  "Last LDL Date" is null
-    or "Last LDL Date" before Today() - 1 year
-
-// Cancer Screening (age-based)
-define "Mammogram Due":
-  Patient.gender = 'female'
-    and AgeInYears() >= 50
-    and not exists ([DiagnosticReport] D
-      where D.code.coding.display contains 'mammogram'
-      and D.effective after Today() - 2 years)
-
-define "Colonoscopy Due":
-  AgeInYears() >= 50
-    and not exists ([Procedure] P
-      where P.code.coding.display contains 'colonoscopy'
-      and P.performed after Today() - 10 years)
-
-// Immunization Reminders
-define "Flu Shot Due":
-  not exists ([Immunization] I
-    where I.vaccineCode.coding.display contains 'influenza'
-    and I.occurrence after Today() - 1 year)
-
-// Summary
-define "Care Gaps":
-  (if "HbA1c Due" then { 'HbA1c Test Due' } else { })
-    union (if "LDL Due" then { 'Lipid Panel Due' } else { })
-    union (if "Mammogram Due" then { 'Mammogram Due' } else { })
-    union (if "Colonoscopy Due" then { 'Colonoscopy Due' } else { })
-    union (if "Flu Shot Due" then { 'Flu Vaccine Due' } else { })
-`,
-
-        'rule-contraindications': `library Contraindications version '1.0.0'
-
-using FHIR version '4.0.1'
-include FHIRHelpers version '4.0.1'
-
-context Patient
-
-// Renal Impairment
-define "Has CKD":
-  exists ([Condition] C
-    where C.code.coding.code contains 'N18'
-    and C.clinicalStatus.coding.code contains 'active')
-
-define "Severe Renal Impairment":
-  exists ([Observation] O
-    where O.code.coding.code = '33914-3'  // eGFR
-    and (O.value as Quantity).value < 30)
-
-// Liver Impairment
-define "Has Liver Disease":
-  exists ([Condition] C
-    where (C.code.coding.code contains 'K70'
-      or C.code.coding.code contains 'K74')
-    and C.clinicalStatus.coding.code contains 'active')
-
-// Pregnancy
-define "Is Pregnant":
-  Patient.gender = 'female'
-    and exists ([Condition] C
-      where C.code.coding.display contains 'pregnancy'
-      and C.clinicalStatus.coding.code contains 'active')
-
-// Bleeding Risk
-define "On Anticoagulant":
-  exists ([MedicationRequest] M
-    where M.status = 'active'
-    and (M.medication.coding.display contains 'warfarin'
-      or M.medication.coding.display contains 'apixaban'))
-
-define "Has Bleeding History":
-  exists ([Condition] C
-    where C.code.coding.display contains 'bleed')
-
-// Drug Contraindications
-define "Metformin Contraindicated":
-  "Severe Renal Impairment"
-
-define "Statin Contraindicated":
-  "Has Liver Disease" or "Is Pregnant"
-
-define "NSAID Contraindicated":
-  "Has CKD" or "On Anticoagulant"
-
-define "Contraindication Summary": {
-  metformin: "Metformin Contraindicated",
-  statin: "Statin Contraindicated",
-  nsaid: "NSAID Contraindicated"
-}
-`,
-
-        'adv-aggregates': `library AggregateExamples version '1.0.0'
-
-using FHIR version '4.0.1'
-include FHIRHelpers version '4.0.1'
-
-context Patient
-
-define "Observations":
-  [Observation] O where O.status = 'final'
-
-define "Observation Count":
-  Count("Observations")
-
-define "Numeric Values":
-  "Observations" O
-    where O.value is Quantity
-    return (O.value as Quantity).value
-
-define "Sum of Values":
-  Sum("Numeric Values")
-
-define "Average Value":
-  Avg("Numeric Values")
-
-define "Minimum Value":
-  Min("Numeric Values")
-
-define "Maximum Value":
-  Max("Numeric Values")
-
-define "Standard Deviation":
-  StdDev("Numeric Values")
-
-define "Variance":
-  Variance("Numeric Values")
-
-define "Median":
-  Median("Numeric Values")
-
-define "Population Standard Deviation":
-  PopulationStdDev("Numeric Values")
-
-// Aggregate with Filter
-define "Recent Observations":
-  "Observations" O
-    where O.effective after Today() - 30 days
-
-define "Recent Count":
-  Count("Recent Observations")
-
-// Custom Aggregation
-define "Value Distribution":
-  from "Observations" O
-    let val: (O.value as Quantity).value
-    return {
-      code: O.code.coding.first().display,
-      value: val,
-      aboveAvg: val > Avg("Numeric Values")
-    }
-`,
-
-        'adv-timing': `library TimingRelationships version '1.0.0'
-
-using FHIR version '4.0.1'
-include FHIRHelpers version '4.0.1'
-
-context Patient
-
-// Basic Timing
-define "Encounters":
-  [Encounter] E where E.status = 'finished'
-
-define "Conditions":
-  [Condition] C where C.clinicalStatus.coding.code contains 'active'
-
-define "Medications":
-  [MedicationRequest] M where M.status = 'active'
-
-// Conditions diagnosed during encounter
-define "Encounter Diagnoses":
-  from "Encounters" E, "Conditions" C
-    where C.onset during E.period
-    return {
-      encounter: E.id,
-      condition: C.code.coding.first().display,
-      date: C.onset
-    }
-
-// Medications started after diagnosis
-define "Post Diagnosis Medications":
-  from "Conditions" C, "Medications" M
-    where M.authoredOn after C.onset
-    return {
-      condition: C.code.coding.first().display,
-      medication: M.medication.coding.first().display,
-      daysBetween: days between C.onset and M.authoredOn
-    }
-
-// Time-based filtering
-define "Last 30 Days":
-  Interval[Today() - 30 days, Today()]
-
-define "Last Year":
-  Interval[Today() - 1 year, Today()]
-
-define "Recent Encounters":
-  "Encounters" E where E.period starts during "Last 30 Days"
-
-// Overlapping conditions
-define "Concurrent Conditions":
-  from "Conditions" C1, "Conditions" C2
-    where C1 != C2
-    and (C1.onset same day as C2.onset
-      or days between C1.onset and C2.onset < 30)
-    return {
-      condition1: C1.code.coding.first().display,
-      condition2: C2.code.coding.first().display
-    }
-`,
-
-        'adv-queries': `library ComplexQueries version '1.0.0'
-
-using FHIR version '4.0.1'
-include FHIRHelpers version '4.0.1'
-
-context Patient
-
-// Multi-source queries
-define "Patient Summary":
-  {
-    name: Patient.name.first().given.first() + ' ' + Patient.name.first().family,
-    age: AgeInYears(),
-    gender: Patient.gender,
-    conditionCount: Count([Condition] C where C.clinicalStatus.coding.code contains 'active'),
-    medicationCount: Count([MedicationRequest] M where M.status = 'active'),
-    lastEncounter: Last([Encounter] E sort by period.start).period.start
-  }
-
-// Grouping
-define "Observations By Category":
-  from [Observation] O
-    let cat: O.category.coding.first().code
-    return {
-      category: cat,
-      count: Count([Observation] O2 where O2.category.coding.first().code = cat)
-    }
-
-// Complex filtering with multiple conditions
-define "High Risk Patients Criteria":
-  AgeInYears() >= 65
-    and Count([Condition] C where C.clinicalStatus.coding.code contains 'active') >= 3
-    and Count([MedicationRequest] M where M.status = 'active') >= 5
-
-// Nested queries
-define "Encounters With Diagnoses":
-  [Encounter] E
-    return {
-      encounterId: E.id,
-      date: E.period.start,
-      type: E.type.coding.first().display,
-      diagnoses: [Condition] C
-        where C.encounter.reference contains E.id
-        return C.code.coding.first().display
-    }
-
-// Temporal patterns
-define "Readmissions Within 30 Days":
-  from [Encounter] E1, [Encounter] E2
-    where E1 != E2
-    and E2.period.start after E1.period.end
-    and days between E1.period.end and E2.period.start <= 30
-    return {
-      firstAdmit: E1.period.start,
-      readmit: E2.period.start,
-      daysBetween: days between E1.period.end and E2.period.start
-    }
-`
-    };
-
-    function loadCQLExample() {
+    async function loadCQLExample() {
         var select = document.getElementById('example-select');
-        var example = cqlExamples[select.value];
-        if (example && cqlEditor) {
-            cqlEditor.setValue(example);
+        var exampleId = select.value;
+        if (!exampleId || !cqlEditor) {
+            select.value = '';
+            return;
+        }
+
+        // Check if we already have the code cached
+        if (cqlExamples[exampleId] && cqlExamples[exampleId].code) {
+            cqlEditor.setValue(cqlExamples[exampleId].code);
+            select.value = '';
+            return;
+        }
+
+        // Fetch the example from API
+        try {
+            var response = await fetch('{{ api_base_path }}/cql/examples/' + exampleId);
+            if (response.ok) {
+                var example = await response.json();
+                cqlExamples[exampleId] = example;
+                cqlEditor.setValue(example.code);
+            } else {
+                console.error('Failed to load example:', exampleId);
+            }
+        } catch (e) {
+            console.error('Error loading example:', e);
         }
         select.value = '';
     }
+
+    // All inline CQL examples removed - loaded from API
 
     require.config({
         paths: { vs: 'https://unpkg.com/monaco-editor@0.45.0/min/vs' }
@@ -1707,6 +404,131 @@ define "Readmissions Within 30 Days":
         }
     }
 
+    function escapeHtml(str) {
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function toggleJsonCollapse(id) {
+        var el = document.getElementById(id);
+        var icon = document.getElementById(id + '-icon');
+        if (el.classList.contains('hidden')) {
+            el.classList.remove('hidden');
+            icon.style.transform = 'rotate(90deg)';
+        } else {
+            el.classList.add('hidden');
+            icon.style.transform = 'rotate(0deg)';
+        }
+    }
+
+    function formatQuantity(q) {
+        if (!q || q.value === undefined) return null;
+        return q.value + ' ' + (q.unit || '');
+    }
+
+    function formatDate(dt) {
+        if (!dt) return '';
+        // Extract just the date part
+        return dt.substring(0, 10);
+    }
+
+    function formatObservation(obs) {
+        var name = obs.code?.text || obs.code?.coding?.[0]?.display || 'Observation';
+        var date = formatDate(obs.effectiveDateTime || obs.effectivePeriod?.start);
+
+        // Handle component-based observations (like BP)
+        if (obs.component && obs.component.length > 0) {
+            var values = obs.component.map(function(c) {
+                var v = c.valueQuantity;
+                return v ? v.value : '?';
+            });
+            var unit = obs.component[0]?.valueQuantity?.unit || '';
+            return name + ' (' + date + '): ' + values.join('/') + ' ' + unit;
+        }
+
+        // Handle regular observations with valueQuantity
+        var qty = obs.valueQuantity || obs.value;
+        if (qty && qty.value !== undefined) {
+            return name + ' (' + date + '): ' + formatQuantity(qty);
+        }
+
+        // Handle valueString, valueCodeableConcept, etc.
+        if (obs.valueString) {
+            return name + ' (' + date + '): ' + obs.valueString;
+        }
+        if (obs.valueCodeableConcept) {
+            var code = obs.valueCodeableConcept.text || obs.valueCodeableConcept.coding?.[0]?.display || '';
+            return name + ' (' + date + '): ' + code;
+        }
+
+        return name + ' (' + date + ')';
+    }
+
+    function formatValue(value) {
+        if (value === null) return 'null';
+        if (value === undefined) return 'undefined';
+
+        // Handle Quantity: {value, unit, system?, code?}
+        if (typeof value === 'object' && value.value !== undefined && value.unit !== undefined && !value.resourceType) {
+            return value.value + ' ' + value.unit;
+        }
+
+        // Handle Code: {code, system, display?}
+        if (typeof value === 'object' && value.code && value.system && !value.resourceType) {
+            return value.display ? value.display + ' (' + value.code + ')' : value.code;
+        }
+
+        // Handle arrays of FHIR resources
+        if (Array.isArray(value) && value.length > 0 && value[0]?.resourceType) {
+            var resourceType = value[0].resourceType;
+            // Format Observations nicely
+            if (resourceType === 'Observation') {
+                return value.map(formatObservation).join('\n');
+            }
+            // Other resources: show summary
+            return value.map(function(r) {
+                var display = r.code?.text || r.code?.coding?.[0]?.display ||
+                              r.medicationCodeableConcept?.text || r.type?.[0]?.text ||
+                              r.resourceType;
+                return r.resourceType + ': ' + display;
+            }).join('\n');
+        }
+
+        // Handle arrays of simple values
+        if (Array.isArray(value)) {
+            if (value.length === 0) return '[]';
+            var allSimple = value.every(function(v) {
+                return v === null || typeof v !== 'object' ||
+                       (v.value !== undefined && v.unit !== undefined) ||
+                       (v.code && v.system && !v.resourceType);
+            });
+            if (allSimple && value.length <= 10) {
+                return '[\n  ' + value.map(formatValue).join(',\n  ') + '\n]';
+            }
+        }
+
+        // Handle single Observation
+        if (typeof value === 'object' && value.resourceType === 'Observation') {
+            return formatObservation(value);
+        }
+
+        // Handle other FHIR resources - show summary
+        if (typeof value === 'object' && value.resourceType) {
+            var display = value.code?.text || value.code?.coding?.[0]?.display ||
+                          value.medicationCodeableConcept?.text || value.type?.[0]?.text || '';
+            if (display) {
+                return value.resourceType + ': ' + display + '\n' + JSON.stringify(value, null, 2);
+            }
+            return JSON.stringify(value, null, 2);
+        }
+
+        // Default: JSON stringify
+        if (typeof value === 'object') {
+            return JSON.stringify(value, null, 2);
+        }
+
+        return String(value);
+    }
+
     async function runExecution() {
         if (!cqlEditor) {
             console.warn('Editor not ready yet');
@@ -1796,12 +618,18 @@ define "Readmissions Within 30 Days":
 
         var nullCount = 0;
         var totalCount = 0;
+        var resultIndex = 0;
         if (data.results) {
             for (var name in data.results) {
                 totalCount++;
+                resultIndex++;
                 var value = data.results[name];
                 var isNull = value === null;
                 if (isNull) nullCount++;
+
+                var formatted = formatValue(value);
+                var rawJson = JSON.stringify(value, null, 2);
+                var needsCollapse = typeof value === 'object' && value !== null && formatted !== rawJson;
 
                 html += '<div class="border border-gray-200 rounded-lg overflow-hidden">';
                 html += '<div class="bg-gray-50 px-3 py-2 border-b border-gray-200 flex justify-between items-center">';
@@ -1810,7 +638,19 @@ define "Readmissions Within 30 Days":
                     html += '<span class="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded">null</span>';
                 }
                 html += '</div>';
-                html += '<pre class="p-3 text-sm overflow-auto max-h-48 json-content">' + JSON.stringify(value, null, 2) + '</pre>';
+                html += '<pre class="p-3 text-sm overflow-auto max-h-48 json-content">' + formatted + '</pre>';
+
+                // Add collapsible JSON section for complex values
+                if (needsCollapse) {
+                    var collapseId = 'json-collapse-' + resultIndex;
+                    html += '<div class="border-t border-gray-200">';
+                    html += '<button onclick="toggleJsonCollapse(\'' + collapseId + '\')" class="w-full px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-50 flex items-center gap-1">';
+                    html += '<svg class="w-3 h-3 transition-transform" id="' + collapseId + '-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>';
+                    html += 'Show JSON</button>';
+                    html += '<pre id="' + collapseId + '" class="hidden p-3 text-xs overflow-auto max-h-64 bg-gray-50 json-content">' + escapeHtml(rawJson) + '</pre>';
+                    html += '</div>';
+                }
+
                 html += '</div>';
             }
         }

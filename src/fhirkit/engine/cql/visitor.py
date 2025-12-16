@@ -835,7 +835,25 @@ class CQLEvaluatorVisitor(cqlVisitor):
                 return self._evaluate_library_definition(target, name)
 
             if isinstance(target, dict):
-                return target.get(name)
+                result = target.get(name)
+                # FHIR polymorphic type support: value[x]
+                # If accessing 'value' and not found, try valueQuantity, valueString, etc.
+                if result is None and name == "value":
+                    for suffix in [
+                        "Quantity",
+                        "String",
+                        "CodeableConcept",
+                        "Boolean",
+                        "Integer",
+                        "DateTime",
+                        "Period",
+                        "Range",
+                        "Ratio",
+                    ]:
+                        result = target.get(f"value{suffix}")
+                        if result is not None:
+                            break
+                return result
             elif isinstance(target, CQLTuple):
                 return target.elements.get(name)
             elif isinstance(target, list):
@@ -980,6 +998,15 @@ class CQLEvaluatorVisitor(cqlVisitor):
             return self._apply_aggregate_clause(results, aggregate_clause)
         elif return_clause:
             results = self._apply_return_clause(results, return_clause)
+        else:
+            # No return clause - auto-unwrap single-source queries
+            # For single-source queries, return the items directly, not alias wrappers
+            source_clause = ctx.sourceClause()
+            if source_clause:
+                num_sources = len(source_clause.aliasedQuerySource())
+                if num_sources == 1 and results and isinstance(results[0], dict) and len(results[0]) == 1:
+                    key = next(iter(results[0].keys()))
+                    results = [row[key] for row in results]
 
         # Apply sort clause
         sort_clause = ctx.sortClause()
@@ -2169,6 +2196,15 @@ class CQLEvaluatorVisitor(cqlVisitor):
         # Handle Code
         if isinstance(left, CQLCode) and isinstance(right, CQLCode):
             return left.equivalent(right)
+
+        # Handle CodeableConcept (dict with 'coding') vs CQLCode
+        # This allows comparing FHIR CodeableConcept to CQL Code definitions
+        if isinstance(left, dict) and "coding" in left and isinstance(right, CQLCode):
+            codings = left.get("coding", [])
+            return any(c.get("system") == right.system and c.get("code") == right.code for c in codings)
+        if isinstance(right, dict) and "coding" in right and isinstance(left, CQLCode):
+            codings = right.get("coding", [])
+            return any(c.get("system") == left.system and c.get("code") == left.code for c in codings)
 
         return left == right
 

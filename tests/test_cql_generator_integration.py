@@ -57,9 +57,7 @@ class TestCQLWithGeneratedData:
     # PATIENT DEMOGRAPHICS
     # =========================================================================
 
-    def test_patient_name_access(
-        self, evaluator: CQLEvaluator, patient: dict
-    ) -> None:
+    def test_patient_name_access(self, evaluator: CQLEvaluator, patient: dict) -> None:
         """Test accessing Patient.name from generated data."""
         evaluator.compile("""
             library Test version '1.0'
@@ -74,9 +72,7 @@ class TestCQLWithGeneratedData:
         assert isinstance(result, list)
         assert len(result) > 0
 
-    def test_patient_birthdate_access(
-        self, evaluator: CQLEvaluator, patient: dict
-    ) -> None:
+    def test_patient_birthdate_access(self, evaluator: CQLEvaluator, patient: dict) -> None:
         """Test accessing Patient.birthDate from generated data."""
         evaluator.compile("""
             library Test version '1.0'
@@ -91,9 +87,7 @@ class TestCQLWithGeneratedData:
         # Should be a date string
         assert isinstance(result, str)
 
-    def test_patient_gender_access(
-        self, evaluator: CQLEvaluator, patient: dict
-    ) -> None:
+    def test_patient_gender_access(self, evaluator: CQLEvaluator, patient: dict) -> None:
         """Test accessing Patient.gender from generated data."""
         evaluator.compile("""
             library Test version '1.0'
@@ -127,9 +121,7 @@ class TestCQLWithGeneratedData:
     # RESOURCE RETRIEVAL
     # =========================================================================
 
-    def test_retrieve_conditions(
-        self, evaluator: CQLEvaluator, patient: dict, patient_resources: list[dict]
-    ) -> None:
+    def test_retrieve_conditions(self, evaluator: CQLEvaluator, patient: dict, patient_resources: list[dict]) -> None:
         """Test [Condition] returns generated conditions."""
         evaluator.compile("""
             library Test version '1.0'
@@ -141,17 +133,13 @@ class TestCQLWithGeneratedData:
         result = evaluator.evaluate_definition("AllConditions", resource=patient)
 
         # Count conditions in generated data
-        expected_count = sum(
-            1 for r in patient_resources if r.get("resourceType") == "Condition"
-        )
+        expected_count = sum(1 for r in patient_resources if r.get("resourceType") == "Condition")
 
         assert isinstance(result, list)
         assert len(result) == expected_count
         assert len(result) > 0  # Should have at least some conditions
 
-    def test_retrieve_observations(
-        self, evaluator: CQLEvaluator, patient: dict, patient_resources: list[dict]
-    ) -> None:
+    def test_retrieve_observations(self, evaluator: CQLEvaluator, patient: dict, patient_resources: list[dict]) -> None:
         """Test [Observation] returns generated observations."""
         evaluator.compile("""
             library Test version '1.0'
@@ -162,9 +150,7 @@ class TestCQLWithGeneratedData:
 
         result = evaluator.evaluate_definition("AllObservations", resource=patient)
 
-        expected_count = sum(
-            1 for r in patient_resources if r.get("resourceType") == "Observation"
-        )
+        expected_count = sum(1 for r in patient_resources if r.get("resourceType") == "Observation")
 
         assert isinstance(result, list)
         assert len(result) == expected_count
@@ -183,17 +169,13 @@ class TestCQLWithGeneratedData:
 
         result = evaluator.evaluate_definition("AllMedications", resource=patient)
 
-        expected_count = sum(
-            1 for r in patient_resources if r.get("resourceType") == "MedicationRequest"
-        )
+        expected_count = sum(1 for r in patient_resources if r.get("resourceType") == "MedicationRequest")
 
         assert isinstance(result, list)
         assert len(result) == expected_count
         assert len(result) > 0
 
-    def test_retrieve_encounters(
-        self, evaluator: CQLEvaluator, patient: dict, patient_resources: list[dict]
-    ) -> None:
+    def test_retrieve_encounters(self, evaluator: CQLEvaluator, patient: dict, patient_resources: list[dict]) -> None:
         """Test [Encounter] returns generated encounters."""
         evaluator.compile("""
             library Test version '1.0'
@@ -204,17 +186,13 @@ class TestCQLWithGeneratedData:
 
         result = evaluator.evaluate_definition("AllEncounters", resource=patient)
 
-        expected_count = sum(
-            1 for r in patient_resources if r.get("resourceType") == "Encounter"
-        )
+        expected_count = sum(1 for r in patient_resources if r.get("resourceType") == "Encounter")
 
         assert isinstance(result, list)
         assert len(result) == expected_count
         assert len(result) > 0
 
-    def test_retrieve_allergies(
-        self, evaluator: CQLEvaluator, patient: dict, patient_resources: list[dict]
-    ) -> None:
+    def test_retrieve_allergies(self, evaluator: CQLEvaluator, patient: dict, patient_resources: list[dict]) -> None:
         """Test [AllergyIntolerance] returns generated allergies."""
         evaluator.compile("""
             library Test version '1.0'
@@ -225,9 +203,7 @@ class TestCQLWithGeneratedData:
 
         result = evaluator.evaluate_definition("AllAllergies", resource=patient)
 
-        expected_count = sum(
-            1 for r in patient_resources if r.get("resourceType") == "AllergyIntolerance"
-        )
+        expected_count = sum(1 for r in patient_resources if r.get("resourceType") == "AllergyIntolerance")
 
         assert isinstance(result, list)
         assert len(result) == expected_count
@@ -245,16 +221,12 @@ class TestCQLWithGeneratedData:
 
         result = evaluator.evaluate_definition("AllImmunizations", resource=patient)
 
-        expected_count = sum(
-            1 for r in patient_resources if r.get("resourceType") == "Immunization"
-        )
+        expected_count = sum(1 for r in patient_resources if r.get("resourceType") == "Immunization")
 
         assert isinstance(result, list)
         assert len(result) == expected_count
 
-    def test_retrieve_procedures(
-        self, evaluator: CQLEvaluator, patient: dict, patient_resources: list[dict]
-    ) -> None:
+    def test_retrieve_procedures(self, evaluator: CQLEvaluator, patient: dict, patient_resources: list[dict]) -> None:
         """Test [Procedure] returns generated procedures."""
         evaluator.compile("""
             library Test version '1.0'
@@ -265,9 +237,7 @@ class TestCQLWithGeneratedData:
 
         result = evaluator.evaluate_definition("AllProcedures", resource=patient)
 
-        expected_count = sum(
-            1 for r in patient_resources if r.get("resourceType") == "Procedure"
-        )
+        expected_count = sum(1 for r in patient_resources if r.get("resourceType") == "Procedure")
 
         assert isinstance(result, list)
         assert len(result) == expected_count
@@ -276,9 +246,7 @@ class TestCQLWithGeneratedData:
     # FILTERED QUERIES
     # =========================================================================
 
-    def test_active_conditions(
-        self, evaluator: CQLEvaluator, patient: dict
-    ) -> None:
+    def test_active_conditions(self, evaluator: CQLEvaluator, patient: dict) -> None:
         """Test filtering conditions by clinicalStatus."""
         evaluator.compile("""
             library Test version '1.0'
@@ -299,9 +267,7 @@ class TestCQLWithGeneratedData:
             codes = [c.get("code") for c in codings]
             assert "active" in codes
 
-    def test_active_medications(
-        self, evaluator: CQLEvaluator, patient: dict
-    ) -> None:
+    def test_active_medications(self, evaluator: CQLEvaluator, patient: dict) -> None:
         """Test filtering medications by status = 'active'."""
         evaluator.compile("""
             library Test version '1.0'
@@ -319,9 +285,7 @@ class TestCQLWithGeneratedData:
             med = item.get("M", item)
             assert med.get("status") == "active"
 
-    def test_completed_encounters(
-        self, evaluator: CQLEvaluator, patient: dict
-    ) -> None:
+    def test_completed_encounters(self, evaluator: CQLEvaluator, patient: dict) -> None:
         """Test filtering encounters by status."""
         evaluator.compile("""
             library Test version '1.0'
@@ -342,9 +306,7 @@ class TestCQLWithGeneratedData:
     # VALUE ACCESS
     # =========================================================================
 
-    def test_observation_value_quantity(
-        self, evaluator: CQLEvaluator, patient: dict
-    ) -> None:
+    def test_observation_value_quantity(self, evaluator: CQLEvaluator, patient: dict) -> None:
         """Test accessing valueQuantity.value from observations."""
         evaluator.compile("""
             library Test version '1.0'
@@ -361,9 +323,7 @@ class TestCQLWithGeneratedData:
         assert isinstance(obs_result, list)
         # Generator should produce observations with valueQuantity
 
-    def test_medication_code_access(
-        self, evaluator: CQLEvaluator, patient: dict
-    ) -> None:
+    def test_medication_code_access(self, evaluator: CQLEvaluator, patient: dict) -> None:
         """Test accessing medication code from MedicationRequest."""
         evaluator.compile("""
             library Test version '1.0'
@@ -378,9 +338,7 @@ class TestCQLWithGeneratedData:
         assert isinstance(result, list)
         # Should return coding arrays for each medication
 
-    def test_condition_code_display(
-        self, evaluator: CQLEvaluator, patient: dict
-    ) -> None:
+    def test_condition_code_display(self, evaluator: CQLEvaluator, patient: dict) -> None:
         """Test accessing condition code display text."""
         evaluator.compile("""
             library Test version '1.0'
@@ -399,9 +357,7 @@ class TestCQLWithGeneratedData:
     # CLINICAL LOGIC
     # =========================================================================
 
-    def test_count_resources(
-        self, evaluator: CQLEvaluator, patient: dict
-    ) -> None:
+    def test_count_resources(self, evaluator: CQLEvaluator, patient: dict) -> None:
         """Test counting generated resources."""
         evaluator.compile("""
             library Test version '1.0'
@@ -423,9 +379,7 @@ class TestCQLWithGeneratedData:
         assert med_count > 0
         assert enc_count > 0
 
-    def test_exists_check(
-        self, evaluator: CQLEvaluator, patient: dict
-    ) -> None:
+    def test_exists_check(self, evaluator: CQLEvaluator, patient: dict) -> None:
         """Test exists() with generated data."""
         evaluator.compile("""
             library Test version '1.0'
@@ -444,9 +398,7 @@ class TestCQLWithGeneratedData:
         assert has_med is True
         assert has_enc is True
 
-    def test_first_last_resources(
-        self, evaluator: CQLEvaluator, patient: dict
-    ) -> None:
+    def test_first_last_resources(self, evaluator: CQLEvaluator, patient: dict) -> None:
         """Test First() and Last() with generated resources."""
         evaluator.compile("""
             library Test version '1.0'
@@ -507,12 +459,8 @@ class TestMultiplePatients:
         count2 = evaluator.evaluate_definition("ConditionCount", resource=patient2)
 
         # Counts should match what was generated for each patient
-        expected_count1 = sum(
-            1 for r in patient1_resources if r.get("resourceType") == "Condition"
-        )
-        expected_count2 = sum(
-            1 for r in patient2_resources if r.get("resourceType") == "Condition"
-        )
+        expected_count1 = sum(1 for r in patient1_resources if r.get("resourceType") == "Condition")
+        expected_count2 = sum(1 for r in patient2_resources if r.get("resourceType") == "Condition")
 
         assert count1 == expected_count1
         assert count2 == expected_count2

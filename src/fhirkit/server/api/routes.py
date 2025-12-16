@@ -529,6 +529,37 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
         return str(value)
 
     # =========================================================================
+    # CQL Examples API
+    # =========================================================================
+
+    @router.get("/cql/examples", tags=["CQL"])
+    async def list_cql_examples() -> Response:
+        """List all available CQL examples.
+
+        Returns the manifest with all example metadata.
+        """
+        from fhirkit.server.cql_examples import load_manifest
+
+        manifest = load_manifest()
+        return JSONResponse(content=manifest)
+
+    @router.get("/cql/examples/{example_id}", tags=["CQL"])
+    async def get_cql_example(example_id: str) -> Response:
+        """Get a specific CQL example by ID.
+
+        Returns the example with its CQL code loaded.
+        """
+        from fhirkit.server.cql_examples import load_example
+
+        example = load_example(example_id)
+        if example is None:
+            return JSONResponse(
+                status_code=404,
+                content={"error": f"Example '{example_id}' not found"},
+            )
+        return JSONResponse(content=example)
+
+    # =========================================================================
     # Bulk Data Export Operations
     # =========================================================================
 

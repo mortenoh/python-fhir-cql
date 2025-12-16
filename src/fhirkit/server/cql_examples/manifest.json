@@ -1,0 +1,229 @@
+{
+  "version": "1.0.0",
+  "examples": [
+    {
+      "id": "basic-arithmetic",
+      "name": "Arithmetic operations",
+      "description": "Basic math operations and functions in CQL",
+      "file": "beginner/basic_arithmetic.cql",
+      "category": "beginner",
+      "requires_patient": false
+    },
+    {
+      "id": "basic-strings",
+      "name": "String operations",
+      "description": "String manipulation and text processing",
+      "file": "beginner/basic_strings.cql",
+      "category": "beginner",
+      "requires_patient": false
+    },
+    {
+      "id": "basic-dates",
+      "name": "Date operations",
+      "description": "Date/time arithmetic and comparisons",
+      "file": "beginner/basic_dates.cql",
+      "category": "beginner",
+      "requires_patient": false
+    },
+    {
+      "id": "basic-lists",
+      "name": "List operations",
+      "description": "Working with lists and set operations",
+      "file": "beginner/basic_lists.cql",
+      "category": "beginner",
+      "requires_patient": false
+    },
+    {
+      "id": "basic-intervals",
+      "name": "Interval operations",
+      "description": "Creating and comparing intervals",
+      "file": "beginner/basic_intervals.cql",
+      "category": "beginner",
+      "requires_patient": false
+    },
+    {
+      "id": "patient-demographics",
+      "name": "Patient demographics",
+      "description": "Accessing patient name, gender, address, contacts",
+      "file": "intermediate/patient_demographics.cql",
+      "category": "intermediate",
+      "requires_patient": true
+    },
+    {
+      "id": "patient-age",
+      "name": "Age calculations",
+      "description": "Age in years, months, days and age groups",
+      "file": "intermediate/patient_age.cql",
+      "category": "intermediate",
+      "requires_patient": true
+    },
+    {
+      "id": "patient-contacts",
+      "name": "Patient contacts",
+      "description": "Phone numbers, emails, emergency contacts",
+      "file": "intermediate/patient_contacts.cql",
+      "category": "intermediate",
+      "requires_patient": true
+    },
+    {
+      "id": "obs-vitals",
+      "name": "Vital signs query",
+      "description": "Heart rate, blood pressure, temperature, BMI",
+      "file": "intermediate/vital_signs.cql",
+      "category": "intermediate",
+      "requires_patient": true
+    },
+    {
+      "id": "obs-labs",
+      "name": "Lab results query",
+      "description": "HbA1c, cholesterol, kidney function, glucose",
+      "file": "intermediate/lab_results.cql",
+      "category": "intermediate",
+      "requires_patient": true
+    },
+    {
+      "id": "obs-latest",
+      "name": "Most recent observation",
+      "description": "Getting latest observations and filtering by date",
+      "file": "intermediate/latest_observations.cql",
+      "category": "intermediate",
+      "requires_patient": true
+    },
+    {
+      "id": "cond-active",
+      "name": "Active conditions",
+      "description": "Active, resolved, and problem list conditions",
+      "file": "intermediate/active_conditions.cql",
+      "category": "intermediate",
+      "requires_patient": true
+    },
+    {
+      "id": "cond-diabetes",
+      "name": "Diabetes check",
+      "description": "Detecting diabetes by ICD-10/SNOMED codes",
+      "file": "intermediate/diabetes_check.cql",
+      "category": "intermediate",
+      "requires_patient": true
+    },
+    {
+      "id": "med-active",
+      "name": "Active medications",
+      "description": "Medication queries, dosing, polypharmacy",
+      "file": "intermediate/active_medications.cql",
+      "category": "intermediate",
+      "requires_patient": true
+    },
+    {
+      "id": "obs-abnormal",
+      "name": "Abnormal values",
+      "description": "Finding abnormal and critical lab results",
+      "file": "advanced/abnormal_observations.cql",
+      "category": "advanced",
+      "requires_patient": true
+    },
+    {
+      "id": "cond-chronic",
+      "name": "Chronic conditions",
+      "description": "Detecting hypertension, heart disease, COPD, CKD",
+      "file": "advanced/chronic_conditions.cql",
+      "category": "advanced",
+      "requires_patient": true
+    },
+    {
+      "id": "med-opioids",
+      "name": "Opioid check",
+      "description": "Opioid and benzodiazepine detection",
+      "file": "advanced/opioid_check.cql",
+      "category": "advanced",
+      "requires_patient": true
+    },
+    {
+      "id": "med-interactions",
+      "name": "Drug class check",
+      "description": "Drug classes and interaction screening",
+      "file": "advanced/drug_interactions.cql",
+      "category": "advanced",
+      "requires_patient": true
+    },
+    {
+      "id": "measure-ipp",
+      "name": "Initial population",
+      "description": "Quality measure initial population criteria",
+      "file": "advanced/measure_ipp.cql",
+      "category": "advanced",
+      "requires_patient": true
+    },
+    {
+      "id": "measure-denom",
+      "name": "Denominator criteria",
+      "description": "Quality measure denominator with exclusions",
+      "file": "advanced/measure_denominator.cql",
+      "category": "advanced",
+      "requires_patient": true
+    },
+    {
+      "id": "measure-numer",
+      "name": "Numerator criteria",
+      "description": "Quality measure numerator (HbA1c control)",
+      "file": "advanced/measure_numerator.cql",
+      "category": "advanced",
+      "requires_patient": true
+    },
+    {
+      "id": "measure-exclusion",
+      "name": "Exclusion criteria",
+      "description": "Hospice, palliative care, frailty exclusions",
+      "file": "advanced/measure_exclusion.cql",
+      "category": "advanced",
+      "requires_patient": true
+    },
+    {
+      "id": "rule-alerts",
+      "name": "Clinical alerts",
+      "description": "Critical lab values and drug-disease alerts",
+      "file": "advanced/clinical_alerts.cql",
+      "category": "advanced",
+      "requires_patient": true
+    },
+    {
+      "id": "rule-reminders",
+      "name": "Care reminders",
+      "description": "Care gaps for screening and immunizations",
+      "file": "advanced/care_reminders.cql",
+      "category": "advanced",
+      "requires_patient": true
+    },
+    {
+      "id": "rule-contraindications",
+      "name": "Contraindications",
+      "description": "Drug contraindication checking",
+      "file": "advanced/contraindications.cql",
+      "category": "advanced",
+      "requires_patient": true
+    },
+    {
+      "id": "adv-aggregates",
+      "name": "Aggregate functions",
+      "description": "Sum, avg, median, stddev, variance",
+      "file": "advanced/aggregate_examples.cql",
+      "category": "advanced",
+      "requires_patient": true
+    },
+    {
+      "id": "adv-timing",
+      "name": "Timing relationships",
+      "description": "Temporal patterns and overlapping events",
+      "file": "advanced/timing_relationships.cql",
+      "category": "advanced",
+      "requires_patient": true
+    },
+    {
+      "id": "adv-queries",
+      "name": "Complex queries",
+      "description": "Multi-source queries, grouping, nested queries",
+      "file": "advanced/complex_queries.cql",
+      "category": "advanced",
+      "requires_patient": true
+    }
+  ]
+}
