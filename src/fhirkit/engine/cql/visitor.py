@@ -856,6 +856,17 @@ class CQLEvaluatorVisitor(cqlVisitor):
                 return result
             elif isinstance(target, CQLTuple):
                 return target.elements.get(name)
+            elif isinstance(target, CQLInterval):
+                # Handle interval property access: .low, .high, .lowClosed, .highClosed
+                if name == "low":
+                    return target.low
+                elif name == "high":
+                    return target.high
+                elif name == "lowClosed":
+                    return target.low_closed
+                elif name == "highClosed":
+                    return target.high_closed
+                return None
             elif isinstance(target, list):
                 # Flatten property access on list, recursively handling nested lists
                 results = []
