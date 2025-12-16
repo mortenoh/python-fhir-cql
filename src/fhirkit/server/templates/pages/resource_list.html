@@ -28,13 +28,16 @@
             </p>
         </div>
         <div class="mt-4 flex md:ml-4 md:mt-0">
-            <a href="{{ url_for('ui_resource_new', resource_type=resource_type) }}"
-               class="ml-3 inline-flex items-center rounded-md bg-fhir-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-fhir-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fhir-600">
-                <svg class="-ml-0.5 mr-1.5 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
-                </svg>
-                Create New
-            </a>
+            <div class="group relative ml-3">
+                <a href="{{ url_for('ui_resource_new', resource_type=resource_type) }}"
+                   class="inline-flex items-center rounded-md bg-fhir-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-fhir-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fhir-600">
+                    <svg class="-ml-0.5 mr-1.5 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+                    </svg>
+                    Create New
+                </a>
+                <span class="tooltip">Create new {{ resource_type }}</span>
+            </div>
         </div>
     </div>
 
@@ -42,13 +45,16 @@
     {% if search_params %}
     <div class="bg-white shadow rounded-lg">
         <div class="px-4 py-4 sm:px-6 border-b border-gray-200">
-            <button type="button" onclick="toggleSearch()"
-                    class="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900">
-                <svg id="search-chevron" class="h-5 w-5 mr-1 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                </svg>
-                Search & Filter
-            </button>
+            <div class="group relative inline-block">
+                <button type="button" onclick="toggleSearch()"
+                        class="flex items-center text-sm font-medium text-gray-700 hover:text-gray-900">
+                    <svg id="search-chevron" class="h-5 w-5 mr-1 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                    Search & Filter
+                </button>
+                <span class="tooltip tooltip-bottom">Toggle search filters</span>
+            </div>
         </div>
         <div id="search-form" class="p-4 hidden">
             <form method="get" class="space-y-4">
@@ -120,12 +126,21 @@
                         {{ resource.meta.versionId if resource.meta and resource.meta.versionId else '1' }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                        <a href="{{ url_for('ui_resource_detail', resource_type=resource_type, resource_id=resource.id) }}"
-                           class="text-fhir-600 hover:text-fhir-900">View</a>
-                        <a href="{{ url_for('ui_resource_edit', resource_type=resource_type, resource_id=resource.id) }}"
-                           class="text-green-600 hover:text-green-900">Edit</a>
-                        <a href="{{ url_for('ui_resource_history', resource_type=resource_type, resource_id=resource.id) }}"
-                           class="text-purple-600 hover:text-purple-900">History</a>
+                        <span class="group relative inline-block">
+                            <a href="{{ url_for('ui_resource_detail', resource_type=resource_type, resource_id=resource.id) }}"
+                               class="text-fhir-600 hover:text-fhir-900">View</a>
+                            <span class="tooltip">View details</span>
+                        </span>
+                        <span class="group relative inline-block">
+                            <a href="{{ url_for('ui_resource_edit', resource_type=resource_type, resource_id=resource.id) }}"
+                               class="text-green-600 hover:text-green-900">Edit</a>
+                            <span class="tooltip">Edit JSON</span>
+                        </span>
+                        <span class="group relative inline-block">
+                            <a href="{{ url_for('ui_resource_history', resource_type=resource_type, resource_id=resource.id) }}"
+                               class="text-purple-600 hover:text-purple-900">History</a>
+                            <span class="tooltip">Version history</span>
+                        </span>
                     </td>
                 </tr>
                 {% endfor %}

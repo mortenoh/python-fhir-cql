@@ -19,7 +19,7 @@
     <!-- Stats Grid -->
     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <!-- Total Resources -->
-        <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="bg-white overflow-hidden shadow rounded-lg group relative">
             <div class="p-5">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
@@ -35,10 +35,11 @@
                     </div>
                 </div>
             </div>
+            <span class="tooltip tooltip-bottom">All FHIR resources in store</span>
         </div>
 
         <!-- Resource Types -->
-        <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="bg-white overflow-hidden shadow rounded-lg group relative">
             <div class="p-5">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
@@ -54,10 +55,11 @@
                     </div>
                 </div>
             </div>
+            <span class="tooltip tooltip-bottom">Types with stored resources</span>
         </div>
 
         <!-- Patients -->
-        <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="bg-white overflow-hidden shadow rounded-lg group relative">
             <div class="p-5">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
@@ -73,10 +75,11 @@
                     </div>
                 </div>
             </div>
+            <span class="tooltip tooltip-bottom">Patient resources in store</span>
         </div>
 
         <!-- Supported Types -->
-        <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="bg-white overflow-hidden shadow rounded-lg group relative">
             <div class="p-5">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
@@ -92,6 +95,7 @@
                     </div>
                 </div>
             </div>
+            <span class="tooltip tooltip-bottom">FHIR types this server supports</span>
         </div>
     </div>
 

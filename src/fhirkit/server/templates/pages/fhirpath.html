@@ -64,8 +64,9 @@
                         <p class="text-xs text-gray-500">Ctrl+Enter to evaluate</p>
                     </div>
                     <div class="flex space-x-2">
-                        <select id="example-select" onchange="loadExample()" class="text-sm border-gray-300 rounded-md">
-                            <option value="">-- Examples --</option>
+                        <div class="group relative">
+                            <select id="example-select" onchange="loadExample()" class="text-sm border-gray-300 rounded-md">
+                                <option value="">-- Examples --</option>
                             <optgroup label="🟢 Patient - Basic">
                                 <option value="name.given">Given names</option>
                                 <option value="name.family">Family names</option>
@@ -204,19 +205,24 @@
                                 <option value="name.where(use='official').exists().not()">No official name?</option>
                                 <option value="iif(gender='male', 'M', 'F')">Gender code (M/F)</option>
                             </optgroup>
-                        </select>
+                            </select>
+                            <span class="tooltip">Load example expression</span>
+                        </div>
                     </div>
                 </div>
                 <div id="expression-editor" class="h-24 border-b border-gray-200"></div>
                 <div class="px-4 py-2 bg-gray-50 flex justify-between items-center">
-                    <button onclick="runEvaluation()" id="evaluate-btn"
-                            class="inline-flex items-center rounded-md bg-fhir-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-fhir-700">
-                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Evaluate
-                    </button>
+                    <div class="group relative">
+                        <button onclick="runEvaluation()" id="evaluate-btn"
+                                class="inline-flex items-center rounded-md bg-fhir-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-fhir-700">
+                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Evaluate
+                        </button>
+                        <span class="tooltip tooltip-bottom">Run expression (Ctrl+Enter)</span>
+                    </div>
                     <span id="exec-time" class="text-xs text-gray-500"></span>
                 </div>
             </div>
@@ -225,14 +231,20 @@
             <div class="bg-white shadow rounded-lg overflow-hidden">
                 <div class="px-4 py-3 border-b border-gray-200">
                     <div class="flex space-x-4">
-                        <button onclick="setMode('single')" id="mode-single"
-                                class="text-sm font-medium text-fhir-600 border-b-2 border-fhir-600 pb-1">
-                            Single Resource
-                        </button>
-                        <button onclick="setMode('search')" id="mode-search"
-                                class="text-sm font-medium text-gray-500 hover:text-gray-700 pb-1">
-                            Search & Query
-                        </button>
+                        <span class="group relative">
+                            <button onclick="setMode('single')" id="mode-single"
+                                    class="text-sm font-medium text-fhir-600 border-b-2 border-fhir-600 pb-1">
+                                Single Resource
+                            </button>
+                            <span class="tooltip tooltip-bottom">Evaluate against one resource</span>
+                        </span>
+                        <span class="group relative">
+                            <button onclick="setMode('search')" id="mode-search"
+                                    class="text-sm font-medium text-gray-500 hover:text-gray-700 pb-1">
+                                Search & Query
+                            </button>
+                            <span class="tooltip tooltip-bottom">Query server and evaluate each result</span>
+                        </span>
                     </div>
                 </div>
 
@@ -253,7 +265,10 @@
                             {% endfor %}
                             </optgroup>
                         </select>
-                        <button onclick="formatResource()" class="text-sm text-gray-600 hover:text-gray-900">Format</button>
+                        <span class="group relative">
+                            <button onclick="formatResource()" class="text-sm text-gray-600 hover:text-gray-900">Format</button>
+                            <span class="tooltip">Format JSON</span>
+                        </span>
                     </div>
                     <div id="resource-editor" class="h-64 border border-gray-200 rounded-md"></div>
                 </div>
@@ -315,7 +330,10 @@
                 <h2 class="text-lg font-medium text-gray-900">Results</h2>
                 <div class="flex items-center space-x-2">
                     <span id="result-count" class="text-sm text-gray-500"></span>
-                    <button onclick="copyResults()" class="text-sm text-gray-600 hover:text-gray-900">Copy</button>
+                    <span class="group relative">
+                        <button onclick="copyResults()" class="text-sm text-gray-600 hover:text-gray-900">Copy</button>
+                        <span class="tooltip">Copy to clipboard</span>
+                    </span>
                 </div>
             </div>
             <div id="results-panel" class="h-[550px] overflow-auto">

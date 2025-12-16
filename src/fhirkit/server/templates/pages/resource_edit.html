@@ -67,14 +67,20 @@
                     </p>
                 </div>
                 <div class="flex space-x-2">
-                    <button type="button" onclick="formatJSON()"
-                            class="inline-flex items-center rounded-md bg-white px-2.5 py-1.5 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
-                        Format
-                    </button>
-                    <button type="button" onclick="validateJSON()"
-                            class="inline-flex items-center rounded-md bg-white px-2.5 py-1.5 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
-                        Validate
-                    </button>
+                    <span class="group relative">
+                        <button type="button" onclick="formatJSON()"
+                                class="inline-flex items-center rounded-md bg-white px-2.5 py-1.5 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                            Format
+                        </button>
+                        <span class="tooltip">Auto-format JSON</span>
+                    </span>
+                    <span class="group relative">
+                        <button type="button" onclick="validateJSON()"
+                                class="inline-flex items-center rounded-md bg-white px-2.5 py-1.5 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                            Validate
+                        </button>
+                        <span class="tooltip">Check FHIR compliance</span>
+                    </span>
                 </div>
             </div>
             <div class="p-4">
@@ -86,14 +92,20 @@
 
         <!-- Actions -->
         <div class="flex justify-end space-x-3">
-            <a href="{% if is_new %}{{ url_for('ui_resource_list', resource_type=resource_type) }}{% else %}{{ url_for('ui_resource_detail', resource_type=resource_type, resource_id=resource_id) }}{% endif %}"
-               class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
-                Cancel
-            </a>
-            <button type="submit"
-                    class="inline-flex items-center rounded-md bg-fhir-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-fhir-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fhir-600">
-                {% if is_new %}Create{% else %}Save Changes{% endif %}
-            </button>
+            <span class="group relative">
+                <a href="{% if is_new %}{{ url_for('ui_resource_list', resource_type=resource_type) }}{% else %}{{ url_for('ui_resource_detail', resource_type=resource_type, resource_id=resource_id) }}{% endif %}"
+                   class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                    Cancel
+                </a>
+                <span class="tooltip">Discard changes</span>
+            </span>
+            <span class="group relative">
+                <button type="submit"
+                        class="inline-flex items-center rounded-md bg-fhir-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-fhir-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fhir-600">
+                    {% if is_new %}Create{% else %}Save Changes{% endif %}
+                </button>
+                <span class="tooltip tooltip-bottom">{% if is_new %}POST new resource{% else %}PUT updated resource{% endif %}</span>
+            </span>
         </div>
     </form>
 </div>
