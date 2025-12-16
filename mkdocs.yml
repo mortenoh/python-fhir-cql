@@ -51,6 +51,8 @@ nav:
       - Reference: fhirpath-cql-tutorial.md
   - ELM:
       - Guide: elm-guide.md
+      - Python API: elm-api.md
+      - Reference: elm-reference.md
   - FHIR Server:
       - Guide: fhir-server-guide.md
       - Resources:
