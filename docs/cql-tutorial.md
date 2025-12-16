@@ -2252,7 +2252,7 @@ define SeriousConditions:
 
 // Query with let
 define ConditionsWithAge:
-    from C in [Condition]
+    [Condition] C
     let onsetAge: years between Patient.birthDate and C.onset
     where onsetAge is not null
     return Tuple {
@@ -2262,8 +2262,7 @@ define ConditionsWithAge:
 
 // Multi-source query
 define ConditionMedications:
-    from C in [Condition],
-         M in [MedicationRequest]
+    [Condition] C, [MedicationRequest] M
     where M.reasonReference.reference = 'Condition/' + C.id
     return Tuple {
         condition: C.code.coding.first().display,
@@ -2272,7 +2271,7 @@ define ConditionMedications:
 
 // Aggregate query
 define ConditionCountByStatus:
-    from C in [Condition]
+    [Condition] C
     return all C.clinicalStatus.coding.first().code
 
 // Sort and limit
@@ -2343,7 +2342,7 @@ define AbnormalLabs:
 
 // Calculate average of recent values
 define RecentGlucoseValues:
-    from O in [Observation] O
+    [Observation] O
         where O.code.coding.code contains '2339-0'
             and O.status = 'final'
             and O.effective after Today() - 90 days

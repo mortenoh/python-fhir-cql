@@ -446,13 +446,47 @@ print(source)  # FHIRHelpers CQL source
 ```python
 from fhirkit.engine.cql.types import CQLInterval
 
-# Create interval
+# Create interval programmatically
 interval = CQLInterval(low=1, high=10, low_closed=True, high_closed=True)
 
 # Evaluate interval expressions
 result = evaluator.evaluate_expression("Interval[1, 10] contains 5")  # True
 result = evaluator.evaluate_expression("5 in Interval[1, 10]")  # True
 ```
+
+#### Interval Property Access
+
+Access interval bounds using dot notation:
+
+```cql
+// Get boundaries
+Interval[1, 10].low          // 1
+Interval[1, 10].high         // 10
+
+// Check if bounds are closed/open
+Interval[1, 10].lowClosed    // true (closed with [)
+Interval[1, 10).highClosed   // false (open with ))
+
+// Alternative: start/end operators
+start of Interval[1, 10]     // 1
+end of Interval[1, 10]       // 10
+width of Interval[1, 10]     // 9
+```
+
+#### Interval Operations
+
+| Operation | Example | Result |
+|-----------|---------|--------|
+| Contains | `Interval[1, 10] contains 5` | `true` |
+| In | `5 in Interval[1, 10]` | `true` |
+| Overlaps | `Interval[1, 5] overlaps Interval[3, 8]` | `true` |
+| Includes | `Interval[1, 10] includes Interval[3, 7]` | `true` |
+| Before | `Interval[1, 3] before Interval[5, 10]` | `true` |
+| After | `Interval[5, 10] after Interval[1, 3]` | `true` |
+| Meets | `Interval[1, 3] meets Interval[4, 10]` | `true` |
+| Union | `Interval[1, 5] union Interval[3, 10]` | `Interval[1, 10]` |
+| Intersect | `Interval[1, 10] intersect Interval[5, 15]` | `Interval[5, 10]` |
+| Except | `Interval[1, 10] except Interval[5, 15]` | `Interval[1, 4]` |
 
 ### Tuples
 

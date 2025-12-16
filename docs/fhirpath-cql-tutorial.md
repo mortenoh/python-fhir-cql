@@ -704,28 +704,38 @@ define EncountersInPeriod:
 
 ## Queries
 
-### Basic Query Structure
+### Query Syntax
+
+CQL queries use the pattern `source alias where condition return expression`:
 
 ```cql
-// Simple query
+// List literals require parentheses
 define FilteredList:
-    from item in {1, 2, 3, 4, 5}
+    ({1, 2, 3, 4, 5}) item
     where item > 2
     return item
 // Returns: {3, 4, 5}
+
+// FHIR retrieves don't need parentheses
+define FinalObs:
+    [Observation] O
+    where O.status = 'final'
+    return O
 ```
 
 ### Query Clauses
 
-#### FROM - Define Sources
+#### Source and Alias
 
 ```cql
-// Single source
-from Obs in [Observation]
+// Single FHIR source
+[Observation] Obs
+
+// List literal (parentheses required)
+({1, 2, 3}) N
 
 // Multiple sources
-from C in [Condition],
-     O in [Observation]
+[Condition] C, [Observation] O
 ```
 
 #### WHERE - Filter Results
@@ -759,12 +769,12 @@ define ObsWithAge:
 ```cql
 // Return specific property
 define ObsDates:
-    from O in [Observation]
+    [Observation] O
     return O.effective
 
 // Return tuple
 define ObsSummary:
-    from O in [Observation]
+    [Observation] O
     return Tuple {
         code: O.code,
         value: O.value,
@@ -773,7 +783,7 @@ define ObsSummary:
 
 // Return all (preserve duplicates)
 define AllValues:
-    from O in [Observation]
+    [Observation] O
     return all O.value
 ```
 
