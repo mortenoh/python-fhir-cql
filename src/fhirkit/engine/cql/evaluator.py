@@ -21,7 +21,11 @@ from cqlParser import cqlParser  # noqa: E402
 from ..exceptions import CQLError  # noqa: E402
 from .context import CQLContext, DataSource  # noqa: E402
 from .library import CQLLibrary, LibraryManager  # noqa: E402
-from .library_resolver import FileLibraryResolver, LibraryResolver  # noqa: E402
+from .library_resolver import (  # noqa: E402
+    CompositeLibraryResolver,
+    FileLibraryResolver,
+    LibraryResolver,
+)
 from .plugins import CQLPluginRegistry  # noqa: E402
 from .visitor import CQLEvaluatorVisitor  # noqa: E402
 
@@ -114,6 +118,7 @@ class CQLEvaluator:
         library_resolver: LibraryResolver | None = None,
         library_paths: list[Path | str] | None = None,
         plugin_registry: CQLPluginRegistry | None = None,
+        include_builtins: bool = True,
     ):
         """Initialize the CQL evaluator.
 
@@ -123,6 +128,7 @@ class CQLEvaluator:
             library_resolver: Optional library resolver for loading includes
             library_paths: Optional list of directories to search for libraries
             plugin_registry: Optional plugin registry for custom functions
+            include_builtins: Whether to include built-in libraries like FHIRHelpers (default True)
         """
         self._library_manager = library_manager or LibraryManager()
         self._data_source = data_source
@@ -130,11 +136,25 @@ class CQLEvaluator:
         self._current_library: CQLLibrary | None = None
         self._expression_cache: dict[str, cqlParser.ExpressionContext] = {}
 
-        # Set up library resolver
+        # Build resolver chain: user resolver -> builtins -> file paths
+        resolvers: list[LibraryResolver] = []
+
         if library_resolver:
-            self._library_manager.set_resolver(library_resolver)
-        elif library_paths:
-            self._library_manager.set_resolver(FileLibraryResolver(library_paths))
+            resolvers.append(library_resolver)
+
+        if include_builtins:
+            from .builtins import get_builtin_resolver
+
+            resolvers.append(get_builtin_resolver())
+
+        if library_paths:
+            resolvers.append(FileLibraryResolver(library_paths))
+
+        # Set up combined resolver
+        if len(resolvers) == 1:
+            self._library_manager.set_resolver(resolvers[0])
+        elif len(resolvers) > 1:
+            self._library_manager.set_resolver(CompositeLibraryResolver(resolvers))
 
         # Set compile function for library manager to resolve includes
         self._library_manager.set_compile_function(self._compile_source)
