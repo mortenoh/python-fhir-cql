@@ -1,9 +1,20 @@
 """Tests for FHIR conditional operations."""
 
+from datetime import datetime, timedelta, timezone
+
 import pytest
 from fastapi.testclient import TestClient
 
 from fhirkit.server.api.app import create_app
+from fhirkit.server.api.conditional import (
+    check_conditional_read,
+    etag_matches,
+    is_modified_since,
+    parse_etag,
+    parse_if_modified_since,
+    parse_if_none_match,
+    parse_last_updated,
+)
 from fhirkit.server.config.settings import FHIRServerSettings
 from fhirkit.server.storage.fhir_store import FHIRStore
 
@@ -288,3 +299,250 @@ class TestConditionalDelete:
         # Verify it's deleted
         get_response = client.get(f"/Patient/{patient_id}")
         assert get_response.status_code == 404
+
+
+class TestConditionalReadUtilities:
+    """Tests for conditional read utility functions."""
+
+    def test_parse_etag_weak(self):
+        """Test parsing weak ETag."""
+        assert parse_etag('W/"2"') == "2"
+        assert parse_etag('W/"123"') == "123"
+
+    def test_parse_etag_strong(self):
+        """Test parsing strong ETag."""
+        assert parse_etag('"2"') == "2"
+        assert parse_etag('"abc"') == "abc"
+
+    def test_parse_etag_with_spaces(self):
+        """Test parsing ETag with whitespace."""
+        assert parse_etag('  W/"2"  ') == "2"
+
+    def test_parse_if_none_match_single(self):
+        """Test parsing single ETag."""
+        assert parse_if_none_match('W/"2"') == ["2"]
+
+    def test_parse_if_none_match_multiple(self):
+        """Test parsing multiple ETags."""
+        result = parse_if_none_match('W/"1", W/"2", W/"3"')
+        assert result == ["1", "2", "3"]
+
+    def test_parse_if_none_match_wildcard(self):
+        """Test parsing wildcard."""
+        assert parse_if_none_match("*") == ["*"]
+
+    def test_parse_if_modified_since_valid(self):
+        """Test parsing valid HTTP date."""
+        result = parse_if_modified_since("Tue, 15 Nov 2024 12:30:45 GMT")
+        assert result is not None
+        assert result.year == 2024
+        assert result.month == 11
+        assert result.day == 15
+
+    def test_parse_if_modified_since_invalid(self):
+        """Test parsing invalid date returns None."""
+        assert parse_if_modified_since("invalid-date") is None
+        assert parse_if_modified_since("") is None
+
+    def test_etag_matches_exact(self):
+        """Test ETag exact match."""
+        assert etag_matches("2", ["2"]) is True
+        assert etag_matches("2", ["1", "2", "3"]) is True
+
+    def test_etag_matches_no_match(self):
+        """Test ETag no match."""
+        assert etag_matches("2", ["1", "3"]) is False
+
+    def test_etag_matches_wildcard(self):
+        """Test ETag wildcard match."""
+        assert etag_matches("2", ["*"]) is True
+        assert etag_matches("anything", ["*"]) is True
+
+    def test_parse_last_updated_iso(self):
+        """Test parsing ISO 8601 datetime."""
+        result = parse_last_updated("2024-11-15T12:30:45+00:00")
+        assert result is not None
+        assert result.year == 2024
+
+    def test_parse_last_updated_z_suffix(self):
+        """Test parsing datetime with Z suffix."""
+        result = parse_last_updated("2024-11-15T12:30:45Z")
+        assert result is not None
+        assert result.tzinfo is not None
+
+    def test_is_modified_since_true(self):
+        """Test resource modified after date."""
+        # Resource updated today
+        now = datetime.now(timezone.utc)
+        last_updated = now.isoformat()
+        # Check against yesterday
+        yesterday = now - timedelta(days=1)
+        assert is_modified_since(last_updated, yesterday) is True
+
+    def test_is_modified_since_false(self):
+        """Test resource not modified after date."""
+        # Resource updated yesterday
+        yesterday = datetime.now(timezone.utc) - timedelta(days=1)
+        last_updated = yesterday.isoformat()
+        # Check against today
+        today = datetime.now(timezone.utc)
+        assert is_modified_since(last_updated, today) is False
+
+    def test_check_conditional_read_etag_match(self):
+        """Test check_conditional_read with matching ETag."""
+        resource = {"meta": {"versionId": "2", "lastUpdated": "2024-01-01T00:00:00Z"}}
+        assert check_conditional_read(resource, 'W/"2"', None) is True
+
+    def test_check_conditional_read_etag_no_match(self):
+        """Test check_conditional_read with non-matching ETag."""
+        resource = {"meta": {"versionId": "2", "lastUpdated": "2024-01-01T00:00:00Z"}}
+        assert check_conditional_read(resource, 'W/"1"', None) is False
+
+    def test_check_conditional_read_not_modified(self):
+        """Test check_conditional_read with If-Modified-Since."""
+        # Resource from yesterday
+        yesterday = datetime.now(timezone.utc) - timedelta(days=1)
+        resource = {"meta": {"versionId": "1", "lastUpdated": yesterday.isoformat()}}
+        # Check with today's date - should return True (not modified)
+        today = datetime.now(timezone.utc)
+        if_modified_since = today.strftime("%a, %d %b %Y %H:%M:%S GMT")
+        assert check_conditional_read(resource, None, if_modified_since) is True
+
+
+class TestConditionalReadEndpoint:
+    """Tests for conditional read HTTP endpoint."""
+
+    def test_read_with_matching_etag_returns_304(self, client):
+        """Test read with matching If-None-Match returns 304."""
+        # Create a patient
+        create_response = client.post(
+            "/Patient",
+            json={"resourceType": "Patient", "name": [{"family": "ConditionalRead"}]},
+        )
+        assert create_response.status_code == 201
+        patient = create_response.json()
+        patient_id = patient["id"]
+        etag = create_response.headers.get("ETag")
+
+        # Read with matching ETag
+        response = client.get(
+            f"/Patient/{patient_id}",
+            headers={"If-None-Match": etag},
+        )
+
+        assert response.status_code == 304
+        assert response.content == b""  # No body
+        assert "ETag" in response.headers
+
+    def test_read_with_non_matching_etag_returns_200(self, client):
+        """Test read with non-matching If-None-Match returns 200."""
+        # Create a patient
+        create_response = client.post(
+            "/Patient",
+            json={"resourceType": "Patient", "name": [{"family": "ConditionalRead2"}]},
+        )
+        patient_id = create_response.json()["id"]
+
+        # Read with non-matching ETag
+        response = client.get(
+            f"/Patient/{patient_id}",
+            headers={"If-None-Match": 'W/"999"'},
+        )
+
+        assert response.status_code == 200
+        assert response.json()["resourceType"] == "Patient"
+
+    def test_read_with_wildcard_etag_returns_304(self, client):
+        """Test read with If-None-Match: * returns 304 if resource exists."""
+        # Create a patient
+        create_response = client.post(
+            "/Patient",
+            json={"resourceType": "Patient", "name": [{"family": "WildcardTest"}]},
+        )
+        patient_id = create_response.json()["id"]
+
+        # Read with wildcard
+        response = client.get(
+            f"/Patient/{patient_id}",
+            headers={"If-None-Match": "*"},
+        )
+
+        assert response.status_code == 304
+
+    def test_read_with_old_if_modified_since_returns_200(self, client):
+        """Test read with old If-Modified-Since returns 200."""
+        # Create a patient
+        create_response = client.post(
+            "/Patient",
+            json={"resourceType": "Patient", "name": [{"family": "ModifiedTest"}]},
+        )
+        patient_id = create_response.json()["id"]
+
+        # Read with old date (resource was modified after this)
+        old_date = "Tue, 01 Jan 2020 00:00:00 GMT"
+        response = client.get(
+            f"/Patient/{patient_id}",
+            headers={"If-Modified-Since": old_date},
+        )
+
+        assert response.status_code == 200
+        assert response.json()["resourceType"] == "Patient"
+
+    def test_read_with_future_if_modified_since_returns_304(self, client):
+        """Test read with future If-Modified-Since returns 304."""
+        # Create a patient
+        create_response = client.post(
+            "/Patient",
+            json={"resourceType": "Patient", "name": [{"family": "FutureTest"}]},
+        )
+        patient_id = create_response.json()["id"]
+
+        # Read with future date (resource not modified after this)
+        future_date = "Tue, 01 Jan 2030 00:00:00 GMT"
+        response = client.get(
+            f"/Patient/{patient_id}",
+            headers={"If-Modified-Since": future_date},
+        )
+
+        assert response.status_code == 304
+
+    def test_read_without_conditional_headers_returns_200(self, client):
+        """Test normal read without conditional headers returns 200."""
+        # Create a patient
+        create_response = client.post(
+            "/Patient",
+            json={"resourceType": "Patient", "name": [{"family": "NormalRead"}]},
+        )
+        patient_id = create_response.json()["id"]
+
+        # Normal read
+        response = client.get(f"/Patient/{patient_id}")
+
+        assert response.status_code == 200
+        assert "ETag" in response.headers
+
+    def test_read_nonexistent_resource_returns_404(self, client):
+        """Test read of nonexistent resource returns 404, not 304."""
+        response = client.get(
+            "/Patient/nonexistent-id",
+            headers={"If-None-Match": "*"},
+        )
+
+        assert response.status_code == 404
+
+    def test_read_multiple_etags_match(self, client):
+        """Test read with multiple ETags where one matches."""
+        # Create a patient
+        create_response = client.post(
+            "/Patient",
+            json={"resourceType": "Patient", "name": [{"family": "MultiETag"}]},
+        )
+        patient_id = create_response.json()["id"]
+
+        # Read with multiple ETags including the correct one
+        response = client.get(
+            f"/Patient/{patient_id}",
+            headers={"If-None-Match": 'W/"99", W/"1", W/"100"'},
+        )
+
+        assert response.status_code == 304

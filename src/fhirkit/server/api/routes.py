@@ -2813,7 +2813,13 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
         """Read a specific resource by ID.
 
         Returns the current version of the resource.
+
+        Supports conditional read via:
+        - If-None-Match: Returns 304 if ETag matches current version
+        - If-Modified-Since: Returns 304 if resource not modified since date
         """
+        from .conditional import check_conditional_read
+
         if resource_type not in SUPPORTED_TYPES:
             outcome = OperationOutcome.error(
                 f"Resource type '{resource_type}' is not supported",
@@ -2834,12 +2840,24 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
                 media_type=FHIR_JSON,
             )
 
-        # Set ETag header
+        # Get version for ETag
         version = resource.get("meta", {}).get("versionId", "1")
+        etag = f'W/"{version}"'
+
+        # Check conditional read headers
+        if_none_match = request.headers.get("If-None-Match")
+        if_modified_since = request.headers.get("If-Modified-Since")
+
+        if check_conditional_read(resource, if_none_match, if_modified_since):
+            return Response(
+                status_code=304,
+                headers={"ETag": etag},
+            )
+
         return JSONResponse(
             content=resource,
             media_type=FHIR_JSON,
-            headers={"ETag": f'W/"{version}"'},
+            headers={"ETag": etag},
         )
 
     @router.get("/{resource_type}/{resource_id}/_history", tags=["History"])
