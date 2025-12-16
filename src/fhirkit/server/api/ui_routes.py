@@ -345,6 +345,22 @@ def create_ui_router(
         )
         return templates.TemplateResponse("pages/measures.html", context)
 
+    @router.get("/questionnaires", response_class=HTMLResponse, name="ui_questionnaires")
+    async def questionnaires_browser(request: Request) -> HTMLResponse:
+        """Questionnaire browser and structure viewer."""
+        # Get available Questionnaire resources
+        questionnaires, _ = store.search("Questionnaire", {}, _count=100)
+
+        # Get patients for subject selection in form
+        patients, _ = store.search("Patient", {}, _count=100)
+
+        context = get_context(
+            request,
+            questionnaires=questionnaires,
+            patients=patients,
+        )
+        return templates.TemplateResponse("pages/questionnaires.html", context)
+
     @router.get("/tutorials", response_class=HTMLResponse, name="ui_tutorials")
     async def tutorials(request: Request, lesson: str = "welcome") -> HTMLResponse:
         """Interactive tutorials for learning FHIRPath, CQL, and FHIR."""

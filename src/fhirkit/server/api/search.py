@@ -429,6 +429,36 @@ SEARCH_PARAMS: dict[str, dict[str, dict[str, Any]]] = {
         "period": {"path": "executionPeriod.start", "type": "date"},
         "business-status": {"path": "businessStatus.coding", "type": "token"},
     },
+    # === Forms ===
+    "Questionnaire": {
+        "_id": {"path": "id", "type": "token"},
+        "identifier": {"path": "identifier", "type": "token"},
+        "url": {"path": "url", "type": "uri"},
+        "name": {"path": "name", "type": "string"},
+        "title": {"path": "title", "type": "string"},
+        "status": {"path": "status", "type": "token"},
+        "version": {"path": "version", "type": "token"},
+        "publisher": {"path": "publisher", "type": "string"},
+        "date": {"path": "date", "type": "date"},
+        "description": {"path": "description", "type": "string"},
+        "code": {"path": "code.coding", "type": "token"},
+        "context-type": {"path": "useContext.code", "type": "token"},
+        "subject-type": {"path": "subjectType", "type": "token"},
+    },
+    "QuestionnaireResponse": {
+        "_id": {"path": "id", "type": "token"},
+        "identifier": {"path": "identifier", "type": "token"},
+        "questionnaire": {"path": "questionnaire", "type": "uri"},
+        "status": {"path": "status", "type": "token"},
+        "subject": {"path": "subject.reference", "type": "reference"},
+        "patient": {"path": "subject.reference", "type": "reference"},
+        "author": {"path": "author.reference", "type": "reference"},
+        "authored": {"path": "authored", "type": "date"},
+        "encounter": {"path": "encounter.reference", "type": "reference"},
+        "source": {"path": "source.reference", "type": "reference"},
+        "based-on": {"path": "basedOn.reference", "type": "reference"},
+        "part-of": {"path": "partOf.reference", "type": "reference"},
+    },
 }
 
 

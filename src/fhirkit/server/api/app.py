@@ -59,6 +59,20 @@ def create_app(
 
             logger.info(f"Generated {len(resources)} resources for {settings.patients} patients")
 
+            # Generate standard questionnaire templates
+            from ..generator import QuestionnaireGenerator
+
+            questionnaire_gen = QuestionnaireGenerator(seed=settings.seed)
+            questionnaire_templates = [
+                "phq-9", "gad-7", "health-intake", "pain-assessment", "covid-screening",
+                "audit-c", "falls-risk", "sdoh", "medication-adherence",
+                "patient-satisfaction", "brief-mental-status", "surgical-preop"
+            ]
+            for template_name in questionnaire_templates:
+                questionnaire = questionnaire_gen.generate(template=template_name)
+                store.create(questionnaire)
+            logger.info(f"Generated {len(questionnaire_templates)} questionnaire templates")
+
             # Generate linked organization and location hierarchies for demo
             from ..generator import LocationGenerator, OrganizationGenerator
 

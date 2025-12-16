@@ -1235,6 +1235,21 @@
           }
         },
         {
+          "name": "Create GAD-7 Questionnaire",
+          "description": "Create a GAD-7 anxiety screening questionnaire",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Questionnaire\",\n  \"id\": \"gad-7\",\n  \"url\": \"http://example.org/Questionnaire/gad-7\",\n  \"name\": \"gad_7\",\n  \"title\": \"Generalized Anxiety Disorder Assessment (GAD-7)\",\n  \"status\": \"active\",\n  \"subjectType\": [\"Patient\"],\n  \"description\": \"A 7-item anxiety screening tool\",\n  \"purpose\": \"Anxiety screening and severity assessment\",\n  \"item\": [\n    {\"linkId\": \"1\", \"text\": \"Feeling nervous, anxious, or on edge\", \"type\": \"choice\", \"answerOption\": [{\"valueInteger\": 0}, {\"valueInteger\": 1}, {\"valueInteger\": 2}, {\"valueInteger\": 3}]},\n    {\"linkId\": \"2\", \"text\": \"Not being able to stop or control worrying\", \"type\": \"choice\", \"answerOption\": [{\"valueInteger\": 0}, {\"valueInteger\": 1}, {\"valueInteger\": 2}, {\"valueInteger\": 3}]},\n    {\"linkId\": \"3\", \"text\": \"Worrying too much about different things\", \"type\": \"choice\", \"answerOption\": [{\"valueInteger\": 0}, {\"valueInteger\": 1}, {\"valueInteger\": 2}, {\"valueInteger\": 3}]},\n    {\"linkId\": \"4\", \"text\": \"Trouble relaxing\", \"type\": \"choice\", \"answerOption\": [{\"valueInteger\": 0}, {\"valueInteger\": 1}, {\"valueInteger\": 2}, {\"valueInteger\": 3}]},\n    {\"linkId\": \"5\", \"text\": \"Being so restless that it's hard to sit still\", \"type\": \"choice\", \"answerOption\": [{\"valueInteger\": 0}, {\"valueInteger\": 1}, {\"valueInteger\": 2}, {\"valueInteger\": 3}]},\n    {\"linkId\": \"6\", \"text\": \"Becoming easily annoyed or irritable\", \"type\": \"choice\", \"answerOption\": [{\"valueInteger\": 0}, {\"valueInteger\": 1}, {\"valueInteger\": 2}, {\"valueInteger\": 3}]},\n    {\"linkId\": \"7\", \"text\": \"Feeling afraid as if something awful might happen\", \"type\": \"choice\", \"answerOption\": [{\"valueInteger\": 0}, {\"valueInteger\": 1}, {\"valueInteger\": 2}, {\"valueInteger\": 3}]}\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/Questionnaire"
+          }
+        },
+        {
           "name": "Create Pain Assessment Questionnaire",
           "description": "Create a pain assessment questionnaire",
           "request": {
@@ -1245,6 +1260,21 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"resourceType\": \"Questionnaire\",\n  \"id\": \"pain-assessment\",\n  \"url\": \"http://example.org/Questionnaire/pain-assessment\",\n  \"name\": \"pain_assessment\",\n  \"title\": \"Pain Assessment Questionnaire\",\n  \"status\": \"active\",\n  \"subjectType\": [\"Patient\"],\n  \"description\": \"Comprehensive pain evaluation form\",\n  \"item\": [\n    {\"linkId\": \"pain-level\", \"text\": \"Rate your pain level (0-10)\", \"type\": \"integer\"},\n    {\"linkId\": \"pain-location\", \"text\": \"Where is your pain located?\", \"type\": \"string\"},\n    {\n      \"linkId\": \"pain-type\",\n      \"text\": \"Describe your pain\",\n      \"type\": \"choice\",\n      \"answerOption\": [\n        {\"valueString\": \"sharp\"},\n        {\"valueString\": \"dull\"},\n        {\"valueString\": \"burning\"},\n        {\"valueString\": \"aching\"},\n        {\"valueString\": \"throbbing\"}\n      ]\n    },\n    {\"linkId\": \"pain-interferes\", \"text\": \"Does pain interfere with daily activities?\", \"type\": \"boolean\"}\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/Questionnaire"
+          }
+        },
+        {
+          "name": "Create Health Intake Questionnaire",
+          "description": "Create a health intake form with groups and various item types",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Questionnaire\",\n  \"id\": \"health-intake\",\n  \"url\": \"http://example.org/Questionnaire/health-intake\",\n  \"name\": \"health_intake\",\n  \"title\": \"Patient Health Intake Form\",\n  \"status\": \"active\",\n  \"subjectType\": [\"Patient\"],\n  \"description\": \"General health intake questionnaire\",\n  \"item\": [\n    {\n      \"linkId\": \"emergency-contact\",\n      \"text\": \"Emergency Contact\",\n      \"type\": \"group\",\n      \"item\": [\n        {\"linkId\": \"ec1\", \"text\": \"Contact Name\", \"type\": \"string\"},\n        {\"linkId\": \"ec2\", \"text\": \"Relationship\", \"type\": \"choice\", \"answerOption\": [{\"valueString\": \"Spouse\"}, {\"valueString\": \"Parent\"}, {\"valueString\": \"Child\"}, {\"valueString\": \"Sibling\"}, {\"valueString\": \"Friend\"}, {\"valueString\": \"Other\"}]},\n        {\"linkId\": \"ec3\", \"text\": \"Phone Number\", \"type\": \"string\"}\n      ]\n    },\n    {\"linkId\": \"current-symptoms\", \"text\": \"What symptoms are you experiencing?\", \"type\": \"text\"},\n    {\"linkId\": \"symptom-duration\", \"text\": \"How long have you had these symptoms?\", \"type\": \"string\"},\n    {\"linkId\": \"medications\", \"text\": \"List current medications\", \"type\": \"text\"},\n    {\"linkId\": \"allergies\", \"text\": \"Do you have any allergies?\", \"type\": \"boolean\"},\n    {\"linkId\": \"smoking\", \"text\": \"Do you smoke?\", \"type\": \"boolean\"}\n  ]\n}"
             },
             "url": "{{baseUrl}}/Questionnaire"
           }
@@ -1290,6 +1320,26 @@
           }
         },
         {
+          "name": "Search Questionnaires by Name",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/Questionnaire?name=gad"
+          }
+        },
+        {
+          "name": "List All Questionnaires",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/Questionnaire"
+          }
+        },
+        {
           "name": "Update Questionnaire",
           "request": {
             "method": "PUT",
@@ -1332,6 +1382,21 @@
           }
         },
         {
+          "name": "Create GAD-7 Response",
+          "description": "Create a completed GAD-7 anxiety screening response (score: 12 = Moderate anxiety)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"QuestionnaireResponse\",\n  \"questionnaire\": \"http://example.org/Questionnaire/gad-7\",\n  \"status\": \"completed\",\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"authored\": \"2024-06-15T11:00:00Z\",\n  \"author\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"item\": [\n    {\"linkId\": \"1\", \"text\": \"Feeling nervous, anxious, or on edge\", \"answer\": [{\"valueInteger\": 2}]},\n    {\"linkId\": \"2\", \"text\": \"Not being able to stop or control worrying\", \"answer\": [{\"valueInteger\": 2}]},\n    {\"linkId\": \"3\", \"text\": \"Worrying too much about different things\", \"answer\": [{\"valueInteger\": 2}]},\n    {\"linkId\": \"4\", \"text\": \"Trouble relaxing\", \"answer\": [{\"valueInteger\": 2}]},\n    {\"linkId\": \"5\", \"text\": \"Being so restless that it's hard to sit still\", \"answer\": [{\"valueInteger\": 1}]},\n    {\"linkId\": \"6\", \"text\": \"Becoming easily annoyed or irritable\", \"answer\": [{\"valueInteger\": 2}]},\n    {\"linkId\": \"7\", \"text\": \"Feeling afraid as if something awful might happen\", \"answer\": [{\"valueInteger\": 1}]}\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/QuestionnaireResponse"
+          }
+        },
+        {
           "name": "Create Pain Assessment Response",
           "description": "Create a completed pain assessment response",
           "request": {
@@ -1342,6 +1407,21 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"resourceType\": \"QuestionnaireResponse\",\n  \"questionnaire\": \"http://example.org/Questionnaire/pain-assessment\",\n  \"status\": \"completed\",\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"authored\": \"2024-06-15T14:00:00Z\",\n  \"author\": {\"reference\": \"Practitioner/{{practitionerId}}\"},\n  \"source\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"item\": [\n    {\"linkId\": \"pain-level\", \"text\": \"Rate your pain level (0-10)\", \"answer\": [{\"valueInteger\": 7}]},\n    {\"linkId\": \"pain-location\", \"text\": \"Where is your pain located?\", \"answer\": [{\"valueString\": \"Lower back\"}]},\n    {\"linkId\": \"pain-type\", \"text\": \"Describe your pain\", \"answer\": [{\"valueString\": \"aching\"}]},\n    {\"linkId\": \"pain-interferes\", \"text\": \"Does pain interfere with daily activities?\", \"answer\": [{\"valueBoolean\": true}]}\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/QuestionnaireResponse"
+          }
+        },
+        {
+          "name": "Create Health Intake Response",
+          "description": "Create a completed health intake form response with grouped items",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"QuestionnaireResponse\",\n  \"questionnaire\": \"http://example.org/Questionnaire/health-intake\",\n  \"status\": \"completed\",\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"authored\": \"2024-06-15T08:30:00Z\",\n  \"author\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"item\": [\n    {\n      \"linkId\": \"emergency-contact\",\n      \"text\": \"Emergency Contact\",\n      \"item\": [\n        {\"linkId\": \"ec1\", \"text\": \"Contact Name\", \"answer\": [{\"valueString\": \"Jane Smith\"}]},\n        {\"linkId\": \"ec2\", \"text\": \"Relationship\", \"answer\": [{\"valueString\": \"Spouse\"}]},\n        {\"linkId\": \"ec3\", \"text\": \"Phone Number\", \"answer\": [{\"valueString\": \"555-987-6543\"}]}\n      ]\n    },\n    {\"linkId\": \"current-symptoms\", \"text\": \"What symptoms are you experiencing?\", \"answer\": [{\"valueString\": \"Persistent headache for 3 days, mild nausea\"}]},\n    {\"linkId\": \"symptom-duration\", \"text\": \"How long have you had these symptoms?\", \"answer\": [{\"valueString\": \"3 days\"}]},\n    {\"linkId\": \"medications\", \"text\": \"List current medications\", \"answer\": [{\"valueString\": \"Lisinopril 10mg daily, Metformin 500mg twice daily\"}]},\n    {\"linkId\": \"allergies\", \"text\": \"Do you have any allergies?\", \"answer\": [{\"valueBoolean\": true}]},\n    {\"linkId\": \"smoking\", \"text\": \"Do you smoke?\", \"answer\": [{\"valueBoolean\": false}]}\n  ]\n}"
             },
             "url": "{{baseUrl}}/QuestionnaireResponse"
           }

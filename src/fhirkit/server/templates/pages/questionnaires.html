@@ -1,0 +1,1151 @@
+{% extends "base.html" %}
+
+{% block title %}Questionnaires - FHIR Server{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between">
+        <div class="min-w-0 flex-1">
+            <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
+                Questionnaires
+            </h1>
+            <p class="mt-1 text-sm text-gray-500">
+                Browse questionnaire definitions, view structure, and fill out forms
+            </p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left Panel: Questionnaire Browser -->
+        <div class="space-y-4">
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+                    <h2 class="text-lg font-medium text-gray-900">Available Questionnaires</h2>
+                    <span class="text-xs text-gray-500">{{ questionnaires | length }} questionnaires</span>
+                </div>
+                <div id="questionnaires-list" class="divide-y divide-gray-200 max-h-[600px] overflow-auto">
+                    {% if questionnaires %}
+                        {% for q in questionnaires %}
+                        <div class="p-4 hover:bg-gray-50 cursor-pointer questionnaire-item"
+                             onclick="selectQuestionnaire('{{ q.id }}', this)"
+                             data-questionnaire-id="{{ q.id }}">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-sm font-medium text-gray-900 truncate">{{ q.title | default(q.name | default(q.id)) }}</h3>
+                                    <p class="text-xs text-gray-500 mt-1">{{ q.description | default('No description') | truncate(80) }}</p>
+                                </div>
+                                <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ml-2
+                                    {% if q.status == 'active' %}bg-green-100 text-green-700
+                                    {% elif q.status == 'draft' %}bg-yellow-100 text-yellow-700
+                                    {% elif q.status == 'retired' %}bg-gray-100 text-gray-700
+                                    {% else %}bg-gray-100 text-gray-600{% endif %}">
+                                    {{ q.status | default('unknown') }}
+                                </span>
+                            </div>
+                            <div class="mt-2 flex flex-wrap gap-1">
+                                {% if q.item %}
+                                <span class="inline-flex items-center rounded px-1.5 py-0.5 text-xs bg-fhir-100 text-fhir-700">
+                                    {{ q.item | length }} items
+                                </span>
+                                {% endif %}
+                                {% if q.subjectType %}
+                                    {% for st in q.subjectType %}
+                                    <span class="inline-flex items-center rounded px-1.5 py-0.5 text-xs bg-gray-100 text-gray-600">
+                                        {{ st }}
+                                    </span>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="p-4 text-center text-gray-500">
+                            <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <p class="mt-2 text-sm">No Questionnaire resources found</p>
+                            <p class="text-xs text-gray-400 mt-1">Create a Questionnaire resource to get started</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle Panel: Structure / Form -->
+        <div class="space-y-4">
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+                <!-- Tab Header -->
+                <div class="px-4 py-3 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div class="flex space-x-4">
+                            <button onclick="switchTab('structure')" id="tab-structure"
+                                    class="text-sm font-medium text-fhir-600 border-b-2 border-fhir-600 pb-1">
+                                Structure
+                            </button>
+                            <button onclick="switchTab('form')" id="tab-form"
+                                    class="text-sm font-medium text-gray-500 hover:text-gray-700 pb-1">
+                                Fill Form
+                            </button>
+                            <button onclick="switchTab('responses')" id="tab-responses"
+                                    class="text-sm font-medium text-gray-500 hover:text-gray-700 pb-1">
+                                Responses
+                                <span id="response-count-badge" class="hidden ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium bg-fhir-100 text-fhir-700 rounded-full">0</span>
+                            </button>
+                        </div>
+                        <button onclick="switchTab('form')" id="fill-form-btn"
+                                class="hidden inline-flex items-center rounded-md bg-fhir-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-fhir-700">
+                            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                            Fill Form
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Structure View -->
+                <div id="structure-panel" class="max-h-[550px] overflow-auto">
+                    <div id="structure-placeholder" class="p-4 text-center text-gray-500 py-8">
+                        <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p class="mt-2 text-sm">Select a questionnaire to view its structure</p>
+                    </div>
+                    <div id="structure-content" class="hidden p-4 space-y-4"></div>
+                </div>
+
+                <!-- Form View -->
+                <div id="form-panel" class="hidden max-h-[550px] overflow-auto">
+                    <div id="form-placeholder" class="p-4 text-center text-gray-500 py-8">
+                        <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p class="mt-2 text-sm">Select a questionnaire to fill out</p>
+                    </div>
+                    <div id="form-content" class="hidden p-4">
+                        <form id="questionnaire-form" class="space-y-4">
+                            <!-- Subject Selection -->
+                            <div class="bg-gray-50 rounded-lg p-3 mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Patient (Subject)</label>
+                                <select id="form-subject" class="w-full text-sm border-gray-300 rounded-md">
+                                    <option value="">-- Select Patient --</option>
+                                    {% for patient in patients %}
+                                    <option value="Patient/{{ patient.id }}">
+                                        {% if patient.name and patient.name[0] %}
+                                            {{ patient.name[0].given | join(' ') }} {{ patient.name[0].family | default('') }}
+                                        {% else %}
+                                            Unknown
+                                        {% endif %}
+                                        ({{ patient.id }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <!-- Dynamic form items will be inserted here -->
+                            <div id="form-items"></div>
+                            <!-- Submit Button -->
+                            <div class="pt-4 border-t border-gray-200">
+                                <button type="submit" id="submit-form-btn"
+                                        class="w-full inline-flex justify-center items-center rounded-md bg-fhir-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-fhir-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Submit Response
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Responses View -->
+                <div id="responses-panel" class="hidden max-h-[550px] overflow-auto">
+                    <div id="responses-placeholder" class="p-4 text-center text-gray-500 py-8">
+                        <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                        </svg>
+                        <p class="mt-2 text-sm">Select a questionnaire to view responses</p>
+                    </div>
+                    <div id="responses-content" class="hidden">
+                        <!-- Response List -->
+                        <div id="response-list" class="border-b border-gray-200">
+                            <div class="px-4 py-2 bg-gray-50 text-xs font-medium text-gray-500 uppercase">
+                                Submitted Responses
+                            </div>
+                            <div id="response-list-items" class="divide-y divide-gray-100 max-h-32 overflow-auto"></div>
+                        </div>
+                        <!-- Selected Response Detail -->
+                        <div id="response-detail" class="p-4">
+                            <div id="response-detail-placeholder" class="text-center text-gray-500 py-4">
+                                <p class="text-sm">Select a response to view details</p>
+                            </div>
+                            <div id="response-detail-content" class="hidden space-y-4"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Questionnaire Metadata -->
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-200">
+                    <h2 class="text-lg font-medium text-gray-900">Metadata</h2>
+                </div>
+                <div id="metadata-panel" class="p-4 max-h-48 overflow-auto">
+                    <p class="text-sm text-gray-500">Select a questionnaire to see metadata</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Raw JSON / Response -->
+        <div class="space-y-4">
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+                    <h2 class="text-lg font-medium text-gray-900" id="right-panel-title">Raw JSON</h2>
+                    <button onclick="copyJson(this)" class="text-sm text-gray-600 hover:text-gray-900">Copy</button>
+                </div>
+                <div class="max-h-[600px] overflow-auto">
+                    <pre id="raw-json" class="p-4 text-xs json-content">Select a questionnaire to view JSON</pre>
+                </div>
+            </div>
+
+            <!-- Response Result (hidden until submit) -->
+            <div id="response-result" class="hidden bg-white shadow rounded-lg overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-200">
+                    <h2 class="text-lg font-medium text-gray-900">Response</h2>
+                </div>
+                <div id="response-content" class="p-4"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    var selectedQuestionnaireId = null;
+    var currentQuestionnaire = null;
+    var currentTab = 'structure';
+    var formAnswers = {};
+    var currentResponses = [];
+    var selectedResponse = null;
+
+    function switchTab(tab) {
+        currentTab = tab;
+
+        // Update tab styles for all tabs
+        ['structure', 'form', 'responses'].forEach(function(t) {
+            var tabEl = document.getElementById('tab-' + t);
+            tabEl.classList.toggle('text-fhir-600', tab === t);
+            tabEl.classList.toggle('border-b-2', tab === t);
+            tabEl.classList.toggle('border-fhir-600', tab === t);
+            tabEl.classList.toggle('text-gray-500', tab !== t);
+        });
+
+        // Show/hide panels
+        document.getElementById('structure-panel').classList.toggle('hidden', tab !== 'structure');
+        document.getElementById('form-panel').classList.toggle('hidden', tab !== 'form');
+        document.getElementById('responses-panel').classList.toggle('hidden', tab !== 'responses');
+    }
+
+    async function selectQuestionnaire(questionnaireId, element) {
+        selectedQuestionnaireId = questionnaireId;
+        formAnswers = {};
+        currentResponses = [];
+        selectedResponse = null;
+
+        // Update UI selection
+        document.querySelectorAll('.questionnaire-item').forEach(function(el) {
+            el.classList.remove('bg-fhir-50', 'border-l-4', 'border-fhir-600');
+        });
+        element.classList.add('bg-fhir-50', 'border-l-4', 'border-fhir-600');
+
+        // Load questionnaire details
+        try {
+            var response = await fetch('{{ api_base_path }}/Questionnaire/' + questionnaireId);
+            if (response.ok) {
+                currentQuestionnaire = await response.json();
+                renderQuestionnaireStructure(currentQuestionnaire);
+                renderMetadata(currentQuestionnaire);
+                renderForm(currentQuestionnaire);
+                document.getElementById('raw-json').innerHTML = highlightJSON(JSON.stringify(currentQuestionnaire, null, 2));
+                document.getElementById('fill-form-btn').classList.remove('hidden');
+
+                // Load responses for this questionnaire
+                await loadResponses();
+            }
+        } catch (e) {
+            console.error('Failed to load questionnaire:', e);
+        }
+    }
+
+    async function loadResponses() {
+        if (!currentQuestionnaire) return;
+
+        // Search for responses by questionnaire URL or reference
+        var searchUrl = currentQuestionnaire.url || ('Questionnaire/' + currentQuestionnaire.id);
+        try {
+            var response = await fetch('{{ api_base_path }}/QuestionnaireResponse?questionnaire=' + encodeURIComponent(searchUrl));
+            if (response.ok) {
+                var bundle = await response.json();
+                currentResponses = (bundle.entry || []).map(function(e) { return e.resource; });
+
+                // Update response count badge
+                var badge = document.getElementById('response-count-badge');
+                if (currentResponses.length > 0) {
+                    badge.textContent = currentResponses.length;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+
+                // Render response list
+                renderResponseList();
+            }
+        } catch (e) {
+            console.error('Failed to load responses:', e);
+            currentResponses = [];
+        }
+    }
+
+    function renderResponseList() {
+        var container = document.getElementById('response-list-items');
+
+        if (currentResponses.length === 0) {
+            document.getElementById('responses-placeholder').classList.remove('hidden');
+            document.getElementById('responses-content').classList.add('hidden');
+            document.getElementById('responses-placeholder').querySelector('p').textContent = 'No responses submitted for this questionnaire';
+            return;
+        }
+
+        document.getElementById('responses-placeholder').classList.add('hidden');
+        document.getElementById('responses-content').classList.remove('hidden');
+
+        var html = '';
+        currentResponses.forEach(function(resp, idx) {
+            var subjectRef = resp.subject ? resp.subject.reference : 'Unknown';
+            var authored = resp.authored ? new Date(resp.authored).toLocaleString() : 'Unknown date';
+            var status = resp.status || 'unknown';
+            var statusColor = status === 'completed' ? 'bg-green-100 text-green-700' :
+                              status === 'in-progress' ? 'bg-yellow-100 text-yellow-700' :
+                              status === 'amended' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600';
+
+            html += '<div class="px-4 py-2 hover:bg-gray-50 cursor-pointer response-item" onclick="selectResponse(' + idx + ', this)" data-response-idx="' + idx + '">';
+            html += '<div class="flex items-center justify-between">';
+            html += '<div class="flex-1 min-w-0">';
+            html += '<p class="text-sm text-gray-900 truncate">' + escapeHtml(subjectRef) + '</p>';
+            html += '<p class="text-xs text-gray-500">' + escapeHtml(authored) + '</p>';
+            html += '</div>';
+            html += '<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ' + statusColor + '">' + escapeHtml(status) + '</span>';
+            html += '</div></div>';
+        });
+
+        container.innerHTML = html;
+
+        // Reset detail view
+        document.getElementById('response-detail-placeholder').classList.remove('hidden');
+        document.getElementById('response-detail-content').classList.add('hidden');
+    }
+
+    function selectResponse(idx, element) {
+        selectedResponse = currentResponses[idx];
+
+        // Update selection UI
+        document.querySelectorAll('.response-item').forEach(function(el) {
+            el.classList.remove('bg-fhir-50');
+        });
+        element.classList.add('bg-fhir-50');
+
+        // Render response detail
+        renderResponseDetail(selectedResponse);
+
+        // Update right panel to show response JSON
+        document.getElementById('right-panel-title').textContent = 'Response JSON';
+        document.getElementById('raw-json').innerHTML = highlightJSON(JSON.stringify(selectedResponse, null, 2));
+    }
+
+    function renderResponseDetail(response) {
+        document.getElementById('response-detail-placeholder').classList.add('hidden');
+        document.getElementById('response-detail-content').classList.remove('hidden');
+
+        var html = '';
+
+        // Response metadata
+        html += '<div class="bg-gray-50 rounded-lg p-3">';
+        html += '<div class="grid grid-cols-2 gap-2 text-sm">';
+
+        // Subject
+        if (response.subject && response.subject.reference) {
+            html += '<div><span class="text-xs font-medium text-gray-500 uppercase">Subject</span>';
+            html += '<p class="text-gray-900">' + escapeHtml(response.subject.reference) + '</p></div>';
+        }
+
+        // Authored
+        if (response.authored) {
+            html += '<div><span class="text-xs font-medium text-gray-500 uppercase">Authored</span>';
+            html += '<p class="text-gray-900">' + escapeHtml(new Date(response.authored).toLocaleString()) + '</p></div>';
+        }
+
+        // Status
+        html += '<div><span class="text-xs font-medium text-gray-500 uppercase">Status</span>';
+        html += '<p class="text-gray-900">' + escapeHtml(response.status || 'unknown') + '</p></div>';
+
+        // Author
+        if (response.author && response.author.reference) {
+            html += '<div><span class="text-xs font-medium text-gray-500 uppercase">Author</span>';
+            html += '<p class="text-gray-900">' + escapeHtml(response.author.reference) + '</p></div>';
+        }
+
+        html += '</div></div>';
+
+        // Calculate and show score for PHQ-9 and GAD-7
+        var score = calculateScore(response);
+        if (score !== null) {
+            html += '<div class="bg-fhir-50 rounded-lg p-3">';
+            html += '<div class="flex items-center justify-between">';
+            html += '<span class="text-sm font-medium text-fhir-900">Assessment Score</span>';
+            html += '<span class="text-2xl font-bold text-fhir-700">' + score.total + '</span>';
+            html += '</div>';
+            if (score.interpretation) {
+                html += '<p class="text-sm text-fhir-700 mt-1">' + escapeHtml(score.interpretation) + '</p>';
+            }
+            html += '</div>';
+        }
+
+        // Q&A display
+        html += '<div class="space-y-3">';
+        html += '<h4 class="text-sm font-medium text-gray-700">Questions & Answers</h4>';
+        html += renderQAItems(response.item || [], currentQuestionnaire.item || []);
+        html += '</div>';
+
+        document.getElementById('response-detail-content').innerHTML = html;
+    }
+
+    function renderQAItems(responseItems, questionnaireItems) {
+        var html = '';
+        var responseByLinkId = {};
+
+        // Index response items by linkId
+        function indexResponses(items) {
+            items.forEach(function(item) {
+                responseByLinkId[item.linkId] = item;
+                if (item.item) indexResponses(item.item);
+            });
+        }
+        indexResponses(responseItems);
+
+        // Render each questionnaire item with its answer
+        questionnaireItems.forEach(function(qItem) {
+            var rItem = responseByLinkId[qItem.linkId];
+            var isGroup = qItem.type === 'group';
+
+            if (isGroup) {
+                html += '<div class="border-l-2 border-gray-200 pl-3">';
+                html += '<p class="text-sm font-medium text-gray-700 mb-2">' + escapeHtml(qItem.text || qItem.linkId) + '</p>';
+                if (qItem.item) {
+                    html += renderQAItems(rItem ? (rItem.item || []) : [], qItem.item);
+                }
+                html += '</div>';
+            } else if (qItem.type !== 'display') {
+                html += '<div class="border rounded-lg p-2 bg-white">';
+                html += '<p class="text-xs text-gray-500">' + escapeHtml(qItem.text || qItem.linkId) + '</p>';
+
+                if (rItem && rItem.answer && rItem.answer.length > 0) {
+                    var answerText = formatAnswerValue(rItem.answer[0]);
+                    html += '<p class="text-sm font-medium text-gray-900 mt-0.5">' + escapeHtml(answerText) + '</p>';
+                } else {
+                    html += '<p class="text-sm text-gray-400 italic mt-0.5">No answer</p>';
+                }
+
+                html += '</div>';
+            }
+        });
+
+        return html;
+    }
+
+    function formatAnswerValue(answer) {
+        if (answer.valueString !== undefined) return answer.valueString;
+        if (answer.valueInteger !== undefined) return answer.valueInteger.toString();
+        if (answer.valueDecimal !== undefined) return answer.valueDecimal.toString();
+        if (answer.valueBoolean !== undefined) return answer.valueBoolean ? 'Yes' : 'No';
+        if (answer.valueDate !== undefined) return answer.valueDate;
+        if (answer.valueDateTime !== undefined) return new Date(answer.valueDateTime).toLocaleString();
+        if (answer.valueTime !== undefined) return answer.valueTime;
+        if (answer.valueCoding) {
+            return answer.valueCoding.display || answer.valueCoding.code || 'Selected';
+        }
+        if (answer.valueQuantity) {
+            return answer.valueQuantity.value + ' ' + (answer.valueQuantity.unit || '');
+        }
+        return JSON.stringify(answer);
+    }
+
+    function calculateScore(response) {
+        if (!currentQuestionnaire) return null;
+
+        // Identify questionnaire type by name/url
+        var qName = (currentQuestionnaire.name || '').toLowerCase();
+        var qUrl = (currentQuestionnaire.url || '').toLowerCase();
+
+        var isPHQ9 = qName.includes('phq') || qUrl.includes('phq');
+        var isGAD7 = qName.includes('gad') || qUrl.includes('gad');
+
+        if (!isPHQ9 && !isGAD7) return null;
+
+        // Calculate total score from response items
+        var total = 0;
+        var answeredCount = 0;
+
+        function sumScores(items) {
+            items.forEach(function(item) {
+                if (item.answer && item.answer.length > 0) {
+                    var answer = item.answer[0];
+                    var value = null;
+
+                    // Try to extract numeric value
+                    if (answer.valueInteger !== undefined) {
+                        value = answer.valueInteger;
+                    } else if (answer.valueCoding && answer.valueCoding.code) {
+                        value = parseInt(answer.valueCoding.code, 10);
+                    }
+
+                    if (value !== null && !isNaN(value)) {
+                        total += value;
+                        answeredCount++;
+                    }
+                }
+                if (item.item) sumScores(item.item);
+            });
+        }
+
+        sumScores(response.item || []);
+
+        if (answeredCount === 0) return null;
+
+        // Interpretation
+        var interpretation = '';
+        if (isPHQ9) {
+            if (total <= 4) interpretation = 'Minimal depression';
+            else if (total <= 9) interpretation = 'Mild depression';
+            else if (total <= 14) interpretation = 'Moderate depression';
+            else if (total <= 19) interpretation = 'Moderately severe depression';
+            else interpretation = 'Severe depression';
+        } else if (isGAD7) {
+            if (total <= 4) interpretation = 'Minimal anxiety';
+            else if (total <= 9) interpretation = 'Mild anxiety';
+            else if (total <= 14) interpretation = 'Moderate anxiety';
+            else interpretation = 'Severe anxiety';
+        }
+
+        return { total: total, interpretation: interpretation };
+    }
+
+    function renderQuestionnaireStructure(questionnaire) {
+        document.getElementById('structure-placeholder').classList.add('hidden');
+        document.getElementById('structure-content').classList.remove('hidden');
+
+        var html = '';
+
+        // Title and description
+        if (questionnaire.title) {
+            html += '<div class="bg-fhir-50 rounded-lg p-4">';
+            html += '<h3 class="text-sm font-medium text-fhir-900">' + escapeHtml(questionnaire.title) + '</h3>';
+            if (questionnaire.description) {
+                html += '<p class="text-xs text-fhir-700 mt-1">' + escapeHtml(questionnaire.description) + '</p>';
+            }
+            html += '</div>';
+        }
+
+        // Items
+        if (questionnaire.item && questionnaire.item.length > 0) {
+            html += '<div class="space-y-2">';
+            html += '<h4 class="text-sm font-medium text-gray-700">Questions</h4>';
+            html += renderStructureItems(questionnaire.item, 0);
+            html += '</div>';
+        } else {
+            html += '<p class="text-sm text-gray-500">No items defined</p>';
+        }
+
+        document.getElementById('structure-content').innerHTML = html;
+    }
+
+    function renderStructureItems(items, level) {
+        var html = '<div class="space-y-2" style="margin-left: ' + (level * 16) + 'px;">';
+
+        items.forEach(function(item) {
+            var typeColor = getTypeColor(item.type);
+            var isGroup = item.type === 'group';
+
+            html += '<div class="border rounded-lg p-3 ' + (isGroup ? 'bg-gray-50' : 'bg-white') + '">';
+            html += '<div class="flex items-start justify-between">';
+            html += '<div class="flex-1 min-w-0">';
+
+            if (item.text) {
+                html += '<p class="text-sm text-gray-900">' + escapeHtml(item.text) + '</p>';
+            }
+            html += '<p class="text-xs text-gray-400 mt-0.5">linkId: ' + escapeHtml(item.linkId) + '</p>';
+            html += '</div>';
+
+            html += '<span class="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ' + typeColor + '">';
+            html += escapeHtml(item.type || 'unknown');
+            if (item.required) html += ' *';
+            html += '</span>';
+            html += '</div>';
+
+            // Answer options
+            if ((item.type === 'choice' || item.type === 'open-choice') && item.answerOption) {
+                html += '<div class="mt-2 pl-2 border-l-2 border-gray-200">';
+                html += '<p class="text-xs text-gray-500 mb-1">Options:</p>';
+                html += '<div class="flex flex-wrap gap-1">';
+                item.answerOption.forEach(function(opt) {
+                    html += '<span class="inline-flex items-center rounded px-1.5 py-0.5 text-xs bg-gray-100 text-gray-600">' + escapeHtml(getOptionDisplay(opt)) + '</span>';
+                });
+                html += '</div></div>';
+            }
+
+            // Nested items
+            if (item.item && item.item.length > 0) {
+                html += '<div class="mt-3">' + renderStructureItems(item.item, level + 1) + '</div>';
+            }
+
+            html += '</div>';
+        });
+
+        html += '</div>';
+        return html;
+    }
+
+    function renderForm(questionnaire) {
+        document.getElementById('form-placeholder').classList.add('hidden');
+        document.getElementById('form-content').classList.remove('hidden');
+
+        var html = '';
+
+        // Title
+        if (questionnaire.title) {
+            html += '<div class="bg-fhir-50 rounded-lg p-3 mb-4">';
+            html += '<h3 class="text-sm font-medium text-fhir-900">' + escapeHtml(questionnaire.title) + '</h3>';
+            if (questionnaire.description) {
+                html += '<p class="text-xs text-fhir-700 mt-1">' + escapeHtml(questionnaire.description) + '</p>';
+            }
+            html += '</div>';
+        }
+
+        // Render form items
+        if (questionnaire.item && questionnaire.item.length > 0) {
+            html += renderFormItems(questionnaire.item, '');
+        }
+
+        document.getElementById('form-items').innerHTML = html;
+
+        // Add event listeners for enableWhen
+        setupEnableWhen(questionnaire.item || []);
+    }
+
+    function renderFormItems(items, prefix) {
+        var html = '';
+
+        items.forEach(function(item) {
+            var fieldId = prefix ? prefix + '.' + item.linkId : item.linkId;
+            var isGroup = item.type === 'group';
+            var isDisplay = item.type === 'display';
+
+            if (isGroup) {
+                // Group - render as fieldset
+                html += '<fieldset class="border border-gray-200 rounded-lg p-4 mb-4" data-linkid="' + escapeHtml(item.linkId) + '">';
+                if (item.text) {
+                    html += '<legend class="text-sm font-medium text-gray-900 px-2">' + escapeHtml(item.text) + '</legend>';
+                }
+                if (item.item && item.item.length > 0) {
+                    html += renderFormItems(item.item, fieldId);
+                }
+                html += '</fieldset>';
+            } else if (isDisplay) {
+                // Display - just show text
+                html += '<div class="mb-4 p-3 bg-gray-50 rounded-lg" data-linkid="' + escapeHtml(item.linkId) + '">';
+                html += '<p class="text-sm text-gray-700">' + escapeHtml(item.text || '') + '</p>';
+                html += '</div>';
+            } else {
+                // Regular input field
+                html += '<div class="mb-4" data-linkid="' + escapeHtml(item.linkId) + '">';
+                html += '<label class="block text-sm font-medium text-gray-700 mb-1">';
+                html += escapeHtml(item.text || item.linkId);
+                if (item.required) {
+                    html += ' <span class="text-red-500">*</span>';
+                }
+                html += '</label>';
+
+                html += renderInputControl(item, fieldId);
+
+                html += '</div>';
+            }
+        });
+
+        return html;
+    }
+
+    function renderInputControl(item, fieldId) {
+        var html = '';
+        var inputName = 'q_' + fieldId.replace(/\./g, '_');
+        var required = item.required ? 'required' : '';
+        var readonly = item.readOnly ? 'readonly disabled' : '';
+        var maxLength = item.maxLength ? 'maxlength="' + item.maxLength + '"' : '';
+
+        switch (item.type) {
+            case 'string':
+                html += '<input type="text" name="' + inputName + '" ' + required + ' ' + readonly + ' ' + maxLength + ' ';
+                html += 'class="w-full text-sm border-gray-300 rounded-md focus:ring-fhir-500 focus:border-fhir-500" ';
+                html += 'onchange="updateAnswer(\'' + escapeHtml(item.linkId) + '\', this.value, \'string\')">';
+                break;
+
+            case 'text':
+                html += '<textarea name="' + inputName + '" rows="3" ' + required + ' ' + readonly + ' ' + maxLength + ' ';
+                html += 'class="w-full text-sm border-gray-300 rounded-md focus:ring-fhir-500 focus:border-fhir-500" ';
+                html += 'onchange="updateAnswer(\'' + escapeHtml(item.linkId) + '\', this.value, \'text\')"></textarea>';
+                break;
+
+            case 'integer':
+                html += '<input type="number" name="' + inputName + '" step="1" ' + required + ' ' + readonly + ' ';
+                html += 'class="w-full text-sm border-gray-300 rounded-md focus:ring-fhir-500 focus:border-fhir-500" ';
+                html += 'onchange="updateAnswer(\'' + escapeHtml(item.linkId) + '\', parseInt(this.value), \'integer\')">';
+                break;
+
+            case 'decimal':
+                html += '<input type="number" name="' + inputName + '" step="any" ' + required + ' ' + readonly + ' ';
+                html += 'class="w-full text-sm border-gray-300 rounded-md focus:ring-fhir-500 focus:border-fhir-500" ';
+                html += 'onchange="updateAnswer(\'' + escapeHtml(item.linkId) + '\', parseFloat(this.value), \'decimal\')">';
+                break;
+
+            case 'boolean':
+                html += '<div class="flex items-center space-x-4">';
+                html += '<label class="inline-flex items-center">';
+                html += '<input type="radio" name="' + inputName + '" value="true" ' + required + ' ' + readonly + ' ';
+                html += 'class="text-fhir-600 focus:ring-fhir-500" ';
+                html += 'onchange="updateAnswer(\'' + escapeHtml(item.linkId) + '\', true, \'boolean\')">';
+                html += '<span class="ml-2 text-sm text-gray-700">Yes</span>';
+                html += '</label>';
+                html += '<label class="inline-flex items-center">';
+                html += '<input type="radio" name="' + inputName + '" value="false" ' + readonly + ' ';
+                html += 'class="text-fhir-600 focus:ring-fhir-500" ';
+                html += 'onchange="updateAnswer(\'' + escapeHtml(item.linkId) + '\', false, \'boolean\')">';
+                html += '<span class="ml-2 text-sm text-gray-700">No</span>';
+                html += '</label>';
+                html += '</div>';
+                break;
+
+            case 'date':
+                html += '<input type="date" name="' + inputName + '" ' + required + ' ' + readonly + ' ';
+                html += 'class="w-full text-sm border-gray-300 rounded-md focus:ring-fhir-500 focus:border-fhir-500" ';
+                html += 'onchange="updateAnswer(\'' + escapeHtml(item.linkId) + '\', this.value, \'date\')">';
+                break;
+
+            case 'dateTime':
+                html += '<input type="datetime-local" name="' + inputName + '" ' + required + ' ' + readonly + ' ';
+                html += 'class="w-full text-sm border-gray-300 rounded-md focus:ring-fhir-500 focus:border-fhir-500" ';
+                html += 'onchange="updateAnswer(\'' + escapeHtml(item.linkId) + '\', this.value, \'dateTime\')">';
+                break;
+
+            case 'time':
+                html += '<input type="time" name="' + inputName + '" ' + required + ' ' + readonly + ' ';
+                html += 'class="w-full text-sm border-gray-300 rounded-md focus:ring-fhir-500 focus:border-fhir-500" ';
+                html += 'onchange="updateAnswer(\'' + escapeHtml(item.linkId) + '\', this.value, \'time\')">';
+                break;
+
+            case 'url':
+                html += '<input type="url" name="' + inputName + '" ' + required + ' ' + readonly + ' ';
+                html += 'class="w-full text-sm border-gray-300 rounded-md focus:ring-fhir-500 focus:border-fhir-500" ';
+                html += 'placeholder="https://..." ';
+                html += 'onchange="updateAnswer(\'' + escapeHtml(item.linkId) + '\', this.value, \'url\')">';
+                break;
+
+            case 'choice':
+            case 'open-choice':
+                if (item.answerOption && item.answerOption.length > 0) {
+                    if (item.answerOption.length <= 5) {
+                        // Radio buttons for few options
+                        html += '<div class="space-y-2">';
+                        item.answerOption.forEach(function(opt, idx) {
+                            var display = getOptionDisplay(opt);
+                            var value = getOptionValue(opt);
+                            html += '<label class="inline-flex items-center">';
+                            html += '<input type="radio" name="' + inputName + '" value="' + escapeHtml(JSON.stringify(value)) + '" ' + required + ' ' + readonly + ' ';
+                            html += 'class="text-fhir-600 focus:ring-fhir-500" ';
+                            html += 'onchange="updateAnswer(\'' + escapeHtml(item.linkId) + '\', JSON.parse(this.value), \'choice\')">';
+                            html += '<span class="ml-2 text-sm text-gray-700">' + escapeHtml(display) + '</span>';
+                            html += '</label><br>';
+                        });
+                        html += '</div>';
+                    } else {
+                        // Dropdown for many options
+                        html += '<select name="' + inputName + '" ' + required + ' ' + readonly + ' ';
+                        html += 'class="w-full text-sm border-gray-300 rounded-md focus:ring-fhir-500 focus:border-fhir-500" ';
+                        html += 'onchange="updateAnswer(\'' + escapeHtml(item.linkId) + '\', JSON.parse(this.value), \'choice\')">';
+                        html += '<option value="">-- Select --</option>';
+                        item.answerOption.forEach(function(opt) {
+                            var display = getOptionDisplay(opt);
+                            var value = getOptionValue(opt);
+                            html += '<option value="' + escapeHtml(JSON.stringify(value)) + '">' + escapeHtml(display) + '</option>';
+                        });
+                        html += '</select>';
+                    }
+
+                    // For open-choice, add text input
+                    if (item.type === 'open-choice') {
+                        html += '<div class="mt-2">';
+                        html += '<input type="text" name="' + inputName + '_other" placeholder="Other (specify)" ';
+                        html += 'class="w-full text-sm border-gray-300 rounded-md focus:ring-fhir-500 focus:border-fhir-500" ';
+                        html += 'onchange="updateAnswer(\'' + escapeHtml(item.linkId) + '\', this.value, \'string\')">';
+                        html += '</div>';
+                    }
+                }
+                break;
+
+            case 'quantity':
+                html += '<div class="flex space-x-2">';
+                html += '<input type="number" name="' + inputName + '_value" step="any" ' + required + ' ' + readonly + ' ';
+                html += 'class="flex-1 text-sm border-gray-300 rounded-md focus:ring-fhir-500 focus:border-fhir-500" ';
+                html += 'placeholder="Value" ';
+                html += 'onchange="updateQuantityAnswer(\'' + escapeHtml(item.linkId) + '\')">';
+                html += '<input type="text" name="' + inputName + '_unit" ' + readonly + ' ';
+                html += 'class="w-24 text-sm border-gray-300 rounded-md focus:ring-fhir-500 focus:border-fhir-500" ';
+                html += 'placeholder="Unit" ';
+                html += 'onchange="updateQuantityAnswer(\'' + escapeHtml(item.linkId) + '\')">';
+                html += '</div>';
+                break;
+
+            default:
+                // Fallback to text input
+                html += '<input type="text" name="' + inputName + '" ' + required + ' ' + readonly + ' ';
+                html += 'class="w-full text-sm border-gray-300 rounded-md focus:ring-fhir-500 focus:border-fhir-500" ';
+                html += 'onchange="updateAnswer(\'' + escapeHtml(item.linkId) + '\', this.value, \'string\')">';
+        }
+
+        return html;
+    }
+
+    function getOptionDisplay(opt) {
+        if (opt.valueCoding) {
+            return opt.valueCoding.display || opt.valueCoding.code || 'option';
+        } else if (opt.valueString) {
+            return opt.valueString;
+        } else if (opt.valueInteger !== undefined) {
+            return opt.valueInteger.toString();
+        } else if (opt.valueDecimal !== undefined) {
+            return opt.valueDecimal.toString();
+        }
+        return 'option';
+    }
+
+    function getOptionValue(opt) {
+        if (opt.valueCoding) {
+            return { valueCoding: opt.valueCoding };
+        } else if (opt.valueString) {
+            return { valueString: opt.valueString };
+        } else if (opt.valueInteger !== undefined) {
+            return { valueInteger: opt.valueInteger };
+        } else if (opt.valueDecimal !== undefined) {
+            return { valueDecimal: opt.valueDecimal };
+        }
+        return { valueString: 'option' };
+    }
+
+    function updateAnswer(linkId, value, type) {
+        if (value === '' || value === null || value === undefined) {
+            delete formAnswers[linkId];
+            return;
+        }
+
+        var answer = {};
+        switch (type) {
+            case 'string':
+            case 'text':
+            case 'url':
+                answer = { valueString: value };
+                break;
+            case 'integer':
+                answer = { valueInteger: value };
+                break;
+            case 'decimal':
+                answer = { valueDecimal: value };
+                break;
+            case 'boolean':
+                answer = { valueBoolean: value };
+                break;
+            case 'date':
+                answer = { valueDate: value };
+                break;
+            case 'dateTime':
+                answer = { valueDateTime: value };
+                break;
+            case 'time':
+                answer = { valueTime: value };
+                break;
+            case 'choice':
+                answer = value; // Already formatted
+                break;
+            default:
+                answer = { valueString: String(value) };
+        }
+
+        formAnswers[linkId] = [answer];
+        checkEnableWhen();
+    }
+
+    function updateQuantityAnswer(linkId) {
+        var valueInput = document.querySelector('[name="q_' + linkId.replace(/\./g, '_') + '_value"]');
+        var unitInput = document.querySelector('[name="q_' + linkId.replace(/\./g, '_') + '_unit"]');
+
+        if (valueInput && valueInput.value) {
+            formAnswers[linkId] = [{
+                valueQuantity: {
+                    value: parseFloat(valueInput.value),
+                    unit: unitInput ? unitInput.value : ''
+                }
+            }];
+        } else {
+            delete formAnswers[linkId];
+        }
+    }
+
+    function setupEnableWhen(items) {
+        items.forEach(function(item) {
+            if (item.enableWhen && item.enableWhen.length > 0) {
+                // Store enableWhen rules for this item
+                var element = document.querySelector('[data-linkid="' + item.linkId + '"]');
+                if (element) {
+                    element.dataset.enableWhen = JSON.stringify(item.enableWhen);
+                    element.dataset.enableBehavior = item.enableBehavior || 'all';
+                    // Initially hide
+                    element.classList.add('hidden');
+                }
+            }
+
+            if (item.item && item.item.length > 0) {
+                setupEnableWhen(item.item);
+            }
+        });
+    }
+
+    function checkEnableWhen() {
+        document.querySelectorAll('[data-enable-when]').forEach(function(element) {
+            var rules = JSON.parse(element.dataset.enableWhen);
+            var behavior = element.dataset.enableBehavior || 'all';
+
+            var results = rules.map(function(rule) {
+                var answer = formAnswers[rule.question];
+                if (!answer || answer.length === 0) return false;
+
+                var answerValue = answer[0];
+                var expectedValue = rule.answerBoolean !== undefined ? rule.answerBoolean :
+                                   rule.answerInteger !== undefined ? rule.answerInteger :
+                                   rule.answerDecimal !== undefined ? rule.answerDecimal :
+                                   rule.answerString !== undefined ? rule.answerString :
+                                   rule.answerCoding !== undefined ? rule.answerCoding : null;
+
+                switch (rule.operator) {
+                    case '=':
+                    case 'equals':
+                        if (answerValue.valueBoolean !== undefined) return answerValue.valueBoolean === expectedValue;
+                        if (answerValue.valueInteger !== undefined) return answerValue.valueInteger === expectedValue;
+                        if (answerValue.valueString !== undefined) return answerValue.valueString === expectedValue;
+                        return false;
+                    case '!=':
+                        if (answerValue.valueBoolean !== undefined) return answerValue.valueBoolean !== expectedValue;
+                        if (answerValue.valueInteger !== undefined) return answerValue.valueInteger !== expectedValue;
+                        return false;
+                    case 'exists':
+                        return true;
+                    default:
+                        return false;
+                }
+            });
+
+            var shouldShow = behavior === 'any' ? results.some(r => r) : results.every(r => r);
+            element.classList.toggle('hidden', !shouldShow);
+        });
+    }
+
+    function getTypeColor(type) {
+        switch (type) {
+            case 'group': return 'bg-purple-100 text-purple-700';
+            case 'display': return 'bg-gray-100 text-gray-600';
+            case 'boolean': return 'bg-blue-100 text-blue-700';
+            case 'decimal':
+            case 'integer': return 'bg-green-100 text-green-700';
+            case 'date':
+            case 'dateTime':
+            case 'time': return 'bg-orange-100 text-orange-700';
+            case 'string':
+            case 'text': return 'bg-yellow-100 text-yellow-700';
+            case 'choice':
+            case 'open-choice': return 'bg-fhir-100 text-fhir-700';
+            case 'url': return 'bg-indigo-100 text-indigo-700';
+            case 'attachment': return 'bg-pink-100 text-pink-700';
+            case 'reference': return 'bg-red-100 text-red-700';
+            case 'quantity': return 'bg-teal-100 text-teal-700';
+            default: return 'bg-gray-100 text-gray-600';
+        }
+    }
+
+    function renderMetadata(questionnaire) {
+        var html = '<div class="space-y-2 text-sm">';
+
+        if (questionnaire.url) {
+            html += '<div><span class="text-xs font-medium text-gray-500 uppercase">URL</span>';
+            html += '<p class="text-gray-900 break-all">' + escapeHtml(questionnaire.url) + '</p></div>';
+        }
+
+        if (questionnaire.version) {
+            html += '<div><span class="text-xs font-medium text-gray-500 uppercase">Version</span>';
+            html += '<p class="text-gray-900">' + escapeHtml(questionnaire.version) + '</p></div>';
+        }
+
+        if (questionnaire.publisher) {
+            html += '<div><span class="text-xs font-medium text-gray-500 uppercase">Publisher</span>';
+            html += '<p class="text-gray-900">' + escapeHtml(questionnaire.publisher) + '</p></div>';
+        }
+
+        if (questionnaire.date) {
+            html += '<div><span class="text-xs font-medium text-gray-500 uppercase">Last Updated</span>';
+            html += '<p class="text-gray-900">' + escapeHtml(questionnaire.date) + '</p></div>';
+        }
+
+        html += '</div>';
+        document.getElementById('metadata-panel').innerHTML = html;
+    }
+
+    function copyJson(button) {
+        if (currentQuestionnaire !== null) {
+            var text = JSON.stringify(currentQuestionnaire, null, 2);
+            var originalText = button.textContent;
+            var showSuccess = function() {
+                button.textContent = 'Copied!';
+                setTimeout(function() { button.textContent = originalText; }, 2000);
+            };
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(showSuccess).catch(function() { fallbackCopy(text); showSuccess(); });
+            } else {
+                fallbackCopy(text);
+                showSuccess();
+            }
+        }
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Form submission handler
+    document.getElementById('questionnaire-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        if (!currentQuestionnaire) {
+            alert('Please select a questionnaire');
+            return;
+        }
+
+        var subject = document.getElementById('form-subject').value;
+        if (!subject) {
+            alert('Please select a patient');
+            return;
+        }
+
+        // Build QuestionnaireResponse
+        var response = {
+            resourceType: 'QuestionnaireResponse',
+            questionnaire: currentQuestionnaire.url || ('Questionnaire/' + currentQuestionnaire.id),
+            status: 'completed',
+            subject: { reference: subject },
+            authored: new Date().toISOString(),
+            item: buildResponseItems(currentQuestionnaire.item || [])
+        };
+
+        // Show loading
+        var submitBtn = document.getElementById('submit-form-btn');
+        var originalHtml = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<svg class="animate-spin w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Submitting...';
+
+        try {
+            var result = await fetch('{{ api_base_path }}/QuestionnaireResponse', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/fhir+json' },
+                body: JSON.stringify(response)
+            });
+
+            var data = await result.json();
+
+            if (result.ok) {
+                showResponseSuccess(data);
+            } else {
+                showResponseError(data);
+            }
+        } catch (err) {
+            showResponseError({ message: err.message });
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalHtml;
+        }
+    });
+
+    function buildResponseItems(items) {
+        var result = [];
+
+        items.forEach(function(item) {
+            var responseItem = { linkId: item.linkId };
+
+            if (item.text) {
+                responseItem.text = item.text;
+            }
+
+            // Check if we have an answer for this item
+            if (formAnswers[item.linkId]) {
+                responseItem.answer = formAnswers[item.linkId];
+            }
+
+            // Handle nested items (groups)
+            if (item.item && item.item.length > 0) {
+                responseItem.item = buildResponseItems(item.item);
+            }
+
+            // Only include if has answer or nested items
+            if (responseItem.answer || (responseItem.item && responseItem.item.length > 0)) {
+                result.push(responseItem);
+            }
+        });
+
+        return result;
+    }
+
+    function showResponseSuccess(data) {
+        document.getElementById('response-result').classList.remove('hidden');
+        var html = '<div class="rounded-md bg-green-50 p-4">';
+        html += '<div class="flex">';
+        html += '<div class="flex-shrink-0"><svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg></div>';
+        html += '<div class="ml-3">';
+        html += '<h3 class="text-sm font-medium text-green-800">Response Submitted</h3>';
+        html += '<p class="mt-1 text-sm text-green-700">QuestionnaireResponse/' + escapeHtml(data.id) + ' created</p>';
+        html += '</div></div></div>';
+        html += '<div class="mt-3"><pre class="text-xs bg-gray-50 p-3 rounded-md overflow-auto max-h-48">' + highlightJSON(JSON.stringify(data, null, 2)) + '</pre></div>';
+        document.getElementById('response-content').innerHTML = html;
+
+        // Reload responses to include the new one
+        loadResponses();
+    }
+
+    function showResponseError(data) {
+        document.getElementById('response-result').classList.remove('hidden');
+        var html = '<div class="rounded-md bg-red-50 p-4">';
+        html += '<div class="flex">';
+        html += '<div class="flex-shrink-0"><svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" /></svg></div>';
+        html += '<div class="ml-3">';
+        html += '<h3 class="text-sm font-medium text-red-800">Error</h3>';
+        html += '<p class="mt-1 text-sm text-red-700">' + escapeHtml(data.message || JSON.stringify(data)) + '</p>';
+        html += '</div></div></div>';
+        document.getElementById('response-content').innerHTML = html;
+    }
+</script>
+{% endblock %}

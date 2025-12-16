@@ -68,6 +68,9 @@ SUPPORTED_TYPES = [
     "ConceptMap",
     # Documents (Clinical)
     "Composition",
+    # Forms
+    "Questionnaire",
+    "QuestionnaireResponse",
     # Groups
     "Group",
 ]
@@ -120,6 +123,9 @@ SUMMARY_ELEMENTS: dict[str, list[str]] = {
     "ConceptMap": ["identifier", "url", "name", "status", "title", "sourceUri", "targetUri"],
     # Documents (Clinical)
     "Composition": ["identifier", "status", "type", "subject", "date", "author", "title"],
+    # Forms
+    "Questionnaire": ["identifier", "url", "name", "status", "title", "date", "publisher"],
+    "QuestionnaireResponse": ["identifier", "status", "questionnaire", "subject", "authored", "author"],
     # Groups
     "Group": ["identifier", "active", "type", "actual", "name", "quantity"],
 }

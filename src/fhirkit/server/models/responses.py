@@ -237,6 +237,8 @@ class CapabilityStatement(BaseModel):
             ("Library", ["_id", "url", "name", "version", "status"]),
             ("Measure", ["_id", "url", "name", "version", "status", "title"]),
             ("MeasureReport", ["_id", "patient", "subject", "measure", "status", "date", "reporter"]),
+            ("Questionnaire", ["_id", "url", "name", "title", "status", "version", "publisher"]),
+            ("QuestionnaireResponse", ["_id", "questionnaire", "patient", "subject", "status", "authored"]),
         ]
 
         resources = []

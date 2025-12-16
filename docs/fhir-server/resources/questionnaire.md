@@ -115,13 +115,13 @@ curl -X POST http://localhost:8080/baseR4/Questionnaire \
     "description": "General health intake questionnaire",
     "item": [
       {
-        "linkId": "demographics",
-        "text": "Demographics",
+        "linkId": "emergency-contact",
+        "text": "Emergency Contact",
         "type": "group",
         "item": [
-          {"linkId": "d1", "text": "Date of Birth", "type": "date"},
-          {"linkId": "d2", "text": "Gender", "type": "choice"},
-          {"linkId": "d3", "text": "Primary Language", "type": "string"}
+          {"linkId": "ec1", "text": "Contact Name", "type": "string"},
+          {"linkId": "ec2", "text": "Relationship", "type": "string"},
+          {"linkId": "ec3", "text": "Phone Number", "type": "string"}
         ]
       },
       {"linkId": "current-symptoms", "text": "What symptoms are you experiencing?", "type": "text"},
@@ -197,6 +197,13 @@ The `QuestionnaireGenerator` creates synthetic Questionnaire resources with pre-
 | `health-intake` | Patient Health Intake Form | General health history and symptoms |
 | `pain-assessment` | Pain Assessment Questionnaire | Comprehensive pain evaluation |
 | `covid-screening` | COVID-19 Screening Questionnaire | Pre-visit symptom screening |
+| `audit-c` | AUDIT-C Alcohol Screening | 3-item alcohol use screening |
+| `falls-risk` | Falls Risk Assessment | Fall risk screening for older adults |
+| `sdoh` | Social Determinants of Health Screening | Housing, food security, transportation needs |
+| `medication-adherence` | Medication Adherence Questionnaire | Assess medication-taking behavior |
+| `patient-satisfaction` | Patient Satisfaction Survey | Post-visit satisfaction questionnaire |
+| `brief-mental-status` | Brief Mental Status Exam | Quick cognitive screening |
+| `surgical-preop` | Surgical Pre-Operative Assessment | Pre-surgery health evaluation |
 
 ### Usage
 

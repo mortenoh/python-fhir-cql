@@ -87,6 +87,8 @@ nav:
           - Practitioner: fhir-server/resources/practitioner.md
           - PractitionerRole: fhir-server/resources/practitioner-role.md
           - Procedure: fhir-server/resources/procedure.md
+          - Questionnaire: fhir-server/resources/questionnaire.md
+          - QuestionnaireResponse: fhir-server/resources/questionnaire-response.md
           - RelatedPerson: fhir-server/resources/related-person.md
           - Schedule: fhir-server/resources/schedule.md
           - ServiceRequest: fhir-server/resources/service-request.md

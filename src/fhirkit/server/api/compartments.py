@@ -30,6 +30,7 @@ PATIENT_COMPARTMENT: dict[str, list[str]] = {
     "FamilyMemberHistory": ["patient"],
     "DocumentReference": ["patient", "subject"],
     "MeasureReport": ["patient", "subject"],
+    "QuestionnaireResponse": ["patient", "subject"],
     "Consent": ["patient"],
 }
 
@@ -127,6 +128,16 @@ REFERENCE_PATHS: dict[str, dict[str, list[str]]] = {
     },
     "Measure": {
         # Measure is a definitional resource, no patient references
+    },
+    "QuestionnaireResponse": {
+        "patient": ["subject.reference"],
+        "subject": ["subject.reference"],
+        "author": ["author.reference"],
+        "source": ["source.reference"],
+        "encounter": ["encounter.reference"],
+    },
+    "Questionnaire": {
+        # Questionnaire is a definitional resource, no patient references
     },
 }
 
