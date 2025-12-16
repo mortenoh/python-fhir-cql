@@ -206,6 +206,7 @@
 <script>
     var cqlEditor = null;
     var currentResults = null;
+    var currentExample = null;  // Track the currently loaded example
     var gettingStartedVisible = true;
 
     function toggleGettingStarted() {
@@ -289,6 +290,7 @@ define "IntervalCheck": Interval[1, 10] contains 5
         // Check if we already have the code cached
         if (cqlExamples[exampleId] && cqlExamples[exampleId].code) {
             cqlEditor.setValue(cqlExamples[exampleId].code);
+            currentExample = cqlExamples[exampleId];
             select.value = '';
             return;
         }
@@ -300,6 +302,7 @@ define "IntervalCheck": Interval[1, 10] contains 5
                 var example = await response.json();
                 cqlExamples[exampleId] = example;
                 cqlEditor.setValue(example.code);
+                currentExample = example;
             } else {
                 console.error('Failed to load example:', exampleId);
             }
@@ -402,6 +405,7 @@ define "IntervalCheck": Interval[1, 10] contains 5
         if (cqlEditor) {
             cqlEditor.setValue(defaultCQL);
         }
+        currentExample = null;  // Clear tracking when editor is cleared
     }
 
     function escapeHtml(str) {
@@ -542,6 +546,17 @@ define "IntervalCheck": Interval[1, 10] contains 5
         }
 
         var patientId = document.getElementById('patient-select').value;
+
+        // Check if example requires patient but none selected
+        if (currentExample && currentExample.requires_patient && !patientId) {
+            showError('This example requires a patient. Please select a patient from the "Subject (Patient)" dropdown.');
+            document.getElementById('patient-select').focus();
+            document.getElementById('patient-select').classList.add('ring-2', 'ring-red-500');
+            setTimeout(function() {
+                document.getElementById('patient-select').classList.remove('ring-2', 'ring-red-500');
+            }, 3000);
+            return;
+        }
         var definitionsInput = document.getElementById('definitions-input').value.trim();
         var definitions = definitionsInput ? definitionsInput.split(',').map(s => s.trim()) : null;
 
