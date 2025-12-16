@@ -263,6 +263,70 @@ class TestIntervalStartEnd:
         assert evaluator.evaluate_expression("end of Interval[1, 10]") == 10
 
 
+class TestIntervalPropertyAccess:
+    """Test interval property access via dot notation."""
+
+    def test_low_property(self, evaluator):
+        """Test .low property access."""
+        assert evaluator.evaluate_expression("Interval[1, 10].low") == 1
+
+    def test_high_property(self, evaluator):
+        """Test .high property access."""
+        assert evaluator.evaluate_expression("Interval[1, 10].high") == 10
+
+    def test_low_closed_property_true(self, evaluator):
+        """Test .lowClosed property for closed interval."""
+        assert evaluator.evaluate_expression("Interval[1, 10].lowClosed") is True
+
+    def test_low_closed_property_false(self, evaluator):
+        """Test .lowClosed property for open interval."""
+        assert evaluator.evaluate_expression("Interval(1, 10].lowClosed") is False
+
+    def test_high_closed_property_true(self, evaluator):
+        """Test .highClosed property for closed interval."""
+        assert evaluator.evaluate_expression("Interval[1, 10].highClosed") is True
+
+    def test_high_closed_property_false(self, evaluator):
+        """Test .highClosed property for open interval."""
+        assert evaluator.evaluate_expression("Interval[1, 10).highClosed") is False
+
+    def test_low_with_dates(self, evaluator):
+        """Test .low property with date interval."""
+        result = evaluator.evaluate_expression("Interval[@2024-01-01, @2024-12-31].low")
+        assert result is not None
+        assert result.year == 2024
+        assert result.month == 1
+        assert result.day == 1
+
+    def test_high_with_dates(self, evaluator):
+        """Test .high property with date interval."""
+        result = evaluator.evaluate_expression("Interval[@2024-01-01, @2024-12-31].high")
+        assert result is not None
+        assert result.year == 2024
+        assert result.month == 12
+        assert result.day == 31
+
+    def test_low_with_decimals(self, evaluator):
+        """Test .low property with decimal interval."""
+        result = evaluator.evaluate_expression("Interval[1.5, 9.9].low")
+        assert float(result) == 1.5
+
+    def test_high_with_decimals(self, evaluator):
+        """Test .high property with decimal interval."""
+        result = evaluator.evaluate_expression("Interval[1.5, 9.9].high")
+        assert float(result) == 9.9
+
+    def test_chained_property_in_expression(self, evaluator):
+        """Test interval properties used in expressions."""
+        result = evaluator.evaluate_expression("Interval[1, 10].low + Interval[1, 10].high")
+        assert result == 11
+
+    def test_property_comparison(self, evaluator):
+        """Test interval property in comparison."""
+        result = evaluator.evaluate_expression("Interval[1, 10].low < Interval[1, 10].high")
+        assert result is True
+
+
 class TestIntervalPointFrom:
     """Test point from unit interval."""
 
