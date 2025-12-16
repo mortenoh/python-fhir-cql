@@ -361,6 +361,18 @@ def get_resource_display(resource: dict[str, Any]) -> str:
     elif resource_type == "Group":
         return resource.get("name", f"Group/{resource_id}")
 
+    elif resource_type == "Task":
+        desc = resource.get("description")
+        if desc:
+            return desc[:50] + "..." if len(desc) > 50 else desc
+        code = resource.get("code", {})
+        if code.get("text"):
+            return code["text"]
+        codings = code.get("coding", [])
+        if codings:
+            return codings[0].get("display", f"Task/{resource_id}")
+        return f"Task/{resource_id}"
+
     # Default: use resource type and ID
     return f"{resource_type}/{resource_id}"
 
