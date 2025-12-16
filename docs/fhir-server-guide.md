@@ -441,6 +441,7 @@ Available for all resource types:
 | `_count` | number | Results per page (default: 100, max: 1000) |
 | `_offset` | number | Pagination offset |
 | `_sort` | string | Sort field (prefix with `-` for descending) |
+| `_total` | string | Control total count: `accurate` (default), `estimate`, `none` |
 
 #### Search Parameter Types
 

@@ -169,6 +169,11 @@ greeting = evaluator.evaluate_definition("Greeting")  # 'Hello, CQL!'
 - [FHIR Server Guide](fhir-server-guide.md) - Built-in FHIR server with synthetic data generation, 37 resource types
 - [Supported Resources](fhir-server/resources/index.md) - All 37 supported FHIR resource types with examples
 - [Terminology Operations](fhir-server/operations/terminology.md) - $expand, $lookup, $validate-code operations
+- Search Features:
+  - [_elements and _summary](fhir-server/search/elements-summary.md) - Control returned elements
+  - [_total](fhir-server/search/total-parameter.md) - Control total count behavior
+  - [Chained Search](fhir-server/search/chained-search.md) - Search by referenced resource properties
+  - [Reverse Chained Search](fhir-server/search/reverse-chained-search.md) - Search by referencing resources
 
 ### Advanced Topics
 - [Measure Evaluation Guide](measure-guide.md) - Clinical quality measure evaluation

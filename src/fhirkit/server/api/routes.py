@@ -2631,6 +2631,7 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
         _revinclude: list[str] | None = Query(default=None, alias="_revinclude"),
         _elements: str | None = Query(default=None, alias="_elements"),
         _summary: str | None = Query(default=None, alias="_summary"),
+        _total: str | None = Query(default=None, alias="_total"),
     ) -> Response:
         """Search for resources of a specific type.
 
@@ -2642,6 +2643,7 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
         - _sort: Sort order (prefix with - for descending)
         - _elements: Comma-separated list of elements to include
         - _summary: Return summary view (true, text, data, count, false)
+        - _total: Return total count (accurate, estimate, none)
         """
         if resource_type not in SUPPORTED_TYPES:
             outcome = OperationOutcome.error(
@@ -2796,11 +2798,18 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
             )
 
         # Build bundle
+        # Handle _total parameter (accurate, estimate, none)
+        # Default is accurate (include total), none means exclude total
+        bundle_total: int | None = total
+        if _total == "none":
+            bundle_total = None
+        # For "estimate" we currently return accurate count (future: optimize for large datasets)
+
         bundle = Bundle(
             resourceType="Bundle",
             id=str(uuid.uuid4()),
             type="searchset",
-            total=total,  # Total is primary results only
+            total=bundle_total,
             entry=entries,
             link=links,
         )
