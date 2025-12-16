@@ -1456,19 +1456,23 @@ fhir cql eval "Interval[@2024-01-01T00:00:00, @2024-12-31T23:59:59]"
 #### Interval Properties
 
 ```bash
-# Get start and end
-fhir cql eval "start of Interval[1, 10]"
-fhir cql eval "end of Interval[1, 10]"
+# Get start and end (operators)
+fhir cql eval "start of Interval[1, 10]"  # 1
+fhir cql eval "end of Interval[1, 10]"    # 10
 
 # Get width
-fhir cql eval "width of Interval[1, 10]"
+fhir cql eval "width of Interval[1, 10]"  # 9
 
-# Get low and high bounds
-fhir cql eval "low Interval[1, 10]"
-fhir cql eval "high Interval[1, 10]"
+# Get low and high bounds (property access)
+fhir cql eval "Interval[1, 10].low"       # 1
+fhir cql eval "Interval[1, 10].high"      # 10
+
+# Check if bounds are closed
+fhir cql eval "Interval[1, 10].lowClosed"   # true
+fhir cql eval "Interval[1, 10).highClosed"  # false
 
 # Point from single-value interval
-fhir cql eval "point from Interval[5, 5]"
+fhir cql eval "point from Interval[5, 5]"   # 5
 ```
 
 #### Interval Membership
