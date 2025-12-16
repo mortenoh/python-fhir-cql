@@ -857,8 +857,24 @@ class CQLEvaluatorVisitor(cqlVisitor):
             elif isinstance(target, CQLTuple):
                 return target.elements.get(name)
             elif isinstance(target, list):
-                # Flatten property access on list
-                return [item.get(name) if isinstance(item, dict) else getattr(item, name, None) for item in target]
+                # Flatten property access on list, recursively handling nested lists
+                results = []
+                for item in target:
+                    if isinstance(item, dict):
+                        results.append(item.get(name))
+                    elif isinstance(item, list):
+                        # Recursively access property on nested list items
+                        for nested in item:
+                            if isinstance(nested, dict):
+                                results.append(nested.get(name))
+                            elif isinstance(nested, list):
+                                # Deep nesting - flatten further
+                                for deep in nested:
+                                    if isinstance(deep, dict):
+                                        results.append(deep.get(name))
+                    else:
+                        results.append(getattr(item, name, None))
+                return results
         elif isinstance(invocation, cqlParser.QualifiedFunctionInvocationContext):
             # Method call on target
             func_ctx = invocation.qualifiedFunction()
