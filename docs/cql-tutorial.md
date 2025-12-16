@@ -1006,43 +1006,61 @@ define Weight:
 
 Learn CQL query syntax for filtering and transforming data.
 
+### Query Syntax
+
+CQL uses `source alias` pattern for queries (not `alias in source`):
+
+```
+source alias where condition return expression
+```
+
+For list literals, wrap in parentheses. For FHIR retrieves, no parentheses needed:
+
+```cql
+// List literal - parentheses required
+({1, 2, 3, 4, 5}) N where N > 2 return N
+
+// FHIR retrieve - no parentheses
+[Observation] O where O.status = 'final' return O
+```
+
 ### Basic Query
 
 ```bash
 # Filter a list
-fhir cql eval "from n in {1, 2, 3, 4, 5} where n > 2 return n"
+fhir cql eval "({1, 2, 3, 4, 5}) N where N > 2 return N"
 ```
 
 Output:
 ```
-[3, 4, 5]
+{ 3, 4, 5 }
 ```
 
 ### Transform Results
 
 ```bash
 # Double each value
-fhir cql eval "from n in {1, 2, 3, 4, 5} return n * 2"
+fhir cql eval "({1, 2, 3, 4, 5}) N return N * 2"
 ```
 
 Output:
 ```
-[2, 4, 6, 8, 10]
+{ 2, 4, 6, 8, 10 }
 ```
 
 ### Query with Let
 
 ```bash
 # Define intermediate values
-fhir cql eval "from n in {1, 2, 3, 4, 5} let squared: n * n where squared > 10 return squared"
+fhir cql eval "({1, 2, 3, 4, 5}) N let squared: N * N where squared > 10 return squared"
 ```
 
 ### Sorting
 
 ```bash
 fhir cql eval "Sort({5, 2, 8, 1, 9})"
-fhir cql eval "from n in {5, 2, 8, 1, 9} return n sort asc"
-fhir cql eval "from n in {5, 2, 8, 1, 9} return n sort desc"
+fhir cql eval "({5, 2, 8, 1, 9}) N return N sort asc"
+fhir cql eval "({5, 2, 8, 1, 9}) N return N sort desc"
 ```
 
 ### Query Library
@@ -1056,34 +1074,34 @@ define Numbers: {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 
 // Filter: greater than 5
 define GreaterThanFive:
-    from n in Numbers
-    where n > 5
-    return n
+    (Numbers) N
+    where N > 5
+    return N
 
 // Transform: square each
 define Squared:
-    from n in Numbers
-    return n * n
+    (Numbers) N
+    return N * N
 
 // Combined: squares greater than 25
 define LargeSquares:
-    from n in Numbers
-    let sq: n * n
+    (Numbers) N
+    let sq: N * N
     where sq > 25
     return sq
 
 // Sorted descending
 define SortedDesc:
-    from n in Numbers
-    return n
+    (Numbers) N
+    return N
     sort desc
 
 // First 3 even numbers
 define FirstThreeEven:
     Take(
-        from n in Numbers
-        where n mod 2 = 0
-        return n,
+        (Numbers) N
+        where N mod 2 = 0
+        return N,
         3
     )
 ```
@@ -1113,7 +1131,7 @@ define FinalObservations:
 
 // Get observation values
 define ObservationValues:
-    from O in FinalObservations
+    (FinalObservations) O
     return O.value
 
 // Most recent observation
@@ -1131,7 +1149,7 @@ define ActiveConditions:
 
 // Condition codes
 define ConditionCodes:
-    from C in ActiveConditions
+    (ActiveConditions) C
     return C.code.coding.first().display
 ```
 
@@ -1143,18 +1161,19 @@ fhir cql run fhir-queries.cql --data patient-bundle.json
 
 ```bash
 # Query strings
-fhir cql eval "from name in {'Alice', 'Bob', 'Charlie'} where StartsWith(name, 'A') return name"
+fhir cql eval "({'Alice', 'Bob', 'Charlie'}) name where StartsWith(name, 'A') return name"
 
 # Query with transformation
-fhir cql eval "from name in {'alice', 'bob', 'charlie'} return Upper(name)"
+fhir cql eval "({'alice', 'bob', 'charlie'}) name return Upper(name)"
 ```
 
 ### What You Learned
 
-- `from x in list where condition return expression`
+- Query syntax: `source alias where condition return expression`
+- List literals require parentheses: `({1,2,3}) N where N > 1`
+- FHIR retrieves don't need parentheses: `[Observation] O where O.status = 'final'`
 - `let` defines intermediate values
 - `sort asc` or `sort desc` for ordering
-- Can query FHIR resources directly
 - `First()` and `Last()` with queries
 
 ---
@@ -1615,13 +1634,13 @@ fhir cql eval "Mode({1, 2, 2, 3, 3, 3, 4})"
 
 ```bash
 # Sum with query
-fhir cql eval "Sum(from n in {1, 2, 3, 4, 5} return n * 2)"
+fhir cql eval "Sum(({1, 2, 3, 4, 5}) N return N * 2)"
 
 # Count with filter
-fhir cql eval "Count(from n in {1, 2, 3, 4, 5, 6, 7, 8, 9, 10} where n mod 2 = 0 return n)"
+fhir cql eval "Count(({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}) N where N mod 2 = 0 return N)"
 
 # Average of squares
-fhir cql eval "Avg(from n in {1, 2, 3, 4, 5} return n * n)"
+fhir cql eval "Avg(({1, 2, 3, 4, 5}) N return N * N)"
 ```
 
 #### Aggregate Library Example
@@ -1646,24 +1665,24 @@ define ScoreRange: MaxScore - MinScore
 define StdDeviation: StdDev(Scores)
 
 // Passing scores (>= 80)
-define PassingScores: from s in Scores where s >= 80 return s
+define PassingScores: (Scores) S where S >= 80 return S
 define PassingCount: Count(PassingScores)
 define PassingRate: Round(PassingCount / ScoreCount * 100, 1)
 
 // Grade distribution
-define ACount: Count(from s in Scores where s >= 90 return s)
-define BCount: Count(from s in Scores where s >= 80 and s < 90 return s)
-define CCount: Count(from s in Scores where s >= 70 and s < 80 return s)
-define FCount: Count(from s in Scores where s < 70 return s)
+define ACount: Count((Scores) S where S >= 90 return S)
+define BCount: Count((Scores) S where S >= 80 and S < 90 return S)
+define CCount: Count((Scores) S where S >= 70 and S < 80 return S)
+define FCount: Count((Scores) S where S < 70 return S)
 
 // Normalized scores (0-100 scale to 0-1)
-define NormalizedScores: from s in Scores return s / 100.0
+define NormalizedScores: (Scores) S return S / 100.0
 
 // Top 3 scores
-define TopThree: Take(from s in Scores return s sort desc, 3)
+define TopThree: Take((Scores) S return S sort desc, 3)
 
 // Bottom 3 scores
-define BottomThree: Take(from s in Scores return s sort asc, 3)
+define BottomThree: Take((Scores) S return S sort asc, 3)
 ```
 
 ```bash
@@ -2551,7 +2570,7 @@ define Alerts:
     }
 
 define ActiveAlerts:
-    from A in Alerts where A is not null return A
+    (Alerts) A where A is not null return A
 
 // =============================================
 // Quality Measure Populations

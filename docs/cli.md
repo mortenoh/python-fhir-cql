@@ -1000,7 +1000,7 @@ fhir cql eval "years between @1990-01-01 and Today()"
 fhir cql eval "{1, 2, 3, 4, 5}"
 fhir cql eval "Sum({1, 2, 3})"
 fhir cql eval "First({1, 2, 3})"
-fhir cql eval "from n in {1,2,3,4,5} where n > 2 return n * 2"
+fhir cql eval "({1,2,3,4,5}) N where N > 2 return N * 2"
 ```
 
 ### Work with intervals
