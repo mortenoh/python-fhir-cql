@@ -81,6 +81,7 @@ VALID_RESOURCE_TYPES = {
     "AdverseEvent",
     # Infrastructure
     "Bundle",
+    "Binary",
     "OperationOutcome",
     "Parameters",
     "CapabilityStatement",
@@ -481,6 +482,10 @@ RESOURCE_RULES: dict[str, dict[str, Any]] = {
                 ],
             },
         },
+    },
+    "Binary": {
+        "required": ["contentType"],
+        "code_bindings": {},
     },
     "Group": {
         "required": ["type", "actual"],
