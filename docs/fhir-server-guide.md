@@ -443,6 +443,27 @@ Available for all resource types:
 | `_sort` | string | Sort field (prefix with `-` for descending) |
 | `_total` | string | Control total count: `accurate` (default), `estimate`, `none` |
 | `_contained` | string | Include contained resources: `false` (default), `true`, `both` |
+| `_filter` | string | Advanced filter expression (see below) |
+
+#### _filter Parameter
+
+The `_filter` parameter enables complex boolean expressions beyond simple search:
+
+```bash
+# Find active male patients born after 1980
+curl "http://localhost:8080/baseR4/Patient?_filter=gender%20eq%20male%20and%20active%20eq%20true%20and%20birthDate%20ge%201980-01-01"
+
+# Find patients with name containing "son"
+curl "http://localhost:8080/baseR4/Patient?_filter=family%20co%20son"
+
+# Complex grouping
+curl "http://localhost:8080/baseR4/Patient?_filter=(gender%20eq%20male%20or%20gender%20eq%20female)%20and%20active%20eq%20true"
+```
+
+**Operators**: `eq`, `ne`, `gt`, `lt`, `ge`, `le`, `co` (contains), `sw` (starts with), `ew` (ends with)
+**Logical**: `and`, `or`, `not`, parentheses `()`
+
+See [_filter Parameter](fhir-server/search/filter-parameter.md) for detailed documentation.
 
 #### Search Parameter Types
 

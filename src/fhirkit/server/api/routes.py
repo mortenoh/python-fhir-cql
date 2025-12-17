@@ -2634,6 +2634,7 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
         _summary: str | None = Query(default=None, alias="_summary"),
         _total: str | None = Query(default=None, alias="_total"),
         _contained: str | None = Query(default=None, alias="_contained"),
+        _filter: str | None = Query(default=None, alias="_filter"),
     ) -> Response:
         """Search for resources of a specific type.
 
@@ -2647,6 +2648,7 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
         - _summary: Return summary view (true, text, data, count, false)
         - _total: Return total count (accurate, estimate, none)
         - _contained: Include contained resources (false, true, both)
+        - _filter: Advanced filter expression (e.g., "name eq John and birthDate ge 1990-01-01")
         """
         if resource_type not in SUPPORTED_TYPES:
             outcome = OperationOutcome.error(
@@ -2696,6 +2698,26 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
 
             resources = filter_resources_advanced(resources, resource_type, chained_params, store)
             total = len(resources)  # Update total after filtering
+
+        # Apply _filter parameter if specified
+        if _filter:
+            from .filter_parser import apply_filter
+            from .search import SEARCH_PARAMS
+
+            search_params = SEARCH_PARAMS.get(resource_type, {})
+            try:
+                resources = apply_filter(resources, _filter, search_params)
+                total = len(resources)
+            except ValueError as e:
+                outcome = OperationOutcome.error(
+                    f"Invalid _filter expression: {e}",
+                    code="invalid",
+                )
+                return JSONResponse(
+                    content=outcome.model_dump(exclude_none=True),
+                    status_code=400,
+                    media_type=FHIR_JSON,
+                )
 
         # Apply sorting if specified
         if _sort:
