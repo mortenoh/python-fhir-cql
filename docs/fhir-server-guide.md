@@ -843,6 +843,63 @@ Validate that a code is in a ValueSet.
 curl "http://localhost:8080/baseR4/ValueSet/\$validate-code?url=http://example.com/vs&code=12345"
 ```
 
+### Bulk Data Export
+
+The server implements the [FHIR Bulk Data Access IG](http://hl7.org/fhir/uv/bulkdata/) for asynchronous export of large datasets.
+
+#### System Export
+
+```http
+GET /$export
+Prefer: respond-async
+```
+
+Export all resources from the server.
+
+#### Patient Export
+
+```http
+GET /Patient/$export
+Prefer: respond-async
+```
+
+Export all patient data and related clinical resources.
+
+#### Group Export
+
+```http
+GET /Group/{id}/$export
+Prefer: respond-async
+```
+
+Export data for all patients in a Group.
+
+#### Export Workflow
+
+```bash
+# 1. Start export (returns 202 with Content-Location header)
+curl -X GET "http://localhost:8080/baseR4/\$export?_type=Patient,Observation" \
+  -H "Prefer: respond-async"
+
+# 2. Poll status (returns 202 while in progress, 200 when complete)
+curl http://localhost:8080/baseR4/bulk-status/{job-id}
+
+# 3. Download NDJSON files from manifest
+curl http://localhost:8080/baseR4/bulk-output/{job-id}/Patient.ndjson
+
+# 4. Delete job when done
+curl -X DELETE http://localhost:8080/baseR4/bulk-status/{job-id}
+```
+
+#### Parameters
+
+| Parameter | Description |
+|-----------|-------------|
+| `_type` | Comma-separated resource types to export |
+| `_since` | Only export resources updated after this datetime |
+
+See [Bulk Data Export](fhir-server/operations/bulk-export.md) for detailed documentation.
+
 ---
 
 ## Synthetic Data Generation
