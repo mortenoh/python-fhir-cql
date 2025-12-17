@@ -12,6 +12,7 @@ from fastapi.templating import Jinja2Templates
 
 from ..config.settings import FHIRServerSettings
 from ..generator import PatientRecordGenerator
+from ..graphql import create_graphql_router
 from ..storage.fhir_store import FHIRStore
 from .routes import create_router
 from .ui_routes import create_ui_router
@@ -145,6 +146,13 @@ def create_app(
             allow_methods=["*"],
             allow_headers=["*"],
         )
+
+    # Create and include GraphQL router at /baseR4/$graphql
+    # Per FHIR GraphQL spec, the endpoint should be at /$graphql
+    # NOTE: Must be mounted BEFORE the FHIR router to avoid being caught by /{resource_type}
+    graphql_router = create_graphql_router(store=store)
+    app.include_router(graphql_router, prefix=f"{api_base}/$graphql", tags=["GraphQL"])
+    logger.info(f"GraphQL endpoint enabled at {api_base}/$graphql")
 
     # Create and include FHIR API router at /baseR4
     base_url = f"http://{settings.host}:{settings.port}{api_base}"
@@ -428,6 +436,7 @@ def create_app(
             "endpoints": {
                 "fhir_api": api_base,
                 "metadata": f"{api_base}/metadata",
+                "graphql": f"{api_base}/$graphql",
                 "docs": docs_url,
                 "ui": settings.ui_mount_path or "/" if settings.enable_ui else None,
                 "cds_hooks": "/cds-services",

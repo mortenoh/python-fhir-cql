@@ -1764,6 +1764,171 @@
           }
         }
       ]
+    },
+    {
+      "name": "GraphQL",
+      "description": "GraphQL API for FHIR resources following the FHIR GraphQL specification",
+      "item": [
+        {
+          "name": "GraphiQL Playground",
+          "description": "Open the interactive GraphQL IDE in browser",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/$graphql"
+          }
+        },
+        {
+          "name": "Query - Patient by ID",
+          "description": "Fetch a single Patient resource by ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ Patient(_id: \\\"{{patientId}}\\\") { id resourceType data } }\"\n}"
+            },
+            "url": "{{baseUrl}}/$graphql"
+          }
+        },
+        {
+          "name": "Query - Patient List",
+          "description": "Search for patients with filters",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ PatientList(_count: 10, gender: \\\"male\\\") { id data } }\"\n}"
+            },
+            "url": "{{baseUrl}}/$graphql"
+          }
+        },
+        {
+          "name": "Query - Patient Connection (Pagination)",
+          "description": "Cursor-based pagination for patients",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ PatientConnection(first: 5) { edges { cursor node { id data } } pageInfo { hasNextPage endCursor } total } }\"\n}"
+            },
+            "url": "{{baseUrl}}/$graphql"
+          }
+        },
+        {
+          "name": "Query - Generic Resource",
+          "description": "Query any resource type dynamically",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ resource(resourceType: \\\"Observation\\\", _id: \\\"obs-001\\\") { id resourceType data } }\"\n}"
+            },
+            "url": "{{baseUrl}}/$graphql"
+          }
+        },
+        {
+          "name": "Query - Multiple Resources",
+          "description": "Fetch patient with related observations and conditions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ patient: Patient(_id: \\\"{{patientId}}\\\") { id data } observations: ObservationList(patient: \\\"Patient/{{patientId}}\\\", _count: 5) { id data } conditions: ConditionList(patient: \\\"Patient/{{patientId}}\\\") { id data } }\"\n}"
+            },
+            "url": "{{baseUrl}}/$graphql"
+          }
+        },
+        {
+          "name": "Mutation - Create Patient",
+          "description": "Create a new Patient via GraphQL mutation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation CreatePatient($data: JSON!) { PatientCreate(data: $data) { id resourceType data } }\",\n  \"variables\": {\n    \"data\": {\n      \"resourceType\": \"Patient\",\n      \"name\": [{\"family\": \"GraphQL\", \"given\": [\"Test\"]}],\n      \"gender\": \"female\",\n      \"birthDate\": \"1985-06-15\"\n    }\n  }\n}"
+            },
+            "url": "{{baseUrl}}/$graphql"
+          }
+        },
+        {
+          "name": "Mutation - Update Patient",
+          "description": "Update an existing Patient via GraphQL mutation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation UpdatePatient($id: String!, $data: JSON!) { PatientUpdate(_id: $id, data: $data) { id data } }\",\n  \"variables\": {\n    \"id\": \"{{patientId}}\",\n    \"data\": {\n      \"resourceType\": \"Patient\",\n      \"id\": \"{{patientId}}\",\n      \"name\": [{\"family\": \"Updated\", \"given\": [\"Name\"]}],\n      \"gender\": \"male\"\n    }\n  }\n}"
+            },
+            "url": "{{baseUrl}}/$graphql"
+          }
+        },
+        {
+          "name": "Mutation - Delete Patient",
+          "description": "Delete a Patient via GraphQL mutation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation { PatientDelete(_id: \\\"temp-patient\\\") { id } }\"\n}"
+            },
+            "url": "{{baseUrl}}/$graphql"
+          }
+        },
+        {
+          "name": "Mutation - Generic Create",
+          "description": "Create any resource type via generic mutation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation CreateResource($resourceType: String!, $data: JSON!) { resourceCreate(resourceType: $resourceType, data: $data) { id resourceType data } }\",\n  \"variables\": {\n    \"resourceType\": \"Observation\",\n    \"data\": {\n      \"resourceType\": \"Observation\",\n      \"status\": \"final\",\n      \"code\": {\"text\": \"Heart Rate\"},\n      \"valueQuantity\": {\"value\": 72, \"unit\": \"bpm\"}\n    }\n  }\n}"
+            },
+            "url": "{{baseUrl}}/$graphql"
+          }
+        },
+        {
+          "name": "Schema Introspection",
+          "description": "Get the GraphQL schema via introspection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ __schema { queryType { name fields { name } } mutationType { name fields { name } } } }\"\n}"
+            },
+            "url": "{{baseUrl}}/$graphql"
+          }
+        }
+      ]
     }
   ]
 }
