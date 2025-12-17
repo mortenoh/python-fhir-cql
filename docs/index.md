@@ -172,6 +172,7 @@ greeting = evaluator.evaluate_definition("Greeting")  # 'Hello, CQL!'
 - Search Features:
   - [_elements and _summary](fhir-server/search/elements-summary.md) - Control returned elements
   - [_total](fhir-server/search/total-parameter.md) - Control total count behavior
+  - [_contained](fhir-server/search/contained-parameter.md) - Include contained resources
   - [Chained Search](fhir-server/search/chained-search.md) - Search by referenced resource properties
   - [Reverse Chained Search](fhir-server/search/reverse-chained-search.md) - Search by referencing resources
 

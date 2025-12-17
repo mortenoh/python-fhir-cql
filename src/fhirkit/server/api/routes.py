@@ -2632,6 +2632,7 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
         _elements: str | None = Query(default=None, alias="_elements"),
         _summary: str | None = Query(default=None, alias="_summary"),
         _total: str | None = Query(default=None, alias="_total"),
+        _contained: str | None = Query(default=None, alias="_contained"),
     ) -> Response:
         """Search for resources of a specific type.
 
@@ -2644,6 +2645,7 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
         - _elements: Comma-separated list of elements to include
         - _summary: Return summary view (true, text, data, count, false)
         - _total: Return total count (accurate, estimate, none)
+        - _contained: Include contained resources (false, true, both)
         """
         if resource_type not in SUPPORTED_TYPES:
             outcome = OperationOutcome.error(
@@ -2706,6 +2708,30 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
                 )
             except (TypeError, KeyError):
                 pass  # Ignore sort errors
+
+        # Handle _contained parameter
+        # _contained=false (default): only top-level resources
+        # _contained=true: only contained resources from matched containers
+        # _contained=both: both top-level and contained resources
+        if _contained in ("true", "both"):
+            contained_resources: list[dict[str, Any]] = []
+            for resource in resources:
+                for contained in resource.get("contained", []):
+                    # Add container reference for context
+                    contained_copy = dict(contained)
+                    # Ensure contained resource has an id for the fullUrl
+                    if "id" not in contained_copy:
+                        contained_copy["id"] = f"contained-{len(contained_resources)}"
+                    contained_resources.append(contained_copy)
+
+            if _contained == "true":
+                # Only return contained resources
+                resources = contained_resources
+                total = len(resources)
+            else:  # _contained == "both"
+                # Return both top-level and contained resources
+                resources = resources + contained_resources
+                total = len(resources)
 
         # Handle _summary=count (return count-only bundle)
         if _summary == "count":

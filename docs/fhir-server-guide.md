@@ -442,6 +442,7 @@ Available for all resource types:
 | `_offset` | number | Pagination offset |
 | `_sort` | string | Sort field (prefix with `-` for descending) |
 | `_total` | string | Control total count: `accurate` (default), `estimate`, `none` |
+| `_contained` | string | Include contained resources: `false` (default), `true`, `both` |
 
 #### Search Parameter Types
 

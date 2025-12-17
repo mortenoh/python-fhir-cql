@@ -217,58 +217,81 @@ class CapabilityStatement(BaseModel):
 
     @classmethod
     def default(cls, base_url: str = "") -> "CapabilityStatement":
-        """Create a default CapabilityStatement."""
+        """Create a default CapabilityStatement with all supported resources and operations."""
         from datetime import datetime, timezone
 
         from ..api.include_handler import get_search_includes, get_search_rev_includes
+        from ..api.routes import SUPPORTED_TYPES
+        from ..api.search import SEARCH_PARAMS
 
-        # Define supported resources with search parameters
-        supported_resources = [
-            ("Patient", ["_id", "identifier", "name", "family", "given", "gender", "birthdate"]),
-            ("Condition", ["_id", "patient", "subject", "code", "clinical-status", "onset-date"]),
-            ("Observation", ["_id", "patient", "subject", "code", "date", "category", "status"]),
-            ("MedicationRequest", ["_id", "patient", "subject", "code", "status", "authoredon"]),
-            ("Procedure", ["_id", "patient", "subject", "code", "date", "status"]),
-            ("Encounter", ["_id", "patient", "subject", "date", "status", "class"]),
-            ("Practitioner", ["_id", "identifier", "name", "family", "given"]),
-            ("Organization", ["_id", "identifier", "name", "type"]),
-            ("ValueSet", ["_id", "url", "name", "status"]),
-            ("CodeSystem", ["_id", "url", "name", "status"]),
-            ("Library", ["_id", "url", "name", "version", "status"]),
-            ("Measure", ["_id", "url", "name", "version", "status", "title"]),
-            ("MeasureReport", ["_id", "patient", "subject", "measure", "status", "date", "reporter"]),
-            ("Questionnaire", ["_id", "url", "name", "title", "status", "version", "publisher"]),
-            ("QuestionnaireResponse", ["_id", "questionnaire", "patient", "subject", "status", "authored"]),
-        ]
+        # Resource-specific operations
+        RESOURCE_OPERATIONS: dict[str, list[dict[str, str]]] = {
+            "Patient": [
+                {"name": "everything", "definition": "http://hl7.org/fhir/OperationDefinition/Patient-everything"},
+                {"name": "summary", "definition": "http://hl7.org/fhir/uv/ips/OperationDefinition/summary"},
+                {"name": "export", "definition": "http://hl7.org/fhir/uv/bulkdata/OperationDefinition/patient-export"},
+                {"name": "match", "definition": "http://hl7.org/fhir/OperationDefinition/Patient-match"},
+                {"name": "validate", "definition": "http://hl7.org/fhir/OperationDefinition/Resource-validate"},
+            ],
+            "Group": [
+                {"name": "export", "definition": "http://hl7.org/fhir/uv/bulkdata/OperationDefinition/group-export"},
+            ],
+            "Measure": [
+                {
+                    "name": "evaluate-measure",
+                    "definition": "http://hl7.org/fhir/OperationDefinition/Measure-evaluate-measure",
+                },
+            ],
+            "ValueSet": [
+                {"name": "expand", "definition": "http://hl7.org/fhir/OperationDefinition/ValueSet-expand"},
+                {
+                    "name": "validate-code",
+                    "definition": "http://hl7.org/fhir/OperationDefinition/ValueSet-validate-code",
+                },
+            ],
+            "CodeSystem": [
+                {"name": "lookup", "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-lookup"},
+                {"name": "subsumes", "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-subsumes"},
+            ],
+            "ConceptMap": [
+                {"name": "translate", "definition": "http://hl7.org/fhir/OperationDefinition/ConceptMap-translate"},
+            ],
+            "Composition": [
+                {"name": "document", "definition": "http://hl7.org/fhir/OperationDefinition/Composition-document"},
+            ],
+        }
 
         resources = []
-        for rtype, search_params in supported_resources:
+        for rtype in SUPPORTED_TYPES:
+            # Get search parameters with correct types from SEARCH_PARAMS
+            search_params_def = SEARCH_PARAMS.get(rtype, {})
+            search_params = [
+                {"name": name, "type": info.get("type", "string")} for name, info in search_params_def.items()
+            ]
+            # Add common params if not already present
+            common_params = [
+                {"name": "_lastUpdated", "type": "date"},
+                {"name": "_contained", "type": "token"},
+            ]
+            existing_names = {p["name"] for p in search_params}
+            for p in common_params:
+                if p["name"] not in existing_names:
+                    search_params.append(p)
+
             # Get _include and _revinclude capabilities
             search_include = get_search_includes(rtype)
             search_rev_include = get_search_rev_includes(rtype)
 
-            # Define resource-specific operations
-            resource_operations: list[dict[str, Any]] = []
-            if rtype == "Patient":
-                resource_operations.append(
-                    {
-                        "name": "everything",
-                        "definition": "http://hl7.org/fhir/OperationDefinition/Patient-everything",
-                    }
-                )
-                resource_operations.append(
-                    {
-                        "name": "summary",
-                        "definition": "http://hl7.org/fhir/uv/ips/OperationDefinition/summary",
-                    }
-                )
-            elif rtype == "Measure":
-                resource_operations.append(
-                    {
-                        "name": "evaluate-measure",
-                        "definition": "http://hl7.org/fhir/OperationDefinition/Measure-evaluate-measure",
-                    }
-                )
+            # Get resource-specific operations
+            resource_operations = RESOURCE_OPERATIONS.get(rtype, [])
+
+            # Add validate operation to all resources
+            if rtype not in RESOURCE_OPERATIONS or not any(
+                op["name"] == "validate" for op in RESOURCE_OPERATIONS.get(rtype, [])
+            ):
+                resource_operations = list(resource_operations) + [
+                    {"name": "validate", "definition": "http://hl7.org/fhir/OperationDefinition/Resource-validate"}
+                ]
 
             resources.append(
                 CapabilityStatementRestResource(
@@ -282,27 +305,18 @@ class CapabilityStatement(BaseModel):
                         {"code": "create"},
                         {"code": "search-type"},
                     ],
-                    searchParam=[{"name": p, "type": "string"} for p in search_params],
+                    searchParam=search_params,
                     searchInclude=search_include,
                     searchRevInclude=search_rev_include,
                     operation=resource_operations,
                 )
             )
 
-        # Add server-level terminology operations
-        operations = [
-            {
-                "name": "validate-code",
-                "definition": "http://hl7.org/fhir/OperationDefinition/ValueSet-validate-code",
-            },
-            {
-                "name": "expand",
-                "definition": "http://hl7.org/fhir/OperationDefinition/ValueSet-expand",
-            },
-            {
-                "name": "lookup",
-                "definition": "http://hl7.org/fhir/OperationDefinition/CodeSystem-lookup",
-            },
+        # Server-level operations
+        server_operations = [
+            {"name": "fhirpath", "definition": "http://hl7.org/fhir/OperationDefinition/fhirpath"},
+            {"name": "cql", "definition": "http://cql.hl7.org/OperationDefinition/cql-cql"},
+            {"name": "export", "definition": "http://hl7.org/fhir/uv/bulkdata/OperationDefinition/export"},
         ]
 
         return cls(
@@ -312,7 +326,7 @@ class CapabilityStatement(BaseModel):
                 CapabilityStatementRest(
                     mode="server",
                     resource=resources,
-                    operation=operations,
+                    operation=server_operations,
                 )
             ],
         )
