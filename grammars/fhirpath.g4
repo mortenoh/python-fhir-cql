@@ -96,9 +96,9 @@ identifier
         | 'in'
         | 'is'
         // Allow dateTimePrecision keywords as identifiers for functions like year(), month(), etc.
+        // This is needed because FHIRPath spec defines these as functions but the grammar
+        // also uses them as keywords for quantity units (e.g., "1 year")
         | 'year' | 'month' | 'week' | 'day' | 'hour' | 'minute' | 'second' | 'millisecond'
-        // Allow aggregate function names
-        | 'min' | 'max' | 'sum' | 'avg'
         ;
 
 

@@ -556,63 +556,6 @@ result = evaluate_fhirpath("Patient.birthDate.year()", patient)
 print(result)  # [1985]
 ```
 
-## Aggregate Functions
-
-```python
-from fhirkit import evaluate_fhirpath
-
-# min - returns minimum value
-result = evaluate_fhirpath("(3 | 1 | 4 | 1 | 5).min()", {})
-print(result)  # [1]
-
-# max - returns maximum value
-result = evaluate_fhirpath("(3 | 1 | 4 | 1 | 5).max()", {})
-print(result)  # [5]
-
-# sum - returns sum of numeric values
-result = evaluate_fhirpath("(1 | 2 | 3 | 4 | 5).sum()", {})
-print(result)  # [15]
-
-# avg - returns average of numeric values
-result = evaluate_fhirpath("(1 | 2 | 3 | 4 | 5).avg()", {})
-print(result)  # [3.0]
-
-# Works with resource data
-observation = {
-    "resourceType": "Observation",
-    "component": [
-        {"valueQuantity": {"value": 120}},  # systolic
-        {"valueQuantity": {"value": 80}}    # diastolic
-    ]
-}
-
-result = evaluate_fhirpath(
-    "Observation.component.valueQuantity.value.min()",
-    observation
-)
-print(result)  # [80]
-
-result = evaluate_fhirpath(
-    "Observation.component.valueQuantity.value.max()",
-    observation
-)
-print(result)  # [120]
-
-# Works with strings (alphabetical ordering)
-result = evaluate_fhirpath("('banana' | 'apple' | 'cherry').min()", {})
-print(result)  # ['apple']
-
-# Empty collection behavior
-result = evaluate_fhirpath("{}.min()", {})
-print(result)  # []
-
-result = evaluate_fhirpath("{}.sum()", {})
-print(result)  # [0]
-
-result = evaluate_fhirpath("{}.avg()", {})
-print(result)  # []
-```
-
 ## Error Handling
 
 ```python
