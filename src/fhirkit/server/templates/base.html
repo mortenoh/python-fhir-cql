@@ -52,6 +52,15 @@
             background: #a1a1a1;
         }
 
+        /* Hide scrollbar but allow scrolling */
+        .scrollbar-hide {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;  /* Chrome, Safari, Opera */
+        }
+
         /* Sidebar nav styling */
         .nav-section-title {
             font-size: 11px;
@@ -175,7 +184,7 @@
             </div>
 
             <!-- Navigation -->
-            <nav class="flex-1 py-4 overflow-y-auto">
+            <nav class="flex-1 py-4 overflow-y-auto scrollbar-hide">
                 <!-- Overview -->
                 <div class="nav-section-title">Overview</div>
                 <a href="{{ url_for('ui_home') }}" class="nav-item group relative {% if request.url.path == ui_mount_path or request.url.path == ui_mount_path + '/' %}active{% endif %}">
