@@ -26,11 +26,11 @@ GET  /baseR4/$graphql  (GraphiQL playground)
 
 ### Single Resource Query
 
-Fetch a single resource by ID using the resource type name with `_id` parameter:
+Fetch a single resource by ID using the lowercase resource type name with `id` parameter:
 
 ```graphql
 {
-  Patient(_id: "patient-123") {
+  patient(id: "patient-123") {
     id
     resourceType
     data
@@ -42,7 +42,7 @@ Response:
 ```json
 {
   "data": {
-    "Patient": {
+    "patient": {
       "id": "patient-123",
       "resourceType": "Patient",
       "data": {
@@ -62,7 +62,7 @@ Query any resource type dynamically:
 
 ```graphql
 {
-  resource(resourceType: "Observation", _id: "obs-123") {
+  resource(resourceType: "Observation", id: "obs-123") {
     id
     resourceType
     data
@@ -72,11 +72,11 @@ Query any resource type dynamically:
 
 ### List Queries
 
-Search for resources with FHIR search parameters and offset pagination:
+Search for resources with FHIR search parameters and offset pagination. Use lowercase plural names:
 
 ```graphql
 {
-  PatientList(
+  patients(
     gender: "male"
     name: "Smith"
     _count: 10
@@ -102,7 +102,7 @@ For cursor-based pagination following the GraphQL Connections spec:
 
 ```graphql
 {
-  PatientConnection(first: 10, after: "cursor-string") {
+  patientConnection(first: 10, after: "cursor-string") {
     edges {
       cursor
       node {
@@ -132,7 +132,7 @@ The `data` field returns the full FHIR resource as JSON, which you can use to ac
 
 ```graphql
 {
-  Observation(_id: "obs-123") {
+  observation(id: "obs-123") {
     id
     data
   }
@@ -143,11 +143,13 @@ To navigate references between resources, you can use multiple queries or fetch 
 
 ## Mutations
 
+Mutations use verb-first naming: `createPatient`, `updatePatient`, `deletePatient`.
+
 ### Create Resource
 
 ```graphql
 mutation CreatePatient($data: JSON!) {
-  PatientCreate(data: $data) {
+  createPatient(data: $data) {
     id
     resourceType
     data
@@ -170,7 +172,7 @@ Variables:
 
 ```graphql
 mutation UpdatePatient($id: String!, $data: JSON!) {
-  PatientUpdate(_id: $id, data: $data) {
+  updatePatient(id: $id, data: $data) {
     id
     data
   }
@@ -194,7 +196,7 @@ Variables:
 
 ```graphql
 mutation {
-  PatientDelete(_id: "patient-123") {
+  deletePatient(id: "patient-123") {
     id
     data
   }
@@ -215,14 +217,14 @@ mutation CreateResource($resourceType: String!, $data: JSON!) {
 }
 
 mutation UpdateResource($resourceType: String!, $id: String!, $data: JSON!) {
-  resourceUpdate(resourceType: $resourceType, _id: $id, data: $data) {
+  resourceUpdate(resourceType: $resourceType, id: $id, data: $data) {
     id
     data
   }
 }
 
 mutation DeleteResource($resourceType: String!, $id: String!) {
-  resourceDelete(resourceType: $resourceType, _id: $id) {
+  resourceDelete(resourceType: $resourceType, id: $id) {
     id
   }
 }
@@ -232,12 +234,12 @@ mutation DeleteResource($resourceType: String!, $id: String!) {
 
 All resource types from the REST API are available in GraphQL. Each type has:
 
-- `{Type}(_id: String!)` - Fetch single resource
-- `{TypeList}(...)` - Search with offset pagination
-- `{Type}Connection(...)` - Search with cursor pagination
-- `{Type}Create(data: JSON!)` - Create resource
-- `{Type}Update(_id: String!, data: JSON!)` - Update resource
-- `{Type}Delete(_id: String!)` - Delete resource
+- `{type}(id: String!)` - Fetch single resource (lowercase)
+- `{types}(...)` - Search with offset pagination (lowercase plural)
+- `{type}Connection(...)` - Search with cursor pagination (camelCase)
+- `create{Type}(data: JSON!)` - Create resource (verb-first)
+- `update{Type}(id: String!, data: JSON!)` - Update resource (verb-first)
+- `delete{Type}(id: String!)` - Delete resource (verb-first)
 
 Resource types include: Patient, Observation, Condition, Encounter, Medication, MedicationRequest, Procedure, DiagnosticReport, Immunization, AllergyIntolerance, CarePlan, CareTeam, Goal, Practitioner, PractitionerRole, Organization, Location, Device, and many more.
 
@@ -247,15 +249,15 @@ Resource types include: Patient, Observation, Condition, Encounter, Medication, 
 
 ```graphql
 query PatientWithData($patientId: String!) {
-  patient: Patient(_id: $patientId) {
+  patient: patient(id: $patientId) {
     id
     data
   }
-  observations: ObservationList(patient: $patientId, _count: 10) {
+  observations: observations(patient: $patientId, _count: 10) {
     id
     data
   }
-  conditions: ConditionList(patient: $patientId) {
+  conditions: conditions(patient: $patientId) {
     id
     data
   }
@@ -266,7 +268,7 @@ query PatientWithData($patientId: String!) {
 
 ```graphql
 {
-  PatientConnection(first: 5) {
+  patientConnection(first: 5) {
     edges {
       cursor
       node {
@@ -287,7 +289,7 @@ Then fetch next page:
 
 ```graphql
 {
-  PatientConnection(first: 5, after: "b2Zmc2V0OjU=") {
+  patientConnection(first: 5, after: "b2Zmc2V0OjU=") {
     edges {
       cursor
       node {
@@ -307,7 +309,7 @@ Then fetch next page:
 
 ```graphql
 mutation {
-  PatientCreate(data: {
+  createPatient(data: {
     resourceType: "Patient"
     name: [{family: "Test", given: ["New"]}]
     birthDate: "1990-01-15"
@@ -332,6 +334,7 @@ Features:
 - Query history
 - Documentation explorer
 - Variable editor
+- Pre-loaded example queries
 
 ## cURL Examples
 
@@ -341,7 +344,7 @@ Features:
 curl -X POST http://localhost:8080/baseR4/\$graphql \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "{ PatientList(_count: 5) { id data } }"
+    "query": "{ patients(_count: 5) { id data } }"
   }'
 ```
 
@@ -351,7 +354,7 @@ curl -X POST http://localhost:8080/baseR4/\$graphql \
 curl -X POST http://localhost:8080/baseR4/\$graphql \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "mutation CreatePatient($data: JSON!) { PatientCreate(data: $data) { id } }",
+    "query": "mutation CreatePatient($data: JSON!) { createPatient(data: $data) { id } }",
     "variables": {
       "data": {
         "resourceType": "Patient",
@@ -372,20 +375,20 @@ GRAPHQL_URL = "http://localhost:8080/baseR4/$graphql"
 response = requests.post(GRAPHQL_URL, json={
     "query": """
     {
-        PatientList(_count: 10) {
+        patients(_count: 10) {
             id
             data
         }
     }
     """
 })
-patients = response.json()["data"]["PatientList"]
+patients = response.json()["data"]["patients"]
 
 # Mutation
 response = requests.post(GRAPHQL_URL, json={
     "query": """
     mutation CreatePatient($data: JSON!) {
-        PatientCreate(data: $data) {
+        createPatient(data: $data) {
             id
             resourceType
         }
@@ -398,7 +401,7 @@ response = requests.post(GRAPHQL_URL, json={
         }
     }
 })
-created = response.json()["data"]["PatientCreate"]
+created = response.json()["data"]["createPatient"]
 ```
 
 ## Error Handling
@@ -412,7 +415,7 @@ GraphQL errors are returned in the `errors` field:
     {
       "message": "Resource not found",
       "locations": [{"line": 2, "column": 3}],
-      "path": ["Patient"]
+      "path": ["patient"]
     }
   ]
 }
@@ -428,10 +431,10 @@ Common errors:
 
 | Feature | REST | GraphQL |
 |---------|------|---------|
-| Fetch single resource | `GET /Patient/123` | `Patient(_id: "123")` |
-| Search resources | `GET /Patient?name=Smith` | `PatientList(name: "Smith")` |
-| Create resource | `POST /Patient` | `PatientCreate(data: {...})` |
-| Update resource | `PUT /Patient/123` | `PatientUpdate(_id: "123", data: {...})` |
-| Delete resource | `DELETE /Patient/123` | `PatientDelete(_id: "123")` |
+| Fetch single resource | `GET /Patient/123` | `patient(id: "123")` |
+| Search resources | `GET /Patient?name=Smith` | `patients(name: "Smith")` |
+| Create resource | `POST /Patient` | `createPatient(data: {...})` |
+| Update resource | `PUT /Patient/123` | `updatePatient(id: "123", data: {...})` |
+| Delete resource | `DELETE /Patient/123` | `deletePatient(id: "123")` |
 | Field selection | `_elements=id,name` | Request specific fields in query |
 | Multiple resources | Multiple requests | Single query with multiple fields |

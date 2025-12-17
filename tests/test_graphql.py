@@ -37,7 +37,7 @@ def client(app):
 
 
 class TestSingleResourceQueries:
-    """Tests for single resource queries (e.g., Patient(_id: "123"))."""
+    """Tests for single resource queries (e.g., patient(id: "123"))."""
 
     def test_query_patient_by_id(self, client, store):
         """Test fetching a single Patient by ID."""
@@ -50,7 +50,7 @@ class TestSingleResourceQueries:
 
         query = f"""
         {{
-            Patient(_id: "{patient_id}") {{
+            patient(id: "{patient_id}") {{
                 id
                 resourceType
                 data
@@ -62,15 +62,15 @@ class TestSingleResourceQueries:
         assert response.status_code == 200
         data = response.json()
         assert "errors" not in data
-        assert data["data"]["Patient"]["id"] == patient_id
-        assert data["data"]["Patient"]["resourceType"] == "Patient"
-        assert data["data"]["Patient"]["data"]["name"][0]["family"] == "Smith"
+        assert data["data"]["patient"]["id"] == patient_id
+        assert data["data"]["patient"]["resourceType"] == "Patient"
+        assert data["data"]["patient"]["data"]["name"][0]["family"] == "Smith"
 
     def test_query_nonexistent_patient(self, client, store):
         """Test that querying a nonexistent patient returns null."""
         query = """
         {
-            Patient(_id: "nonexistent-id") {
+            patient(id: "nonexistent-id") {
                 id
                 resourceType
             }
@@ -81,7 +81,7 @@ class TestSingleResourceQueries:
         assert response.status_code == 200
         data = response.json()
         assert "errors" not in data
-        assert data["data"]["Patient"] is None
+        assert data["data"]["patient"] is None
 
     def test_generic_resource_query(self, client, store):
         """Test the generic resource query for any type."""
@@ -93,7 +93,7 @@ class TestSingleResourceQueries:
 
         query = f"""
         {{
-            resource(resourceType: "Observation", _id: "{obs['id']}") {{
+            resource(resourceType: "Observation", id: "{obs['id']}") {{
                 id
                 resourceType
                 data
@@ -117,7 +117,7 @@ class TestListQueries:
 
         query = """
         {
-            PatientList(_count: 10) {
+            patients(_count: 10) {
                 id
                 resourceType
                 data
@@ -129,7 +129,7 @@ class TestListQueries:
         assert response.status_code == 200
         data = response.json()
         assert "errors" not in data
-        assert len(data["data"]["PatientList"]) == 2
+        assert len(data["data"]["patients"]) == 2
 
     def test_patient_list_with_gender_filter(self, client, store):
         """Test patient list query with gender filter."""
@@ -139,7 +139,7 @@ class TestListQueries:
 
         query = """
         {
-            PatientList(gender: "male") {
+            patients(gender: "male") {
                 id
                 data
             }
@@ -149,8 +149,8 @@ class TestListQueries:
 
         assert response.status_code == 200
         data = response.json()
-        assert len(data["data"]["PatientList"]) == 2
-        for patient in data["data"]["PatientList"]:
+        assert len(data["data"]["patients"]) == 2
+        for patient in data["data"]["patients"]:
             assert patient["data"]["gender"] == "male"
 
     def test_patient_list_with_count_limit(self, client, store):
@@ -160,7 +160,7 @@ class TestListQueries:
 
         query = """
         {
-            PatientList(_count: 3) {
+            patients(_count: 3) {
                 id
             }
         }
@@ -169,7 +169,7 @@ class TestListQueries:
 
         assert response.status_code == 200
         data = response.json()
-        assert len(data["data"]["PatientList"]) == 3
+        assert len(data["data"]["patients"]) == 3
 
     def test_observation_list_with_patient_filter(self, client, store):
         """Test observation list query with patient filter."""
@@ -197,7 +197,7 @@ class TestListQueries:
 
         query = f"""
         {{
-            ObservationList(patient: "{patient_ref}") {{
+            observations(patient: "{patient_ref}") {{
                 id
                 data
             }}
@@ -207,7 +207,7 @@ class TestListQueries:
 
         assert response.status_code == 200
         data = response.json()
-        assert len(data["data"]["ObservationList"]) == 2
+        assert len(data["data"]["observations"]) == 2
 
 
 class TestConnectionQueries:
@@ -220,7 +220,7 @@ class TestConnectionQueries:
 
         query = """
         {
-            PatientConnection(first: 3) {
+            patientConnection(first: 3) {
                 edges {
                     cursor
                     node {
@@ -244,7 +244,7 @@ class TestConnectionQueries:
         data = response.json()
         assert "errors" not in data
 
-        connection = data["data"]["PatientConnection"]
+        connection = data["data"]["patientConnection"]
         assert len(connection["edges"]) == 3
         assert connection["total"] == 5
         assert connection["pageInfo"]["hasNextPage"] is True
@@ -258,7 +258,7 @@ class TestConnectionQueries:
         # Get first page
         query = """
         {
-            PatientConnection(first: 2) {
+            patientConnection(first: 2) {
                 edges {
                     cursor
                     node { id }
@@ -272,13 +272,13 @@ class TestConnectionQueries:
         """
         response = client.post("/baseR4/$graphql", json={"query": query})
         data = response.json()
-        first_page = data["data"]["PatientConnection"]
+        first_page = data["data"]["patientConnection"]
         end_cursor = first_page["pageInfo"]["endCursor"]
 
         # Get second page
         query = f"""
         {{
-            PatientConnection(first: 2, after: "{end_cursor}") {{
+            patientConnection(first: 2, after: "{end_cursor}") {{
                 edges {{
                     cursor
                     node {{ id }}
@@ -292,7 +292,7 @@ class TestConnectionQueries:
         """
         response = client.post("/baseR4/$graphql", json={"query": query})
         data = response.json()
-        second_page = data["data"]["PatientConnection"]
+        second_page = data["data"]["patientConnection"]
         assert len(second_page["edges"]) == 2
         assert second_page["pageInfo"]["hasPreviousPage"] is True
         assert second_page["pageInfo"]["hasNextPage"] is True
@@ -306,7 +306,7 @@ class TestMutations:
         # Use variables to pass JSON data properly
         mutation = """
         mutation CreatePatient($data: JSON!) {
-            PatientCreate(data: $data) {
+            createPatient(data: $data) {
                 id
                 resourceType
                 data
@@ -326,7 +326,7 @@ class TestMutations:
         data = response.json()
         assert "errors" not in data
 
-        created = data["data"]["PatientCreate"]
+        created = data["data"]["createPatient"]
         assert created["id"] is not None
         assert created["resourceType"] == "Patient"
         assert created["data"]["name"][0]["family"] == "New"
@@ -347,7 +347,7 @@ class TestMutations:
         # Use variables to pass JSON data properly
         mutation = """
         mutation UpdatePatient($id: String!, $data: JSON!) {
-            PatientUpdate(_id: $id, data: $data) {
+            updatePatient(id: $id, data: $data) {
                 id
                 data
             }
@@ -367,7 +367,7 @@ class TestMutations:
         data = response.json()
         assert "errors" not in data
 
-        updated = data["data"]["PatientUpdate"]
+        updated = data["data"]["updatePatient"]
         assert updated["data"]["name"][0]["family"] == "Updated"
 
     def test_patient_delete(self, client, store):
@@ -380,7 +380,7 @@ class TestMutations:
 
         mutation = f"""
         mutation {{
-            PatientDelete(_id: "{patient_id}") {{
+            deletePatient(id: "{patient_id}") {{
                 id
                 data
             }}
@@ -392,7 +392,7 @@ class TestMutations:
         data = response.json()
         assert "errors" not in data
 
-        deleted = data["data"]["PatientDelete"]
+        deleted = data["data"]["deletePatient"]
         assert deleted["id"] == patient_id
 
     def test_generic_resource_create(self, client, store):
@@ -443,7 +443,7 @@ class TestErrorHandling:
         """Test querying with invalid resource type."""
         query = """
         {
-            resource(resourceType: "InvalidType", _id: "123") {
+            resource(resourceType: "InvalidType", id: "123") {
                 id
             }
         }
@@ -485,7 +485,7 @@ class TestMultipleResourceTypes:
 
         query = f"""
         {{
-            Condition(_id: "{condition['id']}") {{
+            condition(id: "{condition['id']}") {{
                 id
                 resourceType
                 data
@@ -496,7 +496,7 @@ class TestMultipleResourceTypes:
 
         assert response.status_code == 200
         data = response.json()
-        assert data["data"]["Condition"]["data"]["code"]["text"] == "Diabetes"
+        assert data["data"]["condition"]["data"]["code"]["text"] == "Diabetes"
 
     def test_query_encounter(self, client, store):
         """Test querying an Encounter resource."""
@@ -508,7 +508,7 @@ class TestMultipleResourceTypes:
 
         query = f"""
         {{
-            Encounter(_id: "{encounter['id']}") {{
+            encounter(id: "{encounter['id']}") {{
                 id
                 data
             }}
@@ -518,10 +518,10 @@ class TestMultipleResourceTypes:
 
         assert response.status_code == 200
         data = response.json()
-        assert data["data"]["Encounter"]["data"]["status"] == "finished"
+        assert data["data"]["encounter"]["data"]["status"] == "finished"
 
     def test_condition_list_with_filters(self, client, store):
-        """Test ConditionList with clinical status filter."""
+        """Test conditions with clinical status filter."""
         store.create({
             "resourceType": "Condition",
             "clinicalStatus": {"coding": [{"code": "active"}]},
@@ -536,7 +536,7 @@ class TestMultipleResourceTypes:
         # Use clinicalStatus (camelCase) as defined in the GraphQL schema
         query = """
         {
-            ConditionList(clinicalStatus: "active") {
+            conditions(clinicalStatus: "active") {
                 id
                 data
             }
@@ -546,4 +546,4 @@ class TestMultipleResourceTypes:
 
         assert response.status_code == 200
         data = response.json()
-        assert len(data["data"]["ConditionList"]) >= 1
+        assert len(data["data"]["conditions"]) >= 1

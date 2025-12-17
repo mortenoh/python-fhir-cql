@@ -1788,7 +1788,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"query\": \"{ Patient(_id: \\\"{{patientId}}\\\") { id resourceType data } }\"\n}"
+              "raw": "{\n  \"query\": \"{ patient(id: \\\"{{patientId}}\\\") { id resourceType data } }\"\n}"
             },
             "url": "{{baseUrl}}/$graphql"
           }
@@ -1803,7 +1803,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"query\": \"{ PatientList(_count: 10, gender: \\\"male\\\") { id data } }\"\n}"
+              "raw": "{\n  \"query\": \"{ patients(_count: 10, gender: \\\"male\\\") { id data } }\"\n}"
             },
             "url": "{{baseUrl}}/$graphql"
           }
@@ -1818,7 +1818,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"query\": \"{ PatientConnection(first: 5) { edges { cursor node { id data } } pageInfo { hasNextPage endCursor } total } }\"\n}"
+              "raw": "{\n  \"query\": \"{ patientConnection(first: 5) { edges { cursor node { id data } } pageInfo { hasNextPage endCursor } total } }\"\n}"
             },
             "url": "{{baseUrl}}/$graphql"
           }
@@ -1833,7 +1833,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"query\": \"{ resource(resourceType: \\\"Observation\\\", _id: \\\"obs-001\\\") { id resourceType data } }\"\n}"
+              "raw": "{\n  \"query\": \"{ resource(resourceType: \\\"Observation\\\", id: \\\"obs-001\\\") { id resourceType data } }\"\n}"
             },
             "url": "{{baseUrl}}/$graphql"
           }
@@ -1848,7 +1848,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"query\": \"{ patient: Patient(_id: \\\"{{patientId}}\\\") { id data } observations: ObservationList(patient: \\\"Patient/{{patientId}}\\\", _count: 5) { id data } conditions: ConditionList(patient: \\\"Patient/{{patientId}}\\\") { id data } }\"\n}"
+              "raw": "{\n  \"query\": \"{ patient: patient(id: \\\"{{patientId}}\\\") { id data } observations: observations(patient: \\\"Patient/{{patientId}}\\\", _count: 5) { id data } conditions: conditions(patient: \\\"Patient/{{patientId}}\\\") { id data } }\"\n}"
             },
             "url": "{{baseUrl}}/$graphql"
           }
@@ -1863,7 +1863,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"query\": \"mutation CreatePatient($data: JSON!) { PatientCreate(data: $data) { id resourceType data } }\",\n  \"variables\": {\n    \"data\": {\n      \"resourceType\": \"Patient\",\n      \"name\": [{\"family\": \"GraphQL\", \"given\": [\"Test\"]}],\n      \"gender\": \"female\",\n      \"birthDate\": \"1985-06-15\"\n    }\n  }\n}"
+              "raw": "{\n  \"query\": \"mutation CreatePatient($data: JSON!) { createPatient(data: $data) { id resourceType data } }\",\n  \"variables\": {\n    \"data\": {\n      \"resourceType\": \"Patient\",\n      \"name\": [{\"family\": \"GraphQL\", \"given\": [\"Test\"]}],\n      \"gender\": \"female\",\n      \"birthDate\": \"1985-06-15\"\n    }\n  }\n}"
             },
             "url": "{{baseUrl}}/$graphql"
           }
@@ -1878,7 +1878,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"query\": \"mutation UpdatePatient($id: String!, $data: JSON!) { PatientUpdate(_id: $id, data: $data) { id data } }\",\n  \"variables\": {\n    \"id\": \"{{patientId}}\",\n    \"data\": {\n      \"resourceType\": \"Patient\",\n      \"id\": \"{{patientId}}\",\n      \"name\": [{\"family\": \"Updated\", \"given\": [\"Name\"]}],\n      \"gender\": \"male\"\n    }\n  }\n}"
+              "raw": "{\n  \"query\": \"mutation UpdatePatient($id: String!, $data: JSON!) { updatePatient(id: $id, data: $data) { id data } }\",\n  \"variables\": {\n    \"id\": \"{{patientId}}\",\n    \"data\": {\n      \"resourceType\": \"Patient\",\n      \"id\": \"{{patientId}}\",\n      \"name\": [{\"family\": \"Updated\", \"given\": [\"Name\"]}],\n      \"gender\": \"male\"\n    }\n  }\n}"
             },
             "url": "{{baseUrl}}/$graphql"
           }
@@ -1893,7 +1893,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"query\": \"mutation { PatientDelete(_id: \\\"temp-patient\\\") { id } }\"\n}"
+              "raw": "{\n  \"query\": \"mutation { deletePatient(id: \\\"temp-patient\\\") { id } }\"\n}"
             },
             "url": "{{baseUrl}}/$graphql"
           }

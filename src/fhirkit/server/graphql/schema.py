@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 # Type aliases for FHIR-specific argument names (underscore prefix)
 # Strawberry would normally convert _id to Id, but FHIR uses _id
-FhirId = Annotated[str, strawberry.argument(name="_id")]
+FhirId = Annotated[str, strawberry.argument(name="id")]
 FhirCount = Annotated[int, strawberry.argument(name="_count")]
 FhirOffset = Annotated[int, strawberry.argument(name="_offset")]
 FhirSort = Annotated[Optional[str], strawberry.argument(name="_sort")]
@@ -112,11 +112,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
         # =====================================================================
 
         @strawberry.field(description="Fetch a Patient by ID")
-        def Patient(self, _id: FhirId) -> Optional[Resource]:
+        def patient(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("Patient", _id)
 
         @strawberry.field(description="Search Patient resources")
-        def PatientList(
+        def patients(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -155,7 +155,7 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Search Patient resources with cursor pagination")
-        def PatientConnection(
+        def patientConnection(
             self,
             first: Optional[int] = None,
             after: Optional[str] = None,
@@ -179,11 +179,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch a Practitioner by ID")
-        def Practitioner(self, _id: FhirId) -> Optional[Resource]:
+        def practitioner(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("Practitioner", _id)
 
         @strawberry.field(description="Search Practitioner resources")
-        def PractitionerList(
+        def practitioners(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -207,11 +207,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch an Organization by ID")
-        def Organization(self, _id: FhirId) -> Optional[Resource]:
+        def organization(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("Organization", _id)
 
         @strawberry.field(description="Search Organization resources")
-        def OrganizationList(
+        def organizations(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -235,11 +235,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch a Location by ID")
-        def Location(self, _id: FhirId) -> Optional[Resource]:
+        def location(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("Location", _id)
 
         @strawberry.field(description="Search Location resources")
-        def LocationList(
+        def locations(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -265,11 +265,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch a PractitionerRole by ID")
-        def PractitionerRole(self, _id: FhirId) -> Optional[Resource]:
+        def practitionerRole(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("PractitionerRole", _id)
 
         @strawberry.field(description="Search PractitionerRole resources")
-        def PractitionerRoleList(
+        def practitionerRoles(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -291,11 +291,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch a RelatedPerson by ID")
-        def RelatedPerson(self, _id: FhirId) -> Optional[Resource]:
+        def relatedPerson(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("RelatedPerson", _id)
 
         @strawberry.field(description="Search RelatedPerson resources")
-        def RelatedPersonList(
+        def relatedPersons(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -321,11 +321,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
         # =====================================================================
 
         @strawberry.field(description="Fetch an Encounter by ID")
-        def Encounter(self, _id: FhirId) -> Optional[Resource]:
+        def encounter(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("Encounter", _id)
 
         @strawberry.field(description="Search Encounter resources")
-        def EncounterList(
+        def encounters(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -359,11 +359,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch a Condition by ID")
-        def Condition(self, _id: FhirId) -> Optional[Resource]:
+        def condition(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("Condition", _id)
 
         @strawberry.field(description="Search Condition resources")
-        def ConditionList(
+        def conditions(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -393,11 +393,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch an Observation by ID")
-        def Observation(self, _id: FhirId) -> Optional[Resource]:
+        def observation(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("Observation", _id)
 
         @strawberry.field(description="Search Observation resources")
-        def ObservationList(
+        def observations(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -427,11 +427,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch a Procedure by ID")
-        def Procedure(self, _id: FhirId) -> Optional[Resource]:
+        def procedure(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("Procedure", _id)
 
         @strawberry.field(description="Search Procedure resources")
-        def ProcedureList(
+        def procedures(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -457,11 +457,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch a DiagnosticReport by ID")
-        def DiagnosticReport(self, _id: FhirId) -> Optional[Resource]:
+        def diagnosticReport(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("DiagnosticReport", _id)
 
         @strawberry.field(description="Search DiagnosticReport resources")
-        def DiagnosticReportList(
+        def diagnosticReports(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -489,11 +489,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch an AllergyIntolerance by ID")
-        def AllergyIntolerance(self, _id: FhirId) -> Optional[Resource]:
+        def allergyIntolerance(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("AllergyIntolerance", _id)
 
         @strawberry.field(description="Search AllergyIntolerance resources")
-        def AllergyIntoleranceList(
+        def allergyIntolerances(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -521,11 +521,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch an Immunization by ID")
-        def Immunization(self, _id: FhirId) -> Optional[Resource]:
+        def immunization(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("Immunization", _id)
 
         @strawberry.field(description="Search Immunization resources")
-        def ImmunizationList(
+        def immunizations(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -551,11 +551,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
         # =====================================================================
 
         @strawberry.field(description="Fetch a Medication by ID")
-        def Medication(self, _id: FhirId) -> Optional[Resource]:
+        def medication(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("Medication", _id)
 
         @strawberry.field(description="Search Medication resources")
-        def MedicationList(
+        def medications(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -573,11 +573,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch a MedicationRequest by ID")
-        def MedicationRequest(self, _id: FhirId) -> Optional[Resource]:
+        def medicationRequest(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("MedicationRequest", _id)
 
         @strawberry.field(description="Search MedicationRequest resources")
-        def MedicationRequestList(
+        def medicationRequests(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -611,11 +611,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
         # =====================================================================
 
         @strawberry.field(description="Fetch a CarePlan by ID")
-        def CarePlan(self, _id: FhirId) -> Optional[Resource]:
+        def carePlan(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("CarePlan", _id)
 
         @strawberry.field(description="Search CarePlan resources")
-        def CarePlanList(
+        def carePlans(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -639,11 +639,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch a CareTeam by ID")
-        def CareTeam(self, _id: FhirId) -> Optional[Resource]:
+        def careTeam(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("CareTeam", _id)
 
         @strawberry.field(description="Search CareTeam resources")
-        def CareTeamList(
+        def careTeams(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -665,11 +665,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch a Goal by ID")
-        def Goal(self, _id: FhirId) -> Optional[Resource]:
+        def goal(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("Goal", _id)
 
         @strawberry.field(description="Search Goal resources")
-        def GoalList(
+        def goals(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -691,11 +691,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch a Task by ID")
-        def Task(self, _id: FhirId) -> Optional[Resource]:
+        def task(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("Task", _id)
 
         @strawberry.field(description="Search Task resources")
-        def TaskList(
+        def tasks(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -723,11 +723,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
         # =====================================================================
 
         @strawberry.field(description="Fetch an Appointment by ID")
-        def Appointment(self, _id: FhirId) -> Optional[Resource]:
+        def appointment(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("Appointment", _id)
 
         @strawberry.field(description="Search Appointment resources")
-        def AppointmentList(
+        def appointments(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -751,11 +751,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch a Schedule by ID")
-        def Schedule(self, _id: FhirId) -> Optional[Resource]:
+        def schedule(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("Schedule", _id)
 
         @strawberry.field(description="Search Schedule resources")
-        def ScheduleList(
+        def schedules(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -773,11 +773,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch a Slot by ID")
-        def Slot(self, _id: FhirId) -> Optional[Resource]:
+        def slot(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("Slot", _id)
 
         @strawberry.field(description="Search Slot resources")
-        def SlotList(
+        def slots(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -801,11 +801,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
         # =====================================================================
 
         @strawberry.field(description="Fetch a Coverage by ID")
-        def Coverage(self, _id: FhirId) -> Optional[Resource]:
+        def coverage(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("Coverage", _id)
 
         @strawberry.field(description="Search Coverage resources")
-        def CoverageList(
+        def coverages(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -827,11 +827,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch a Claim by ID")
-        def Claim(self, _id: FhirId) -> Optional[Resource]:
+        def claim(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("Claim", _id)
 
         @strawberry.field(description="Search Claim resources")
-        def ClaimList(
+        def claims(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -851,11 +851,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch an ExplanationOfBenefit by ID")
-        def ExplanationOfBenefit(self, _id: FhirId) -> Optional[Resource]:
+        def explanationOfBenefit(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("ExplanationOfBenefit", _id)
 
         @strawberry.field(description="Search ExplanationOfBenefit resources")
-        def ExplanationOfBenefitList(
+        def explanationOfBenefits(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -879,11 +879,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
         # =====================================================================
 
         @strawberry.field(description="Fetch a Device by ID")
-        def Device(self, _id: FhirId) -> Optional[Resource]:
+        def device(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("Device", _id)
 
         @strawberry.field(description="Search Device resources")
-        def DeviceList(
+        def devices(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -907,11 +907,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
         # =====================================================================
 
         @strawberry.field(description="Fetch a ServiceRequest by ID")
-        def ServiceRequest(self, _id: FhirId) -> Optional[Resource]:
+        def serviceRequest(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("ServiceRequest", _id)
 
         @strawberry.field(description="Search ServiceRequest resources")
-        def ServiceRequestList(
+        def serviceRequests(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -935,11 +935,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch a DocumentReference by ID")
-        def DocumentReference(self, _id: FhirId) -> Optional[Resource]:
+        def documentReference(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("DocumentReference", _id)
 
         @strawberry.field(description="Search DocumentReference resources")
-        def DocumentReferenceList(
+        def documentReferences(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -965,11 +965,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch a Binary by ID")
-        def Binary(self, _id: FhirId) -> Optional[Resource]:
+        def binary(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("Binary", _id)
 
         @strawberry.field(description="Search Binary resources")
-        def BinaryList(
+        def binaries(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -987,11 +987,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
         # =====================================================================
 
         @strawberry.field(description="Fetch a Measure by ID")
-        def Measure(self, _id: FhirId) -> Optional[Resource]:
+        def measure(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("Measure", _id)
 
         @strawberry.field(description="Search Measure resources")
-        def MeasureList(
+        def measures(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -1011,11 +1011,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch a MeasureReport by ID")
-        def MeasureReport(self, _id: FhirId) -> Optional[Resource]:
+        def measureReport(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("MeasureReport", _id)
 
         @strawberry.field(description="Search MeasureReport resources")
-        def MeasureReportList(
+        def measureReports(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -1039,11 +1039,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch a Library by ID")
-        def Library(self, _id: FhirId) -> Optional[Resource]:
+        def library(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("Library", _id)
 
         @strawberry.field(description="Search Library resources")
-        def LibraryList(
+        def libraries(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -1069,11 +1069,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
         # =====================================================================
 
         @strawberry.field(description="Fetch a ValueSet by ID")
-        def ValueSet(self, _id: FhirId) -> Optional[Resource]:
+        def valueSet(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("ValueSet", _id)
 
         @strawberry.field(description="Search ValueSet resources")
-        def ValueSetList(
+        def valueSets(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -1095,11 +1095,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch a CodeSystem by ID")
-        def CodeSystem(self, _id: FhirId) -> Optional[Resource]:
+        def codeSystem(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("CodeSystem", _id)
 
         @strawberry.field(description="Search CodeSystem resources")
-        def CodeSystemList(
+        def codeSystems(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -1121,11 +1121,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch a ConceptMap by ID")
-        def ConceptMap(self, _id: FhirId) -> Optional[Resource]:
+        def conceptMap(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("ConceptMap", _id)
 
         @strawberry.field(description="Search ConceptMap resources")
-        def ConceptMapList(
+        def conceptMaps(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -1151,11 +1151,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
         # =====================================================================
 
         @strawberry.field(description="Fetch a Composition by ID")
-        def Composition(self, _id: FhirId) -> Optional[Resource]:
+        def composition(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("Composition", _id)
 
         @strawberry.field(description="Search Composition resources")
-        def CompositionList(
+        def compositions(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -1183,11 +1183,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
         # =====================================================================
 
         @strawberry.field(description="Fetch a Questionnaire by ID")
-        def Questionnaire(self, _id: FhirId) -> Optional[Resource]:
+        def questionnaire(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("Questionnaire", _id)
 
         @strawberry.field(description="Search Questionnaire resources")
-        def QuestionnaireList(
+        def questionnaires(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -1209,11 +1209,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
             )
 
         @strawberry.field(description="Fetch a QuestionnaireResponse by ID")
-        def QuestionnaireResponse(self, _id: FhirId) -> Optional[Resource]:
+        def questionnaireResponse(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("QuestionnaireResponse", _id)
 
         @strawberry.field(description="Search QuestionnaireResponse resources")
-        def QuestionnaireResponseList(
+        def questionnaireResponses(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -1241,11 +1241,11 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
         # =====================================================================
 
         @strawberry.field(description="Fetch a Group by ID")
-        def Group(self, _id: FhirId) -> Optional[Resource]:
+        def group(self, _id: FhirId) -> Optional[Resource]:
             return resource_resolver.resolve("Group", _id)
 
         @strawberry.field(description="Search Group resources")
-        def GroupList(
+        def groups(
             self,
             _count: FhirCount = 100,
             _offset: FhirOffset = 0,
@@ -1315,87 +1315,87 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
         # =====================================================================
 
         @strawberry.mutation(description="Create a Patient resource")
-        def PatientCreate(self, data: JSON) -> Resource:
+        def createPatient(self, data: JSON) -> Resource:
             return mutation_resolver.create("Patient", dict(data))
 
         @strawberry.mutation(description="Update a Patient resource")
-        def PatientUpdate(self, _id: FhirId, data: JSON) -> Optional[Resource]:
+        def updatePatient(self, _id: FhirId, data: JSON) -> Optional[Resource]:
             return mutation_resolver.update("Patient", _id, dict(data))
 
         @strawberry.mutation(description="Delete a Patient resource")
-        def PatientDelete(self, _id: FhirId) -> Optional[Resource]:
+        def deletePatient(self, _id: FhirId) -> Optional[Resource]:
             return mutation_resolver.delete("Patient", _id)
 
         @strawberry.mutation(description="Create a Practitioner resource")
-        def PractitionerCreate(self, data: JSON) -> Resource:
+        def createPractitioner(self, data: JSON) -> Resource:
             return mutation_resolver.create("Practitioner", dict(data))
 
         @strawberry.mutation(description="Update a Practitioner resource")
-        def PractitionerUpdate(self, _id: FhirId, data: JSON) -> Optional[Resource]:
+        def updatePractitioner(self, _id: FhirId, data: JSON) -> Optional[Resource]:
             return mutation_resolver.update("Practitioner", _id, dict(data))
 
         @strawberry.mutation(description="Delete a Practitioner resource")
-        def PractitionerDelete(self, _id: FhirId) -> Optional[Resource]:
+        def deletePractitioner(self, _id: FhirId) -> Optional[Resource]:
             return mutation_resolver.delete("Practitioner", _id)
 
         @strawberry.mutation(description="Create an Organization resource")
-        def OrganizationCreate(self, data: JSON) -> Resource:
+        def createOrganization(self, data: JSON) -> Resource:
             return mutation_resolver.create("Organization", dict(data))
 
         @strawberry.mutation(description="Update an Organization resource")
-        def OrganizationUpdate(self, _id: FhirId, data: JSON) -> Optional[Resource]:
+        def updateOrganization(self, _id: FhirId, data: JSON) -> Optional[Resource]:
             return mutation_resolver.update("Organization", _id, dict(data))
 
         @strawberry.mutation(description="Delete an Organization resource")
-        def OrganizationDelete(self, _id: FhirId) -> Optional[Resource]:
+        def deleteOrganization(self, _id: FhirId) -> Optional[Resource]:
             return mutation_resolver.delete("Organization", _id)
 
         @strawberry.mutation(description="Create an Observation resource")
-        def ObservationCreate(self, data: JSON) -> Resource:
+        def createObservation(self, data: JSON) -> Resource:
             return mutation_resolver.create("Observation", dict(data))
 
         @strawberry.mutation(description="Update an Observation resource")
-        def ObservationUpdate(self, _id: FhirId, data: JSON) -> Optional[Resource]:
+        def updateObservation(self, _id: FhirId, data: JSON) -> Optional[Resource]:
             return mutation_resolver.update("Observation", _id, dict(data))
 
         @strawberry.mutation(description="Delete an Observation resource")
-        def ObservationDelete(self, _id: FhirId) -> Optional[Resource]:
+        def deleteObservation(self, _id: FhirId) -> Optional[Resource]:
             return mutation_resolver.delete("Observation", _id)
 
         @strawberry.mutation(description="Create a Condition resource")
-        def ConditionCreate(self, data: JSON) -> Resource:
+        def createCondition(self, data: JSON) -> Resource:
             return mutation_resolver.create("Condition", dict(data))
 
         @strawberry.mutation(description="Update a Condition resource")
-        def ConditionUpdate(self, _id: FhirId, data: JSON) -> Optional[Resource]:
+        def updateCondition(self, _id: FhirId, data: JSON) -> Optional[Resource]:
             return mutation_resolver.update("Condition", _id, dict(data))
 
         @strawberry.mutation(description="Delete a Condition resource")
-        def ConditionDelete(self, _id: FhirId) -> Optional[Resource]:
+        def deleteCondition(self, _id: FhirId) -> Optional[Resource]:
             return mutation_resolver.delete("Condition", _id)
 
         @strawberry.mutation(description="Create an Encounter resource")
-        def EncounterCreate(self, data: JSON) -> Resource:
+        def createEncounter(self, data: JSON) -> Resource:
             return mutation_resolver.create("Encounter", dict(data))
 
         @strawberry.mutation(description="Update an Encounter resource")
-        def EncounterUpdate(self, _id: FhirId, data: JSON) -> Optional[Resource]:
+        def updateEncounter(self, _id: FhirId, data: JSON) -> Optional[Resource]:
             return mutation_resolver.update("Encounter", _id, dict(data))
 
         @strawberry.mutation(description="Delete an Encounter resource")
-        def EncounterDelete(self, _id: FhirId) -> Optional[Resource]:
+        def deleteEncounter(self, _id: FhirId) -> Optional[Resource]:
             return mutation_resolver.delete("Encounter", _id)
 
         @strawberry.mutation(description="Create a MedicationRequest resource")
-        def MedicationRequestCreate(self, data: JSON) -> Resource:
+        def createMedicationRequest(self, data: JSON) -> Resource:
             return mutation_resolver.create("MedicationRequest", dict(data))
 
         @strawberry.mutation(description="Update a MedicationRequest resource")
-        def MedicationRequestUpdate(self, _id: FhirId, data: JSON) -> Optional[Resource]:
+        def updateMedicationRequest(self, _id: FhirId, data: JSON) -> Optional[Resource]:
             return mutation_resolver.update("MedicationRequest", _id, dict(data))
 
         @strawberry.mutation(description="Delete a MedicationRequest resource")
-        def MedicationRequestDelete(self, _id: FhirId) -> Optional[Resource]:
+        def deleteMedicationRequest(self, _id: FhirId) -> Optional[Resource]:
             return mutation_resolver.delete("MedicationRequest", _id)
 
     # Create and return schema
@@ -1420,148 +1420,6 @@ def create_graphql_router(store: FHIRStore) -> GraphQLRouter:
         """Provide context to resolvers."""
         return {"store": store}
 
-    # Default query to show in GraphiQL with multiple examples
-    default_query = """\
-# FHIR GraphQL API - Example Queries
-# Press the Play button or Ctrl+Enter to run
-
-# 1. List patients (first 5)
-{
-  PatientList(_count: 5) {
-    id
-    resourceType
-    data
-  }
-}
-
-# ============================================
-# More example queries (uncomment to try):
-# ============================================
-
-# 2. Search patients by gender
-# {
-#   PatientList(gender: "female", _count: 5) {
-#     id
-#     data
-#   }
-# }
-
-# 3. Cursor-based pagination
-# {
-#   PatientConnection(first: 3) {
-#     edges {
-#       cursor
-#       node { id data }
-#     }
-#     pageInfo {
-#       hasNextPage
-#       endCursor
-#     }
-#     total
-#   }
-# }
-
-# 4. Get a specific patient by ID
-# {
-#   Patient(_id: "PATIENT_ID_HERE") {
-#     id
-#     data
-#   }
-# }
-
-# 5. List observations for a patient
-# {
-#   ObservationList(patient: "Patient/PATIENT_ID", _count: 10) {
-#     id
-#     data
-#   }
-# }
-
-# 6. List conditions with clinical status
-# {
-#   ConditionList(clinicalStatus: "active", _count: 10) {
-#     id
-#     data
-#   }
-# }
-
-# 7. Search practitioners
-# {
-#   PractitionerList(_count: 5) {
-#     id
-#     data
-#   }
-# }
-
-# 8. List organizations
-# {
-#   OrganizationList(_count: 5) {
-#     id
-#     data
-#   }
-# }
-
-# 9. Search encounters by status
-# {
-#   EncounterList(status: "finished", _count: 5) {
-#     id
-#     data
-#   }
-# }
-
-# 10. List medication requests
-# {
-#   MedicationRequestList(_count: 5) {
-#     id
-#     data
-#   }
-# }
-
-# 11. Search questionnaires
-# {
-#   QuestionnaireList(_count: 5) {
-#     id
-#     data
-#   }
-# }
-
-# 12. Create a new patient (mutation)
-# mutation {
-#   PatientCreate(data: {
-#     resourceType: "Patient",
-#     name: [{family: "Smith", given: ["John"]}],
-#     gender: "male",
-#     birthDate: "1990-01-15"
-#   }) {
-#     id
-#     data
-#   }
-# }
-
-# 13. Fetch multiple resource types at once
-# {
-#   patients: PatientList(_count: 3) { id data }
-#   practitioners: PractitionerList(_count: 3) { id data }
-#   organizations: OrganizationList(_count: 3) { id data }
-# }
-
-# 14. List locations
-# {
-#   LocationList(_count: 5) {
-#     id
-#     data
-#   }
-# }
-
-# 15. Search immunizations
-# {
-#   ImmunizationList(_count: 5) {
-#     id
-#     data
-#   }
-# }
-"""
-
     import json
     from fastapi.responses import HTMLResponse
 
@@ -1580,14 +1438,70 @@ def create_graphql_router(store: FHIRStore) -> GraphQLRouter:
         graphql_ide="graphiql",
     )
 
-    # Set custom GraphiQL HTML with default query
+    # Define examples for the dropdown
+    examples = [
+        {"group": "Queries", "name": "List patients", "query": "{\n  patients(_count: 5) {\n    id\n    resourceType\n    data\n  }\n}"},
+        {"group": "Queries", "name": "Search patients by gender", "query": '{\n  patients(gender: "female", _count: 5) {\n    id\n    data\n  }\n}'},
+        {"group": "Queries", "name": "Get patient by ID", "query": '{\n  patient(id: "PATIENT_ID") {\n    id\n    resourceType\n    data\n  }\n}'},
+        {"group": "Queries", "name": "List observations", "query": "{\n  observations(_count: 10) {\n    id\n    data\n  }\n}"},
+        {"group": "Queries", "name": "Observations for patient", "query": '{\n  observations(patient: "Patient/PATIENT_ID", _count: 10) {\n    id\n    data\n  }\n}'},
+        {"group": "Queries", "name": "List conditions", "query": "{\n  conditions(_count: 10) {\n    id\n    data\n  }\n}"},
+        {"group": "Queries", "name": "Multiple resources", "query": "{\n  p: patients(_count: 3) { id data }\n  obs: observations(_count: 3) { id data }\n  cond: conditions(_count: 3) { id data }\n}"},
+        {"group": "Queries", "name": "Generic resource query", "query": '{\n  resource(resourceType: "Observation", id: "OBS_ID") {\n    id\n    resourceType\n    data\n  }\n}'},
+        {"group": "Pagination", "name": "Cursor pagination", "query": "{\n  patientConnection(first: 5) {\n    edges {\n      cursor\n      node {\n        id\n        data\n      }\n    }\n    pageInfo {\n      hasNextPage\n      endCursor\n    }\n    total\n  }\n}"},
+        {"group": "Pagination", "name": "Offset pagination", "query": "{\n  patients(_count: 5, _offset: 0) {\n    id\n    data\n  }\n}"},
+        {"group": "Pagination", "name": "Pagination with cursor", "query": '{\n  patientConnection(first: 5, after: "CURSOR") {\n    edges {\n      cursor\n      node { id data }\n    }\n    pageInfo {\n      hasNextPage\n      hasPreviousPage\n      endCursor\n    }\n  }\n}'},
+        {"group": "Mutations", "name": "Create patient", "query": 'mutation {\n  createPatient(data: {\n    resourceType: "Patient"\n    name: [{ family: "Smith", given: ["John"] }]\n    gender: "male"\n    birthDate: "1990-01-15"\n  }) {\n    id\n    resourceType\n    data\n  }\n}'},
+        {"group": "Mutations", "name": "Update patient", "query": 'mutation {\n  updatePatient(id: "PATIENT_ID", data: {\n    resourceType: "Patient"\n    name: [{ family: "Updated", given: ["Name"] }]\n    gender: "male"\n  }) {\n    id\n    data\n  }\n}'},
+        {"group": "Mutations", "name": "Delete patient", "query": 'mutation {\n  deletePatient(id: "PATIENT_ID") {\n    id\n  }\n}'},
+        {"group": "Mutations", "name": "Generic create", "query": 'mutation {\n  resourceCreate(resourceType: "Observation", data: {\n    resourceType: "Observation"\n    status: "final"\n    code: { text: "Heart Rate" }\n    valueQuantity: { value: 72, unit: "bpm" }\n  }) {\n    id\n    resourceType\n    data\n  }\n}'},
+    ]
+
+    # Set custom GraphiQL HTML with examples dropdown
     router._custom_html = f"""<!DOCTYPE html>
 <html>
 <head>
     <title>FHIR GraphQL</title>
     <style>
         body {{ height: 100%; margin: 0; width: 100%; overflow: hidden; }}
-        #graphiql {{ height: 100vh; }}
+        #graphiql {{ height: calc(100vh - 40px); }}
+        .toolbar {{
+            height: 40px;
+            background: #1e1e1e;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            border-bottom: 1px solid #333;
+        }}
+        .toolbar label {{
+            color: #ccc;
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 13px;
+            margin-right: 8px;
+        }}
+        .toolbar select {{
+            background: #2d2d2d;
+            color: #fff;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            min-width: 200px;
+        }}
+        .toolbar select:hover {{
+            border-color: #e535ab;
+        }}
+        .toolbar select optgroup {{
+            background: #2d2d2d;
+            color: #e535ab;
+            font-weight: bold;
+        }}
+        .toolbar select option {{
+            background: #2d2d2d;
+            color: #fff;
+            padding: 4px;
+        }}
     </style>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -1595,21 +1509,64 @@ def create_graphql_router(store: FHIRStore) -> GraphQLRouter:
     <link rel="stylesheet" href="https://unpkg.com/graphiql@3/graphiql.min.css" />
 </head>
 <body>
+    <div class="toolbar">
+        <label for="examples">Examples:</label>
+        <select id="examples">
+            <option value="">-- Select an example --</option>
+        </select>
+    </div>
     <div id="graphiql"></div>
     <script>
+        const examples = {json.dumps(examples)};
+
+        // Populate dropdown with grouped options
+        const select = document.getElementById('examples');
+        const groups = {{}};
+        examples.forEach((ex, idx) => {{
+            if (!groups[ex.group]) {{
+                groups[ex.group] = document.createElement('optgroup');
+                groups[ex.group].label = ex.group;
+                select.appendChild(groups[ex.group]);
+            }}
+            const option = document.createElement('option');
+            option.value = idx;
+            option.textContent = ex.name;
+            groups[ex.group].appendChild(option);
+        }});
+
         const fetcher = GraphiQL.createFetcher({{
             url: window.location.href,
         }});
 
-        const defaultQuery = {json.dumps(default_query)};
+        const defaultQuery = "# FHIR GraphQL API\\n# Select an example from the dropdown above, or write your own query\\n\\n{{\\n  patients(_count: 5) {{\\n    id\\n    resourceType\\n    data\\n  }}\\n}}";
+
+        let graphiqlInstance = null;
 
         const root = ReactDOM.createRoot(document.getElementById('graphiql'));
         root.render(
             React.createElement(GraphiQL, {{
                 fetcher: fetcher,
                 defaultQuery: defaultQuery,
+                ref: (instance) => {{ graphiqlInstance = instance; }}
             }})
         );
+
+        // Handle example selection
+        select.addEventListener('change', (e) => {{
+            if (e.target.value !== '') {{
+                const example = examples[parseInt(e.target.value)];
+                // Access the query editor through GraphiQL's API
+                if (graphiqlInstance && graphiqlInstance.getQueryEditor) {{
+                    graphiqlInstance.getQueryEditor().setValue(example.query);
+                }} else {{
+                    // Fallback: find and update the CodeMirror instance
+                    const cm = document.querySelector('.graphiql-query-editor .CodeMirror');
+                    if (cm && cm.CodeMirror) {{
+                        cm.CodeMirror.setValue(example.query);
+                    }}
+                }}
+            }}
+        }});
     </script>
 </body>
 </html>"""
