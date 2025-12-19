@@ -557,3 +557,144 @@ class TestMultipleResourceTypes:
         assert response.status_code == 200
         data = response.json()
         assert len(data["data"]["conditions"]) >= 1
+
+
+class TestNewResourceTypes:
+    """Tests for newly added FHIR R4 resource types via GraphQL."""
+
+    def test_medication_administration_graphql(self, client, store):
+        """Test MedicationAdministration via generic GraphQL queries."""
+        resource = store.create(
+            {
+                "resourceType": "MedicationAdministration",
+                "status": "completed",
+                "medicationCodeableConcept": {"text": "Acetaminophen"},
+                "subject": {"reference": "Patient/test-1"},
+                "effectiveDateTime": "2024-01-15T08:00:00Z",
+            }
+        )
+
+        # Query by ID using generic resource query
+        query = f"""
+        {{
+            resource(resourceType: "MedicationAdministration", id: "{resource["id"]}") {{
+                id
+                resourceType
+                data
+            }}
+        }}
+        """
+        response = client.post("/baseR4/$graphql", json={"query": query})
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "errors" not in data
+        assert data["data"]["resource"]["id"] == resource["id"]
+        assert data["data"]["resource"]["resourceType"] == "MedicationAdministration"
+
+    def test_flag_graphql(self, client, store):
+        """Test Flag via generic GraphQL queries."""
+        resource = store.create(
+            {
+                "resourceType": "Flag",
+                "status": "active",
+                "code": {"text": "Fall Risk"},
+                "subject": {"reference": "Patient/test-1"},
+            }
+        )
+
+        query = f"""
+        {{
+            resource(resourceType: "Flag", id: "{resource["id"]}") {{
+                id
+                resourceType
+                data
+            }}
+        }}
+        """
+        response = client.post("/baseR4/$graphql", json={"query": query})
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "errors" not in data
+        assert data["data"]["resource"]["data"]["status"] == "active"
+
+    def test_specimen_graphql_create(self, client, store):
+        """Test creating Specimen via GraphQL mutation."""
+        mutation = """
+        mutation {
+            resourceCreate(resourceType: "Specimen", data: {
+                resourceType: "Specimen"
+                status: "available"
+                type: { text: "Blood sample" }
+            }) {
+                id
+                resourceType
+                data
+            }
+        }
+        """
+        response = client.post("/baseR4/$graphql", json={"query": mutation})
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "errors" not in data
+        assert data["data"]["resourceCreate"]["resourceType"] == "Specimen"
+        assert data["data"]["resourceCreate"]["id"] is not None
+
+    def test_consent_graphql(self, client, store):
+        """Test Consent via GraphQL."""
+        resource = store.create(
+            {
+                "resourceType": "Consent",
+                "status": "active",
+                "scope": {"coding": [{"code": "patient-privacy"}]},
+                "category": [{"coding": [{"code": "59284-0"}]}],
+                "patient": {"reference": "Patient/test-1"},
+            }
+        )
+
+        query = f"""
+        {{
+            resource(resourceType: "Consent", id: "{resource["id"]}") {{
+                id
+                resourceType
+                data
+            }}
+        }}
+        """
+        response = client.post("/baseR4/$graphql", json={"query": query})
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "errors" not in data
+        assert data["data"]["resource"]["data"]["status"] == "active"
+
+    def test_nutrition_order_graphql_list(self, client, store):
+        """Test NutritionOrder list via GraphQL."""
+        store.create(
+            {
+                "resourceType": "NutritionOrder",
+                "status": "active",
+                "intent": "order",
+                "patient": {"reference": "Patient/test-1"},
+                "dateTime": "2024-01-15T09:00:00Z",
+            }
+        )
+
+        query = """
+        {
+            resourceList(resourceType: "NutritionOrder", _count: 10) {
+                id
+                resourceType
+                data
+            }
+        }
+        """
+        response = client.post("/baseR4/$graphql", json={"query": query})
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "errors" not in data
+        assert len(data["data"]["resourceList"]) >= 1
+        assert data["data"]["resourceList"][0]["resourceType"] == "NutritionOrder"

@@ -780,3 +780,366 @@ class TestIncludeRevinclude:
         resource_types = [e["resource"]["resourceType"] for e in entries]
         assert "Patient" in resource_types
         assert "Practitioner" not in resource_types
+
+
+class TestNewResourceTypes:
+    """Tests for newly added FHIR R4 resource types."""
+
+    def test_crud_medication_administration(self, client, store):
+        """Test CRUD for MedicationAdministration."""
+        resource = {
+            "resourceType": "MedicationAdministration",
+            "status": "completed",
+            "medicationCodeableConcept": {
+                "coding": [{"system": "http://rxnorm", "code": "1049502", "display": "Acetaminophen"}]
+            },
+            "subject": {"reference": "Patient/test-1"},
+            "effectiveDateTime": "2024-01-15T08:00:00Z",
+        }
+        response = client.post("/MedicationAdministration", json=resource)
+        assert response.status_code == 201
+        rid = response.json()["id"]
+
+        # Read
+        response = client.get(f"/MedicationAdministration/{rid}")
+        assert response.status_code == 200
+        assert response.json()["status"] == "completed"
+
+        # Search
+        response = client.get("/MedicationAdministration?status=completed")
+        assert response.status_code == 200
+        assert response.json()["total"] >= 1
+
+        # Delete
+        response = client.delete(f"/MedicationAdministration/{rid}")
+        assert response.status_code == 204
+
+    def test_crud_medication_dispense(self, client, store):
+        """Test CRUD for MedicationDispense."""
+        resource = {
+            "resourceType": "MedicationDispense",
+            "status": "completed",
+            "medicationCodeableConcept": {"text": "Metformin"},
+            "subject": {"reference": "Patient/test-1"},
+            "quantity": {"value": 60, "unit": "tablets"},
+        }
+        response = client.post("/MedicationDispense", json=resource)
+        assert response.status_code == 201
+        rid = response.json()["id"]
+
+        response = client.get(f"/MedicationDispense/{rid}")
+        assert response.status_code == 200
+
+        response = client.delete(f"/MedicationDispense/{rid}")
+        assert response.status_code == 204
+
+    def test_crud_medication_statement(self, client, store):
+        """Test CRUD for MedicationStatement."""
+        resource = {
+            "resourceType": "MedicationStatement",
+            "status": "active",
+            "medicationCodeableConcept": {"text": "Lisinopril"},
+            "subject": {"reference": "Patient/test-1"},
+        }
+        response = client.post("/MedicationStatement", json=resource)
+        assert response.status_code == 201
+        rid = response.json()["id"]
+
+        response = client.get(f"/MedicationStatement/{rid}")
+        assert response.status_code == 200
+
+        response = client.get("/MedicationStatement?status=active")
+        assert response.status_code == 200
+
+        response = client.delete(f"/MedicationStatement/{rid}")
+        assert response.status_code == 204
+
+    def test_crud_specimen(self, client, store):
+        """Test CRUD for Specimen."""
+        resource = {
+            "resourceType": "Specimen",
+            "status": "available",
+            "type": {"coding": [{"system": "http://snomed.info/sct", "code": "119297000", "display": "Blood"}]},
+            "subject": {"reference": "Patient/test-1"},
+        }
+        response = client.post("/Specimen", json=resource)
+        assert response.status_code == 201
+        rid = response.json()["id"]
+
+        response = client.get(f"/Specimen/{rid}")
+        assert response.status_code == 200
+
+        response = client.delete(f"/Specimen/{rid}")
+        assert response.status_code == 204
+
+    def test_crud_family_member_history(self, client, store):
+        """Test CRUD for FamilyMemberHistory."""
+        resource = {
+            "resourceType": "FamilyMemberHistory",
+            "status": "completed",
+            "patient": {"reference": "Patient/test-1"},
+            "relationship": {"coding": [{"system": "http://hl7.org/fhir/v3/RoleCode", "code": "FTH"}]},
+        }
+        response = client.post("/FamilyMemberHistory", json=resource)
+        assert response.status_code == 201
+        rid = response.json()["id"]
+
+        response = client.get(f"/FamilyMemberHistory/{rid}")
+        assert response.status_code == 200
+
+        response = client.delete(f"/FamilyMemberHistory/{rid}")
+        assert response.status_code == 204
+
+    def test_crud_risk_assessment(self, client, store):
+        """Test CRUD for RiskAssessment."""
+        resource = {
+            "resourceType": "RiskAssessment",
+            "status": "final",
+            "subject": {"reference": "Patient/test-1"},
+        }
+        response = client.post("/RiskAssessment", json=resource)
+        assert response.status_code == 201
+        rid = response.json()["id"]
+
+        response = client.get(f"/RiskAssessment/{rid}")
+        assert response.status_code == 200
+
+        response = client.delete(f"/RiskAssessment/{rid}")
+        assert response.status_code == 204
+
+    def test_crud_clinical_impression(self, client, store):
+        """Test CRUD for ClinicalImpression."""
+        resource = {
+            "resourceType": "ClinicalImpression",
+            "status": "completed",
+            "subject": {"reference": "Patient/test-1"},
+        }
+        response = client.post("/ClinicalImpression", json=resource)
+        assert response.status_code == 201
+        rid = response.json()["id"]
+
+        response = client.get(f"/ClinicalImpression/{rid}")
+        assert response.status_code == 200
+
+        response = client.delete(f"/ClinicalImpression/{rid}")
+        assert response.status_code == 204
+
+    def test_crud_adverse_event(self, client, store):
+        """Test CRUD for AdverseEvent."""
+        resource = {
+            "resourceType": "AdverseEvent",
+            "actuality": "actual",
+            "subject": {"reference": "Patient/test-1"},
+        }
+        response = client.post("/AdverseEvent", json=resource)
+        assert response.status_code == 201
+        rid = response.json()["id"]
+
+        response = client.get(f"/AdverseEvent/{rid}")
+        assert response.status_code == 200
+
+        response = client.delete(f"/AdverseEvent/{rid}")
+        assert response.status_code == 204
+
+    def test_crud_detected_issue(self, client, store):
+        """Test CRUD for DetectedIssue."""
+        resource = {
+            "resourceType": "DetectedIssue",
+            "status": "final",
+            "patient": {"reference": "Patient/test-1"},
+        }
+        response = client.post("/DetectedIssue", json=resource)
+        assert response.status_code == 201
+        rid = response.json()["id"]
+
+        response = client.get(f"/DetectedIssue/{rid}")
+        assert response.status_code == 200
+
+        response = client.delete(f"/DetectedIssue/{rid}")
+        assert response.status_code == 204
+
+    def test_crud_flag(self, client, store):
+        """Test CRUD for Flag."""
+        resource = {
+            "resourceType": "Flag",
+            "status": "active",
+            "code": {"text": "Fall Risk"},
+            "subject": {"reference": "Patient/test-1"},
+        }
+        response = client.post("/Flag", json=resource)
+        assert response.status_code == 201
+        rid = response.json()["id"]
+
+        response = client.get(f"/Flag/{rid}")
+        assert response.status_code == 200
+
+        response = client.get("/Flag?status=active")
+        assert response.status_code == 200
+
+        response = client.delete(f"/Flag/{rid}")
+        assert response.status_code == 204
+
+    def test_crud_communication(self, client, store):
+        """Test CRUD for Communication."""
+        resource = {
+            "resourceType": "Communication",
+            "status": "completed",
+            "subject": {"reference": "Patient/test-1"},
+        }
+        response = client.post("/Communication", json=resource)
+        assert response.status_code == 201
+        rid = response.json()["id"]
+
+        response = client.get(f"/Communication/{rid}")
+        assert response.status_code == 200
+
+        response = client.delete(f"/Communication/{rid}")
+        assert response.status_code == 204
+
+    def test_crud_consent(self, client, store):
+        """Test CRUD for Consent."""
+        resource = {
+            "resourceType": "Consent",
+            "status": "active",
+            "scope": {"coding": [{"code": "patient-privacy"}]},
+            "category": [{"coding": [{"code": "59284-0"}]}],
+            "patient": {"reference": "Patient/test-1"},
+        }
+        response = client.post("/Consent", json=resource)
+        assert response.status_code == 201
+        rid = response.json()["id"]
+
+        response = client.get(f"/Consent/{rid}")
+        assert response.status_code == 200
+
+        response = client.delete(f"/Consent/{rid}")
+        assert response.status_code == 204
+
+    def test_crud_audit_event(self, client, store):
+        """Test CRUD for AuditEvent."""
+        resource = {
+            "resourceType": "AuditEvent",
+            "type": {"code": "110110"},
+            "recorded": "2024-01-15T10:00:00Z",
+            "agent": [{"requestor": True}],
+            "source": {"observer": {"display": "Test"}},
+        }
+        response = client.post("/AuditEvent", json=resource)
+        assert response.status_code == 201
+        rid = response.json()["id"]
+
+        response = client.get(f"/AuditEvent/{rid}")
+        assert response.status_code == 200
+
+        response = client.delete(f"/AuditEvent/{rid}")
+        assert response.status_code == 204
+
+    def test_crud_provenance(self, client, store):
+        """Test CRUD for Provenance."""
+        resource = {
+            "resourceType": "Provenance",
+            "target": [{"reference": "Observation/test-1"}],
+            "recorded": "2024-01-15T10:00:00Z",
+            "agent": [{"who": {"display": "Test Agent"}}],
+        }
+        response = client.post("/Provenance", json=resource)
+        assert response.status_code == 201
+        rid = response.json()["id"]
+
+        response = client.get(f"/Provenance/{rid}")
+        assert response.status_code == 200
+
+        response = client.delete(f"/Provenance/{rid}")
+        assert response.status_code == 204
+
+    def test_crud_media(self, client, store):
+        """Test CRUD for Media."""
+        resource = {
+            "resourceType": "Media",
+            "status": "completed",
+            "content": {"contentType": "image/jpeg"},
+            "subject": {"reference": "Patient/test-1"},
+        }
+        response = client.post("/Media", json=resource)
+        assert response.status_code == 201
+        rid = response.json()["id"]
+
+        response = client.get(f"/Media/{rid}")
+        assert response.status_code == 200
+
+        response = client.delete(f"/Media/{rid}")
+        assert response.status_code == 204
+
+    def test_crud_healthcare_service(self, client, store):
+        """Test CRUD for HealthcareService."""
+        resource = {
+            "resourceType": "HealthcareService",
+            "active": True,
+            "name": "Test Clinic",
+        }
+        response = client.post("/HealthcareService", json=resource)
+        assert response.status_code == 201
+        rid = response.json()["id"]
+
+        response = client.get(f"/HealthcareService/{rid}")
+        assert response.status_code == 200
+
+        response = client.get("/HealthcareService?active=true")
+        assert response.status_code == 200
+
+        response = client.delete(f"/HealthcareService/{rid}")
+        assert response.status_code == 204
+
+    def test_crud_nutrition_order(self, client, store):
+        """Test CRUD for NutritionOrder."""
+        resource = {
+            "resourceType": "NutritionOrder",
+            "status": "active",
+            "intent": "order",
+            "patient": {"reference": "Patient/test-1"},
+            "dateTime": "2024-01-15T09:00:00Z",
+        }
+        response = client.post("/NutritionOrder", json=resource)
+        assert response.status_code == 201
+        rid = response.json()["id"]
+
+        response = client.get(f"/NutritionOrder/{rid}")
+        assert response.status_code == 200
+
+        response = client.get("/NutritionOrder?status=active")
+        assert response.status_code == 200
+
+        response = client.delete(f"/NutritionOrder/{rid}")
+        assert response.status_code == 204
+
+    def test_new_resources_in_metadata(self, client):
+        """Test that new resources appear in CapabilityStatement."""
+        response = client.get("/metadata")
+        assert response.status_code == 200
+
+        data = response.json()
+        resources = data["rest"][0]["resource"]
+        resource_types = {r["type"] for r in resources}
+
+        # Check all 17 new resources are listed
+        new_resources = [
+            "MedicationAdministration",
+            "MedicationDispense",
+            "MedicationStatement",
+            "Specimen",
+            "FamilyMemberHistory",
+            "RiskAssessment",
+            "ClinicalImpression",
+            "AdverseEvent",
+            "DetectedIssue",
+            "Flag",
+            "Communication",
+            "Consent",
+            "AuditEvent",
+            "Provenance",
+            "Media",
+            "HealthcareService",
+            "NutritionOrder",
+        ]
+        for rt in new_resources:
+            assert rt in resource_types, f"{rt} not found in CapabilityStatement"

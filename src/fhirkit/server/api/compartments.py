@@ -32,6 +32,18 @@ PATIENT_COMPARTMENT: dict[str, list[str]] = {
     "MeasureReport": ["patient", "subject"],
     "QuestionnaireResponse": ["patient", "subject"],
     "Consent": ["patient"],
+    # New resources
+    "AdverseEvent": ["patient", "subject"],
+    "DetectedIssue": ["patient"],
+    "Flag": ["patient", "subject"],
+    "MedicationAdministration": ["patient", "subject"],
+    "MedicationDispense": ["patient", "subject"],
+    "MedicationStatement": ["patient", "subject"],
+    "NutritionOrder": ["patient"],
+    "Media": ["patient", "subject"],
+    "Specimen": ["patient", "subject"],
+    "Communication": ["patient", "subject"],
+    "Composition": ["patient", "subject"],
 }
 
 # Reference paths: maps resource types and search parameters to the dotted path
@@ -138,6 +150,89 @@ REFERENCE_PATHS: dict[str, dict[str, list[str]]] = {
     },
     "Questionnaire": {
         # Questionnaire is a definitional resource, no patient references
+    },
+    # New resources
+    "AdverseEvent": {
+        "patient": ["subject.reference"],
+        "subject": ["subject.reference"],
+        "recorder": ["recorder.reference"],
+    },
+    "DetectedIssue": {
+        "patient": ["patient.reference"],
+        "author": ["author.reference"],
+    },
+    "Flag": {
+        "patient": ["subject.reference"],
+        "subject": ["subject.reference"],
+        "author": ["author.reference"],
+    },
+    "MedicationAdministration": {
+        "patient": ["subject.reference"],
+        "subject": ["subject.reference"],
+        "performer": ["performer.actor.reference"],
+        "request": ["request.reference"],
+        "encounter": ["context.reference"],
+    },
+    "MedicationDispense": {
+        "patient": ["subject.reference"],
+        "subject": ["subject.reference"],
+        "performer": ["performer.actor.reference"],
+        "prescription": ["authorizingPrescription.reference"],
+    },
+    "MedicationStatement": {
+        "patient": ["subject.reference"],
+        "subject": ["subject.reference"],
+        "source": ["informationSource.reference"],
+        "context": ["context.reference"],
+    },
+    "NutritionOrder": {
+        "patient": ["patient.reference"],
+        "orderer": ["orderer.reference"],
+        "encounter": ["encounter.reference"],
+    },
+    "Media": {
+        "patient": ["subject.reference"],
+        "subject": ["subject.reference"],
+        "operator": ["operator.reference"],
+        "encounter": ["encounter.reference"],
+    },
+    "Specimen": {
+        "patient": ["subject.reference"],
+        "subject": ["subject.reference"],
+        "collector": ["collection.collector.reference"],
+    },
+    "Communication": {
+        "patient": ["subject.reference"],
+        "subject": ["subject.reference"],
+        "sender": ["sender.reference"],
+        "recipient": ["recipient.reference"],
+        "encounter": ["encounter.reference"],
+    },
+    "Composition": {
+        "patient": ["subject.reference"],
+        "subject": ["subject.reference"],
+        "author": ["author.reference"],
+        "encounter": ["encounter.reference"],
+        "custodian": ["custodian.reference"],
+    },
+    "ClinicalImpression": {
+        "patient": ["subject.reference"],
+        "subject": ["subject.reference"],
+        "assessor": ["assessor.reference"],
+        "encounter": ["encounter.reference"],
+    },
+    "RiskAssessment": {
+        "patient": ["subject.reference"],
+        "subject": ["subject.reference"],
+        "condition": ["condition.reference"],
+        "encounter": ["encounter.reference"],
+    },
+    "FamilyMemberHistory": {
+        "patient": ["patient.reference"],
+    },
+    "Consent": {
+        "patient": ["patient.reference"],
+        "organization": ["organization.reference"],
     },
 }
 

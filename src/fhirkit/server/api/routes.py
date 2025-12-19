@@ -29,6 +29,7 @@ SUPPORTED_TYPES = [
     "Organization",
     "Location",
     "RelatedPerson",
+    "HealthcareService",
     # Clinical
     "Encounter",
     "Condition",
@@ -37,14 +38,25 @@ SUPPORTED_TYPES = [
     "DiagnosticReport",
     "AllergyIntolerance",
     "Immunization",
+    "FamilyMemberHistory",
+    "ClinicalImpression",
+    "RiskAssessment",
+    # Clinical Safety
+    "AdverseEvent",
+    "DetectedIssue",
+    "Flag",
     # Medications
     "Medication",
     "MedicationRequest",
+    "MedicationAdministration",
+    "MedicationDispense",
+    "MedicationStatement",
     # Care Management
     "CarePlan",
     "CareTeam",
     "Goal",
     "Task",
+    "NutritionOrder",
     # Scheduling
     "Appointment",
     "Schedule",
@@ -55,10 +67,13 @@ SUPPORTED_TYPES = [
     "ExplanationOfBenefit",
     # Devices
     "Device",
-    # Documents & Binary
+    # Documents & Media
     "ServiceRequest",
     "DocumentReference",
     "Binary",
+    "Media",
+    # Laboratory
+    "Specimen",
     # Quality Measures
     "Measure",
     "MeasureReport",
@@ -74,6 +89,12 @@ SUPPORTED_TYPES = [
     "QuestionnaireResponse",
     # Groups
     "Group",
+    # Communication
+    "Communication",
+    # Security & Privacy
+    "AuditEvent",
+    "Consent",
+    "Provenance",
 ]
 
 # Summary elements per resource type (per FHIR spec)
@@ -85,6 +106,7 @@ SUMMARY_ELEMENTS: dict[str, list[str]] = {
     "Organization": ["identifier", "active", "name", "type", "telecom", "address"],
     "Location": ["identifier", "status", "name", "type", "telecom", "address"],
     "RelatedPerson": ["identifier", "active", "patient", "relationship", "name"],
+    "HealthcareService": ["identifier", "active", "providedBy", "category", "type", "name"],
     # Clinical
     "Encounter": ["identifier", "status", "class", "type", "subject", "period"],
     "Condition": ["identifier", "clinicalStatus", "verificationStatus", "code", "subject", "onsetDateTime"],
@@ -93,14 +115,25 @@ SUMMARY_ELEMENTS: dict[str, list[str]] = {
     "DiagnosticReport": ["identifier", "status", "category", "code", "subject", "effectiveDateTime", "issued"],
     "AllergyIntolerance": ["identifier", "clinicalStatus", "verificationStatus", "code", "patient", "onsetDateTime"],
     "Immunization": ["identifier", "status", "vaccineCode", "patient", "occurrenceDateTime"],
+    "FamilyMemberHistory": ["identifier", "status", "patient", "relationship", "condition"],
+    "ClinicalImpression": ["identifier", "status", "code", "subject", "date", "assessor"],
+    "RiskAssessment": ["identifier", "status", "subject", "occurrenceDateTime", "condition", "prediction"],
+    # Clinical Safety
+    "AdverseEvent": ["identifier", "actuality", "category", "event", "subject", "date"],
+    "DetectedIssue": ["identifier", "status", "code", "patient", "identifiedDateTime"],
+    "Flag": ["identifier", "status", "category", "code", "subject", "period"],
     # Medications
     "Medication": ["identifier", "code", "status"],
     "MedicationRequest": ["identifier", "status", "intent", "medicationCodeableConcept", "subject", "authoredOn"],
+    "MedicationAdministration": ["identifier", "status", "medicationCodeableConcept", "subject", "effectiveDateTime"],
+    "MedicationDispense": ["identifier", "status", "medicationCodeableConcept", "subject", "whenHandedOver"],
+    "MedicationStatement": ["identifier", "status", "medicationCodeableConcept", "subject", "effectiveDateTime"],
     # Care Management
     "CarePlan": ["identifier", "status", "intent", "category", "subject", "period"],
     "CareTeam": ["identifier", "status", "name", "subject", "period"],
     "Goal": ["identifier", "lifecycleStatus", "category", "description", "subject"],
     "Task": ["identifier", "status", "intent", "code", "focus", "for", "authoredOn"],
+    "NutritionOrder": ["identifier", "status", "intent", "patient", "dateTime", "orderer"],
     # Scheduling
     "Appointment": ["identifier", "status", "serviceType", "start", "end", "participant"],
     "Schedule": ["identifier", "active", "serviceType", "actor", "planningHorizon"],
@@ -114,6 +147,9 @@ SUMMARY_ELEMENTS: dict[str, list[str]] = {
     # Documents
     "ServiceRequest": ["identifier", "status", "intent", "code", "subject", "authoredOn"],
     "DocumentReference": ["identifier", "status", "type", "subject", "date", "author"],
+    "Media": ["identifier", "status", "type", "subject", "createdDateTime", "operator"],
+    # Laboratory
+    "Specimen": ["identifier", "status", "type", "subject", "receivedTime", "collection"],
     # Quality Measures
     "Measure": ["identifier", "url", "name", "status", "title", "date"],
     "MeasureReport": ["identifier", "status", "type", "measure", "subject", "date"],
@@ -129,6 +165,12 @@ SUMMARY_ELEMENTS: dict[str, list[str]] = {
     "QuestionnaireResponse": ["identifier", "status", "questionnaire", "subject", "authored", "author"],
     # Groups
     "Group": ["identifier", "active", "type", "actual", "name", "quantity"],
+    # Communication
+    "Communication": ["identifier", "status", "category", "subject", "sent", "received"],
+    # Security & Privacy
+    "AuditEvent": ["type", "subtype", "action", "recorded", "outcome", "agent"],
+    "Consent": ["identifier", "status", "scope", "category", "patient", "dateTime"],
+    "Provenance": ["target", "recorded", "agent", "activity"],
 }
 
 

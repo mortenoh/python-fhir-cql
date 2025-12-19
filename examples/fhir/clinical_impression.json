@@ -1,0 +1,78 @@
+{
+  "resourceType": "ClinicalImpression",
+  "id": "clinicalimpression-example-1",
+  "meta": {
+    "versionId": "1",
+    "lastUpdated": "2024-01-15T14:30:00Z"
+  },
+  "status": "completed",
+  "description": "Comprehensive assessment for chest pain presentation",
+  "subject": {
+    "reference": "Patient/patient-1",
+    "display": "John Smith"
+  },
+  "encounter": {
+    "reference": "Encounter/encounter-1"
+  },
+  "effectiveDateTime": "2024-01-15T14:00:00Z",
+  "date": "2024-01-15T14:30:00Z",
+  "assessor": {
+    "reference": "Practitioner/practitioner-1",
+    "display": "Dr. Sarah Johnson"
+  },
+  "problem": [
+    {
+      "reference": "Condition/chest-pain-1",
+      "display": "Chest pain"
+    }
+  ],
+  "investigation": [
+    {
+      "code": {
+        "text": "Initial workup"
+      },
+      "item": [
+        {
+          "reference": "Observation/ecg-1",
+          "display": "12-lead ECG - normal sinus rhythm"
+        },
+        {
+          "reference": "Observation/troponin-1",
+          "display": "Troponin I - negative"
+        },
+        {
+          "reference": "DiagnosticReport/cxr-1",
+          "display": "Chest X-ray - no acute findings"
+        }
+      ]
+    }
+  ],
+  "summary": "55-year-old male presenting with atypical chest pain. ECG normal, troponin negative, chest X-ray unremarkable. Low probability for acute coronary syndrome. Clinical picture more consistent with musculoskeletal etiology.",
+  "finding": [
+    {
+      "itemCodeableConcept": {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "102557007",
+            "display": "Musculoskeletal chest pain"
+          }
+        ],
+        "text": "Musculoskeletal chest pain"
+      },
+      "basis": "Reproducible on palpation, no cardiac risk factors, negative cardiac workup"
+    }
+  ],
+  "prognosisCodeableConcept": [
+    {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "170968001",
+          "display": "Prognosis good"
+        }
+      ],
+      "text": "Good prognosis with conservative management"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "resourceType": "MedicationAdministration",
+  "id": "medadmin-example-1",
+  "meta": {
+    "versionId": "1",
+    "lastUpdated": "2024-01-15T10:30:00Z"
+  },
+  "status": "completed",
+  "medicationCodeableConcept": {
+    "coding": [
+      {
+        "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+        "code": "1049502",
+        "display": "Acetaminophen 325 MG Oral Tablet"
+      }
+    ],
+    "text": "Acetaminophen 325mg"
+  },
+  "subject": {
+    "reference": "Patient/patient-1",
+    "display": "John Smith"
+  },
+  "context": {
+    "reference": "Encounter/encounter-1"
+  },
+  "effectiveDateTime": "2024-01-15T08:00:00Z",
+  "performer": [
+    {
+      "actor": {
+        "reference": "Practitioner/practitioner-1",
+        "display": "Dr. Sarah Johnson"
+      }
+    }
+  ],
+  "request": {
+    "reference": "MedicationRequest/medrequest-1"
+  },
+  "dosage": {
+    "text": "Two tablets by mouth",
+    "route": {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "26643006",
+          "display": "Oral route"
+        }
+      ]
+    },
+    "dose": {
+      "value": 650,
+      "unit": "mg",
+      "system": "http://unitsofmeasure.org",
+      "code": "mg"
+    }
+  }
+}
