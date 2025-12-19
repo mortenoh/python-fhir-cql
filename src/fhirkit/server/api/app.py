@@ -154,9 +154,21 @@ def create_app(
     app.include_router(graphql_router, prefix=f"{api_base}/$graphql", tags=["GraphQL"])
     logger.info(f"GraphQL endpoint enabled at {api_base}/$graphql")
 
+    # Create audit service if enabled
+    audit_service = None
+    if settings.enable_audit:
+        from ..audit import AuditService
+
+        audit_service = AuditService(
+            store=store,
+            enabled=True,
+            exclude_reads=settings.audit_exclude_reads,
+        )
+        logger.info("Audit logging enabled")
+
     # Create and include FHIR API router at /baseR4
     base_url = f"http://{settings.host}:{settings.port}{api_base}"
-    fhir_router = create_router(store=store, base_url=base_url)
+    fhir_router = create_router(store=store, base_url=base_url, audit_service=audit_service)
     app.include_router(fhir_router, prefix=api_base)
 
     # CDS Hooks endpoints (per HL7 CDS Hooks specification)

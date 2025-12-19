@@ -1730,6 +1730,94 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
                 receiver=receiver,
             )
 
+        # =====================================================================
+        # Security & Privacy Resources
+        # =====================================================================
+
+        @strawberry.field(description="Fetch an AuditEvent by ID")
+        def auditEvent(self, _id: FhirId) -> Optional[Resource]:
+            return resource_resolver.resolve("AuditEvent", _id)
+
+        @strawberry.field(description="Search AuditEvent resources")
+        def auditEvents(
+            self,
+            _count: FhirCount = 100,
+            _offset: FhirOffset = 0,
+            _sort: FhirSort = None,
+            action: Optional[str] = None,
+            date: Optional[str] = None,
+            outcome: Optional[str] = None,
+            type: Optional[str] = None,
+            subtype: Optional[str] = None,
+            patient: Optional[str] = None,
+            agent: Optional[str] = None,
+            entity: Optional[str] = None,
+        ) -> list[Resource]:
+            return list_resolver.resolve(
+                "AuditEvent",
+                _count=_count,
+                _offset=_offset,
+                _sort=_sort,
+                action=action,
+                date=date,
+                outcome=outcome,
+                type=type,
+                subtype=subtype,
+                patient=patient,
+                agent=agent,
+                entity=entity,
+            )
+
+        @strawberry.field(description="Fetch a Consent by ID")
+        def consent(self, _id: FhirId) -> Optional[Resource]:
+            return resource_resolver.resolve("Consent", _id)
+
+        @strawberry.field(description="Search Consent resources")
+        def consents(
+            self,
+            _count: FhirCount = 100,
+            _offset: FhirOffset = 0,
+            _sort: FhirSort = None,
+            patient: Optional[str] = None,
+            status: Optional[str] = None,
+            category: Optional[str] = None,
+        ) -> list[Resource]:
+            return list_resolver.resolve(
+                "Consent",
+                _count=_count,
+                _offset=_offset,
+                _sort=_sort,
+                patient=patient,
+                status=status,
+                category=category,
+            )
+
+        @strawberry.field(description="Fetch a Provenance by ID")
+        def provenance(self, _id: FhirId) -> Optional[Resource]:
+            return resource_resolver.resolve("Provenance", _id)
+
+        @strawberry.field(description="Search Provenance resources")
+        def provenances(
+            self,
+            _count: FhirCount = 100,
+            _offset: FhirOffset = 0,
+            _sort: FhirSort = None,
+            target: Optional[str] = None,
+            patient: Optional[str] = None,
+            recorded: Optional[str] = None,
+            agent: Optional[str] = None,
+        ) -> list[Resource]:
+            return list_resolver.resolve(
+                "Provenance",
+                _count=_count,
+                _offset=_offset,
+                _sort=_sort,
+                target=target,
+                patient=patient,
+                recorded=recorded,
+                agent=agent,
+            )
+
     # =========================================================================
     # Mutation Type
     # =========================================================================
@@ -2067,6 +2155,46 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
         @strawberry.mutation(description="Delete a SupplyDelivery resource")
         def deleteSupplyDelivery(self, _id: FhirId) -> Optional[Resource]:
             return mutation_resolver.delete("SupplyDelivery", _id)
+
+        # =====================================================================
+        # Security & Privacy Mutations
+        # =====================================================================
+
+        @strawberry.mutation(description="Create an AuditEvent resource")
+        def createAuditEvent(self, data: JSON) -> Resource:  # type: ignore[valid-type]
+            return mutation_resolver.create("AuditEvent", dict(data))
+
+        @strawberry.mutation(description="Update an AuditEvent resource")
+        def updateAuditEvent(self, _id: FhirId, data: JSON) -> Optional[Resource]:  # type: ignore[valid-type]
+            return mutation_resolver.update("AuditEvent", _id, dict(data))
+
+        @strawberry.mutation(description="Delete an AuditEvent resource")
+        def deleteAuditEvent(self, _id: FhirId) -> Optional[Resource]:
+            return mutation_resolver.delete("AuditEvent", _id)
+
+        @strawberry.mutation(description="Create a Consent resource")
+        def createConsent(self, data: JSON) -> Resource:  # type: ignore[valid-type]
+            return mutation_resolver.create("Consent", dict(data))
+
+        @strawberry.mutation(description="Update a Consent resource")
+        def updateConsent(self, _id: FhirId, data: JSON) -> Optional[Resource]:  # type: ignore[valid-type]
+            return mutation_resolver.update("Consent", _id, dict(data))
+
+        @strawberry.mutation(description="Delete a Consent resource")
+        def deleteConsent(self, _id: FhirId) -> Optional[Resource]:
+            return mutation_resolver.delete("Consent", _id)
+
+        @strawberry.mutation(description="Create a Provenance resource")
+        def createProvenance(self, data: JSON) -> Resource:  # type: ignore[valid-type]
+            return mutation_resolver.create("Provenance", dict(data))
+
+        @strawberry.mutation(description="Update a Provenance resource")
+        def updateProvenance(self, _id: FhirId, data: JSON) -> Optional[Resource]:  # type: ignore[valid-type]
+            return mutation_resolver.update("Provenance", _id, dict(data))
+
+        @strawberry.mutation(description="Delete a Provenance resource")
+        def deleteProvenance(self, _id: FhirId) -> Optional[Resource]:
+            return mutation_resolver.delete("Provenance", _id)
 
     # Create and return schema
     return strawberry.Schema(query=Query, mutation=Mutation)

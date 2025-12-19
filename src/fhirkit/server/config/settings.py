@@ -66,6 +66,16 @@ class FHIRServerSettings(BaseSettings):
         description="Number of resources per page in UI",
     )
 
+    # Audit Logging
+    enable_audit: bool = Field(
+        default=False,
+        description="Enable automatic audit logging for all FHIR operations",
+    )
+    audit_exclude_reads: bool = Field(
+        default=True,
+        description="Exclude read operations from audit log (reduce noise)",
+    )
+
     # Security
     enable_cors: bool = True
     cors_origins: list[str] = Field(default=["*"])

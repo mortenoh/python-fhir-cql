@@ -1,7 +1,9 @@
 """FHIR REST API routes."""
 
+from __future__ import annotations
+
 import uuid
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fastapi import APIRouter, Query, Request, Response
 from fastapi.responses import JSONResponse
@@ -16,6 +18,9 @@ from ..models.responses import (
     OperationOutcomeIssue,
 )
 from ..storage.fhir_store import FHIRStore
+
+if TYPE_CHECKING:
+    from ..audit import AuditService
 
 # FHIR content type
 FHIR_JSON = "application/fhir+json"
@@ -258,12 +263,17 @@ def filter_summary(resource: dict[str, Any], summary_type: str) -> dict[str, Any
     return resource
 
 
-def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
+def create_router(
+    store: FHIRStore,
+    base_url: str = "",
+    audit_service: AuditService | None = None,
+) -> APIRouter:
     """Create FHIR API router.
 
     Args:
         store: The FHIR data store
         base_url: Base URL for the server
+        audit_service: Optional audit service for logging operations
 
     Returns:
         Configured APIRouter
@@ -2992,6 +3002,10 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
                     headers={"ETag": etag},
                 )
 
+        # Audit log (if reads are not excluded)
+        if audit_service:
+            audit_service.log_read(request, resource_type, resource_id, resource)
+
         return JSONResponse(
             content=resource,
             media_type=FHIR_JSON,
@@ -3199,6 +3213,10 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
         created = store.create(body)
         resource_id = created["id"]
         version = created.get("meta", {}).get("versionId", "1")
+
+        # Audit log
+        if audit_service:
+            audit_service.log_create(request, created)
 
         return JSONResponse(
             content=created,
@@ -3419,6 +3437,13 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
         updated = store.update(resource_type, resource_id, body)
         version = updated.get("meta", {}).get("versionId", "1")
 
+        # Audit log
+        if audit_service:
+            if is_create:
+                audit_service.log_create(request, updated)
+            else:
+                audit_service.log_update(request, updated)
+
         return JSONResponse(
             content=updated,
             status_code=201 if is_create else 200,
@@ -3542,6 +3567,10 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
         updated = store.update(resource_type, resource_id, patched)
         version = updated.get("meta", {}).get("versionId", "1")
 
+        # Audit log
+        if audit_service:
+            audit_service.log_update(request, updated)
+
         return JSONResponse(
             content=updated,
             status_code=200,
@@ -3639,6 +3668,10 @@ def create_router(store: FHIRStore, base_url: str = "") -> APIRouter:
                 status_code=404,
                 media_type=FHIR_JSON,
             )
+
+        # Audit log
+        if audit_service:
+            audit_service.log_delete(request, resource_type, resource_id)
 
         return Response(status_code=204)
 
