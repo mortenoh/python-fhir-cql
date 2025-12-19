@@ -42,6 +42,14 @@
       "requires_patient": false
     },
     {
+      "id": "basic-ucum",
+      "name": "UCUM unit conversions",
+      "description": "Convert between clinical units (mass, volume, temperature, length)",
+      "file": "beginner/basic_ucum.cql",
+      "category": "beginner",
+      "requires_patient": false
+    },
+    {
       "id": "patient-demographics",
       "name": "Patient demographics",
       "description": "Accessing patient name, gender, address, contacts",

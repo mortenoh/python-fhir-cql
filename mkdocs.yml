@@ -49,6 +49,7 @@ nav:
       - Guide: cql-guide.md
       - Tutorial: cql-tutorial.md
       - Python API: cql-api.md
+      - UCUM Units: ucum-guide.md
       - Reference: fhirpath-cql-tutorial.md
   - ELM:
       - Guide: elm-guide.md
