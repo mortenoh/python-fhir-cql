@@ -1,7 +1,10 @@
 """Evaluation context for FHIRPath and CQL."""
 
 from datetime import datetime
-from typing import Any, Callable, Protocol
+from typing import TYPE_CHECKING, Any, Callable, Protocol
+
+if TYPE_CHECKING:
+    from ..server.terminology.provider import TerminologyProvider
 
 
 class ModelProvider(Protocol):
@@ -31,6 +34,7 @@ class EvaluationContext:
         model: ModelProvider | None = None,
         now: datetime | None = None,
         reference_resolver: Callable[[str], dict[str, Any] | None] | None = None,
+        terminology_provider: "TerminologyProvider | None" = None,
     ):
         """
         Initialize evaluation context.
@@ -41,12 +45,14 @@ class EvaluationContext:
             model: FHIR model provider for type information
             now: Fixed datetime for today()/now() functions (useful for testing)
             reference_resolver: Callback to resolve FHIR references
+            terminology_provider: Provider for terminology operations (memberOf, subsumes)
         """
         self.resource = resource
         self.root_resource = root_resource or resource
         self.model = model
         self.now = now
         self.reference_resolver = reference_resolver
+        self.terminology_provider = terminology_provider
 
         # Variable stack for $this, $index, $total
         self._this_stack: list[Any] = []
@@ -132,6 +138,7 @@ class EvaluationContext:
             model=self.model,
             now=self.now,
             reference_resolver=self.reference_resolver,
+            terminology_provider=self.terminology_provider,
         )
         child_ctx._constants = self._constants.copy()
         child_ctx._function_overrides = self._function_overrides.copy()

@@ -208,37 +208,178 @@ def _check_base_type_conformance(resource: dict[str, Any], profile: str) -> bool
     return False
 
 
+def _extract_code_system(item: Any) -> tuple[str | None, str | None]:
+    """Extract code and system from a code, Coding, or CodeableConcept.
+
+    Args:
+        item: A code string, Coding dict, or CodeableConcept dict
+
+    Returns:
+        Tuple of (code, system), either may be None
+    """
+    if isinstance(item, str):
+        # Plain code string - no system
+        return (item, None)
+    elif isinstance(item, dict):
+        # Could be Coding or CodeableConcept
+        if "coding" in item:
+            # CodeableConcept - use first coding
+            codings = item.get("coding", [])
+            if codings and isinstance(codings, list) and len(codings) > 0:
+                first_coding = codings[0]
+                if isinstance(first_coding, dict):
+                    return (first_coding.get("code"), first_coding.get("system"))
+        else:
+            # Assume it's a Coding
+            return (item.get("code"), item.get("system"))
+    return (None, None)
+
+
 @FunctionRegistry.register("memberOf")
 def fn_member_of(ctx: EvaluationContext, collection: list[Any], valueset: str) -> list[bool]:
     """
     Returns true if the code/Coding/CodeableConcept is in the specified ValueSet.
 
-    Note: Requires terminology service. Returns empty for now.
+    Args:
+        ctx: Evaluation context (must have terminology_provider set)
+        collection: Collection of codes, Codings, or CodeableConcepts
+        valueset: The ValueSet URL to check membership against
+
+    Returns:
+        List containing true/false for each item in collection
     """
-    # Terminology lookup is not implemented
-    return []
+    if ctx.terminology_provider is None:
+        # No terminology service available
+        return []
+
+    result: list[bool] = []
+    for item in collection:
+        code, system = _extract_code_system(item)
+        if code is None:
+            result.append(False)
+            continue
+
+        # Use empty string if system is None (some ValueSets accept code-only)
+        system_str = system or ""
+        is_member = ctx.terminology_provider.member_of(valueset, code, system_str)
+        result.append(is_member)
+
+    return result
 
 
 @FunctionRegistry.register("subsumes")
 def fn_subsumes(ctx: EvaluationContext, collection: list[Any], code: Any) -> list[bool]:
     """
-    Returns true if the code in context subsumes the specified code.
+    Returns true if the code in collection subsumes the specified code.
 
-    Note: Requires terminology service. Returns empty for now.
+    The first code (from collection) is the potential ancestor/parent,
+    and the second code (argument) is the potential descendant/child.
+
+    Args:
+        ctx: Evaluation context (must have terminology_provider set)
+        collection: Collection of codes (potential ancestors)
+        code: The code to check if subsumed (potential descendant)
+
+    Returns:
+        List containing true/false for each item in collection
     """
-    # Terminology lookup is not implemented
-    return []
+    if ctx.terminology_provider is None:
+        return []
+
+    # Extract code/system from the argument
+    code_b, system_b = _extract_code_system(code)
+    if code_b is None:
+        return []
+
+    result: list[bool] = []
+    for item in collection:
+        code_a, system_a = _extract_code_system(item)
+        if code_a is None:
+            result.append(False)
+            continue
+
+        # Both codes should be in the same system
+        system = system_a or system_b
+        if system is None:
+            result.append(False)
+            continue
+
+        subsumes_result = ctx.terminology_provider.subsumes(system, code_a, code_b)
+        # Extract outcome from Parameters resource
+        outcome = _get_subsumes_outcome(subsumes_result)
+        # "subsumes" means code_a is ancestor of code_b
+        # "equivalent" also counts as subsumes
+        result.append(outcome in ("subsumes", "equivalent"))
+
+    return result
 
 
 @FunctionRegistry.register("subsumedBy")
 def fn_subsumed_by(ctx: EvaluationContext, collection: list[Any], code: Any) -> list[bool]:
     """
-    Returns true if the code in context is subsumed by the specified code.
+    Returns true if the code in collection is subsumed by the specified code.
 
-    Note: Requires terminology service. Returns empty for now.
+    The first code (from collection) is the potential descendant/child,
+    and the second code (argument) is the potential ancestor/parent.
+
+    Args:
+        ctx: Evaluation context (must have terminology_provider set)
+        collection: Collection of codes (potential descendants)
+        code: The code to check as subsumer (potential ancestor)
+
+    Returns:
+        List containing true/false for each item in collection
     """
-    # Terminology lookup is not implemented
-    return []
+    if ctx.terminology_provider is None:
+        return []
+
+    # Extract code/system from the argument
+    code_b, system_b = _extract_code_system(code)
+    if code_b is None:
+        return []
+
+    result: list[bool] = []
+    for item in collection:
+        code_a, system_a = _extract_code_system(item)
+        if code_a is None:
+            result.append(False)
+            continue
+
+        # Both codes should be in the same system
+        system = system_a or system_b
+        if system is None:
+            result.append(False)
+            continue
+
+        subsumes_result = ctx.terminology_provider.subsumes(system, code_a, code_b)
+        outcome = _get_subsumes_outcome(subsumes_result)
+        # "subsumed-by" means code_a is descendant of code_b
+        # "equivalent" also counts as subsumed-by
+        result.append(outcome in ("subsumed-by", "equivalent"))
+
+    return result
+
+
+def _get_subsumes_outcome(params: dict[str, Any]) -> str | None:
+    """Extract the outcome from a $subsumes Parameters response.
+
+    Args:
+        params: The Parameters resource from $subsumes operation
+
+    Returns:
+        The outcome string: "equivalent", "subsumes", "subsumed-by", or "not-subsumed"
+    """
+    if not isinstance(params, dict):
+        return None
+
+    # Look for the outcome parameter
+    parameters = params.get("parameter", [])
+    if isinstance(parameters, list):
+        for param in parameters:
+            if isinstance(param, dict) and param.get("name") == "outcome":
+                return param.get("valueCode")
+
+    return None
 
 
 @FunctionRegistry.register("htmlChecks")

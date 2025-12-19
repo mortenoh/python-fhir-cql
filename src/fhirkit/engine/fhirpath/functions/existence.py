@@ -12,8 +12,10 @@ def fn_exists(ctx: EvaluationContext, collection: list[Any], *args: Any) -> list
     Returns true if the collection has any elements.
 
     If criteria is provided, returns true if any element matches.
+
+    Note: When called with a criteria argument, the visitor handles evaluation
+    via _evaluate_exists() method. This function only handles the no-criteria case.
     """
-    # TODO: Handle criteria argument
     return [len(collection) > 0]
 
 

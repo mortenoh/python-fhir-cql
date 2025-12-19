@@ -28,7 +28,7 @@ class TestExamplesLoader:
         manifest = load_manifest()
         assert "version" in manifest
         assert "examples" in manifest
-        assert len(manifest["examples"]) == 28  # 5 + 9 + 14 examples
+        assert len(manifest["examples"]) == 29  # 6 + 9 + 14 examples
 
     def test_load_example(self) -> None:
         """Should load a specific example by ID."""
@@ -46,7 +46,7 @@ class TestExamplesLoader:
     def test_load_all_examples(self) -> None:
         """Should load all examples with code."""
         examples = load_all_examples()
-        assert len(examples) == 28
+        assert len(examples) == 29
         for ex in examples:
             assert "code" in ex
             assert len(ex["code"]) > 0
@@ -54,14 +54,14 @@ class TestExamplesLoader:
     def test_get_examples_by_category(self) -> None:
         """Should organize examples by category."""
         by_cat = get_examples_by_category()
-        assert len(by_cat["beginner"]) == 5
+        assert len(by_cat["beginner"]) == 6
         assert len(by_cat["intermediate"]) == 9
         assert len(by_cat["advanced"]) == 14
 
     def test_get_example_ids(self) -> None:
         """Should return list of all example IDs."""
         ids = get_example_ids()
-        assert len(ids) == 28
+        assert len(ids) == 29
         assert "basic-arithmetic" in ids
         assert "adv-queries" in ids
 

@@ -2728,19 +2728,74 @@ class ELMExpressionVisitor:
         return None
 
     def _eval_before(self, node: dict[str, Any]) -> bool | None:
-        """Check if before."""
+        """Check if before.
+
+        CQL 'before' semantics:
+        - Point before Point: A < B
+        - Point before Interval: A < start of B
+        - Interval before Point: end of A < B
+        - Interval before Interval: end of A < start of B
+        """
         left, right = self._get_binary_operands(node)
         if left is None or right is None:
             return None
-        # TODO: Implement proper interval/point before
-        return left < right
+
+        left_is_interval = isinstance(left, CQLInterval)
+        right_is_interval = isinstance(right, CQLInterval)
+
+        if left_is_interval and right_is_interval:
+            # Interval before Interval: end of A < start of B
+            if left.high is None or right.low is None:
+                return None
+            return left.high < right.low
+        elif left_is_interval:
+            # Interval before Point: end of A < B
+            if left.high is None:
+                return None
+            return left.high < right
+        elif right_is_interval:
+            # Point before Interval: A < start of B
+            if right.low is None:
+                return None
+            return left < right.low
+        else:
+            # Point before Point
+            return left < right
 
     def _eval_after(self, node: dict[str, Any]) -> bool | None:
-        """Check if after."""
+        """Check if after.
+
+        CQL 'after' semantics:
+        - Point after Point: A > B
+        - Point after Interval: A > end of B
+        - Interval after Point: start of A > B
+        - Interval after Interval: start of A > end of B
+        """
         left, right = self._get_binary_operands(node)
         if left is None or right is None:
             return None
-        return left > right
+
+        left_is_interval = isinstance(left, CQLInterval)
+        right_is_interval = isinstance(right, CQLInterval)
+
+        if left_is_interval and right_is_interval:
+            # Interval after Interval: start of A > end of B
+            if left.low is None or right.high is None:
+                return None
+            return left.low > right.high
+        elif left_is_interval:
+            # Interval after Point: start of A > B
+            if left.low is None:
+                return None
+            return left.low > right
+        elif right_is_interval:
+            # Point after Interval: A > end of B
+            if right.high is None:
+                return None
+            return left > right.high
+        else:
+            # Point after Point
+            return left > right
 
     def _eval_starts(self, node: dict[str, Any]) -> bool | None:
         """Check if interval starts another."""
