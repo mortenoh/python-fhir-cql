@@ -1,0 +1,60 @@
+{
+  "resourceType": "OrganizationAffiliation",
+  "id": "organization-affiliation-001",
+  "meta": {
+    "versionId": "1",
+    "lastUpdated": "2025-12-19T12:38:06.293432+00:00"
+  },
+  "identifier": [
+    {
+      "system": "http://example.org/org-affiliation-ids",
+      "value": "OA-33218196"
+    }
+  ],
+  "active": true,
+  "period": {
+    "start": "2025-06-13"
+  },
+  "code": [
+    {
+      "coding": [
+        {
+          "code": "agency",
+          "display": "Agency",
+          "system": "http://hl7.org/fhir/organization-role"
+        }
+      ],
+      "text": "Agency"
+    }
+  ],
+  "specialty": [
+    {
+      "coding": [
+        {
+          "code": "394579002",
+          "display": "Cardiology",
+          "system": "http://snomed.info/sct"
+        }
+      ],
+      "text": "Cardiology"
+    }
+  ],
+  "telecom": [
+    {
+      "system": "phone",
+      "value": "5018338908",
+      "use": "work"
+    },
+    {
+      "system": "email",
+      "value": "shaneramirez@blake.biz",
+      "use": "work"
+    }
+  ],
+  "organization": {
+    "reference": "Organization/hospital-1"
+  },
+  "participatingOrganization": {
+    "reference": "Organization/clinic-1"
+  }
+}

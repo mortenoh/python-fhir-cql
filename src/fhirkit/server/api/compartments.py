@@ -32,7 +32,7 @@ PATIENT_COMPARTMENT: dict[str, list[str]] = {
     "MeasureReport": ["patient", "subject"],
     "QuestionnaireResponse": ["patient", "subject"],
     "Consent": ["patient"],
-    # New resources
+    # New resources (Phase 1)
     "AdverseEvent": ["patient", "subject"],
     "DetectedIssue": ["patient"],
     "Flag": ["patient", "subject"],
@@ -44,6 +44,15 @@ PATIENT_COMPARTMENT: dict[str, list[str]] = {
     "Specimen": ["patient", "subject"],
     "Communication": ["patient", "subject"],
     "Composition": ["patient", "subject"],
+    # New resources (Phase 2)
+    "ImagingStudy": ["patient", "subject"],
+    "BodyStructure": ["patient"],
+    "EpisodeOfCare": ["patient"],
+    "List": ["patient", "subject"],
+    "CommunicationRequest": ["patient", "subject"],
+    "RequestGroup": ["patient", "subject"],
+    "ResearchSubject": ["patient", "individual"],
+    "SupplyDelivery": ["patient"],
 }
 
 # Reference paths: maps resource types and search parameters to the dotted path
@@ -233,6 +242,51 @@ REFERENCE_PATHS: dict[str, dict[str, list[str]]] = {
     "Consent": {
         "patient": ["patient.reference"],
         "organization": ["organization.reference"],
+    },
+    # New resources (Phase 2)
+    "ImagingStudy": {
+        "patient": ["subject.reference"],
+        "subject": ["subject.reference"],
+        "referrer": ["referrer.reference"],
+        "encounter": ["encounter.reference"],
+    },
+    "BodyStructure": {
+        "patient": ["patient.reference"],
+    },
+    "EpisodeOfCare": {
+        "patient": ["patient.reference"],
+        "organization": ["managingOrganization.reference"],
+        "care-manager": ["careManager.reference"],
+    },
+    "List": {
+        "patient": ["subject.reference"],
+        "subject": ["subject.reference"],
+        "source": ["source.reference"],
+        "encounter": ["encounter.reference"],
+    },
+    "CommunicationRequest": {
+        "patient": ["subject.reference"],
+        "subject": ["subject.reference"],
+        "requester": ["requester.reference"],
+        "recipient": ["recipient.reference"],
+        "sender": ["sender.reference"],
+        "encounter": ["encounter.reference"],
+    },
+    "RequestGroup": {
+        "patient": ["subject.reference"],
+        "subject": ["subject.reference"],
+        "author": ["author.reference"],
+        "encounter": ["encounter.reference"],
+    },
+    "ResearchSubject": {
+        "patient": ["individual.reference"],
+        "individual": ["individual.reference"],
+        "study": ["study.reference"],
+    },
+    "SupplyDelivery": {
+        "patient": ["patient.reference"],
+        "supplier": ["supplier.reference"],
+        "receiver": ["receiver.reference"],
     },
 }
 

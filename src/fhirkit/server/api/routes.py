@@ -27,11 +27,14 @@ SUPPORTED_TYPES = [
     "Practitioner",
     "PractitionerRole",
     "Organization",
+    "OrganizationAffiliation",
     "Location",
     "RelatedPerson",
     "HealthcareService",
+    "Endpoint",
     # Clinical
     "Encounter",
+    "EpisodeOfCare",
     "Condition",
     "Observation",
     "Procedure",
@@ -41,6 +44,9 @@ SUPPORTED_TYPES = [
     "FamilyMemberHistory",
     "ClinicalImpression",
     "RiskAssessment",
+    "BodyStructure",
+    # Imaging
+    "ImagingStudy",
     # Clinical Safety
     "AdverseEvent",
     "DetectedIssue",
@@ -51,12 +57,15 @@ SUPPORTED_TYPES = [
     "MedicationAdministration",
     "MedicationDispense",
     "MedicationStatement",
+    "MedicationKnowledge",
     # Care Management
     "CarePlan",
     "CareTeam",
     "Goal",
     "Task",
     "NutritionOrder",
+    "RequestGroup",
+    "List",
     # Scheduling
     "Appointment",
     "Schedule",
@@ -67,6 +76,8 @@ SUPPORTED_TYPES = [
     "ExplanationOfBenefit",
     # Devices
     "Device",
+    "DeviceDefinition",
+    "DeviceMetric",
     # Documents & Media
     "ServiceRequest",
     "DocumentReference",
@@ -91,6 +102,13 @@ SUPPORTED_TYPES = [
     "Group",
     # Communication
     "Communication",
+    "CommunicationRequest",
+    # Supply Chain
+    "SupplyRequest",
+    "SupplyDelivery",
+    # Research
+    "ResearchStudy",
+    "ResearchSubject",
     # Security & Privacy
     "AuditEvent",
     "Consent",

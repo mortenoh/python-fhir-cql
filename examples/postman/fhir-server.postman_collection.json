@@ -2660,6 +2660,509 @@
           }
         }
       ]
+    },
+    {
+      "name": "ImagingStudy",
+      "item": [
+        {
+          "name": "Create ImagingStudy",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/fhir+json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"ImagingStudy\",\n  \"status\": \"available\",\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"started\": \"2024-06-15T10:30:00Z\",\n  \"modality\": [{\"system\": \"http://dicom.nema.org/resources/ontology/DCM\", \"code\": \"CT\", \"display\": \"Computed Tomography\"}],\n  \"description\": \"CT Chest with contrast\",\n  \"numberOfSeries\": 3,\n  \"numberOfInstances\": 256\n}"
+            },
+            "url": "{{baseUrl}}/ImagingStudy"
+          }
+        },
+        {
+          "name": "Read ImagingStudy",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/ImagingStudy/imaging-study-001"
+          }
+        },
+        {
+          "name": "Search ImagingStudy by Patient",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/ImagingStudy?patient=Patient/{{patientId}}"
+          }
+        },
+        {
+          "name": "Search ImagingStudy by Modality",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/ImagingStudy?modality=CT"
+          }
+        }
+      ]
+    },
+    {
+      "name": "BodyStructure",
+      "item": [
+        {
+          "name": "Create BodyStructure",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/fhir+json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"BodyStructure\",\n  \"active\": true,\n  \"morphology\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"4147007\", \"display\": \"Mass\"}]},\n  \"location\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"39937001\", \"display\": \"Skin of chest\"}]},\n  \"patient\": {\"reference\": \"Patient/{{patientId}}\"}\n}"
+            },
+            "url": "{{baseUrl}}/BodyStructure"
+          }
+        },
+        {
+          "name": "Read BodyStructure",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/BodyStructure/body-structure-001"
+          }
+        },
+        {
+          "name": "Search BodyStructure by Patient",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/BodyStructure?patient=Patient/{{patientId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "EpisodeOfCare",
+      "item": [
+        {
+          "name": "Create EpisodeOfCare",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/fhir+json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"EpisodeOfCare\",\n  \"status\": \"active\",\n  \"type\": [{\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/episodeofcare-type\", \"code\": \"hacc\", \"display\": \"Home and Community Care\"}]}],\n  \"patient\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"managingOrganization\": {\"reference\": \"Organization/{{organizationId}}\"},\n  \"period\": {\"start\": \"2024-01-15\"}\n}"
+            },
+            "url": "{{baseUrl}}/EpisodeOfCare"
+          }
+        },
+        {
+          "name": "Read EpisodeOfCare",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/EpisodeOfCare/episode-of-care-001"
+          }
+        },
+        {
+          "name": "Search EpisodeOfCare by Patient",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/EpisodeOfCare?patient=Patient/{{patientId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "List",
+      "item": [
+        {
+          "name": "Create List (Problem List)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/fhir+json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"List\",\n  \"status\": \"current\",\n  \"mode\": \"working\",\n  \"title\": \"Current Problems\",\n  \"code\": {\"coding\": [{\"system\": \"http://loinc.org\", \"code\": \"11450-4\", \"display\": \"Problem list\"}]},\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"date\": \"2024-06-15T10:00:00Z\"\n}"
+            },
+            "url": "{{baseUrl}}/List"
+          }
+        },
+        {
+          "name": "Read List",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/List/list-001"
+          }
+        },
+        {
+          "name": "Search List by Patient",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/List?patient=Patient/{{patientId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CommunicationRequest",
+      "item": [
+        {
+          "name": "Create CommunicationRequest",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/fhir+json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"CommunicationRequest\",\n  \"status\": \"active\",\n  \"priority\": \"routine\",\n  \"category\": [{\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/communication-category\", \"code\": \"reminder\", \"display\": \"Reminder\"}]}],\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"payload\": [{\"contentString\": \"Reminder: Your annual check-up is scheduled.\"}],\n  \"authoredOn\": \"2024-06-15T10:00:00Z\"\n}"
+            },
+            "url": "{{baseUrl}}/CommunicationRequest"
+          }
+        },
+        {
+          "name": "Read CommunicationRequest",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/CommunicationRequest/communication-request-001"
+          }
+        },
+        {
+          "name": "Search CommunicationRequest by Patient",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/CommunicationRequest?patient=Patient/{{patientId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "RequestGroup",
+      "item": [
+        {
+          "name": "Create RequestGroup",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/fhir+json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"RequestGroup\",\n  \"status\": \"active\",\n  \"intent\": \"order\",\n  \"priority\": \"urgent\",\n  \"code\": {\"coding\": [{\"system\": \"http://example.org/orderset\", \"code\": \"sepsis-bundle\", \"display\": \"Sepsis Management Bundle\"}]},\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"authoredOn\": \"2024-06-15T10:00:00Z\"\n}"
+            },
+            "url": "{{baseUrl}}/RequestGroup"
+          }
+        },
+        {
+          "name": "Read RequestGroup",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/RequestGroup/request-group-001"
+          }
+        },
+        {
+          "name": "Search RequestGroup by Patient",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/RequestGroup?patient=Patient/{{patientId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "MedicationKnowledge",
+      "item": [
+        {
+          "name": "Create MedicationKnowledge",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/fhir+json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"MedicationKnowledge\",\n  \"code\": {\"coding\": [{\"system\": \"http://www.nlm.nih.gov/research/umls/rxnorm\", \"code\": \"860975\", \"display\": \"Metformin hydrochloride 500 MG Oral Tablet\"}]},\n  \"status\": \"active\",\n  \"doseForm\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"385055001\", \"display\": \"Tablet\"}]},\n  \"synonym\": [\"Glucophage\", \"Metformin HCl\"]\n}"
+            },
+            "url": "{{baseUrl}}/MedicationKnowledge"
+          }
+        },
+        {
+          "name": "Read MedicationKnowledge",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/MedicationKnowledge/medication-knowledge-001"
+          }
+        },
+        {
+          "name": "Search MedicationKnowledge by Code",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/MedicationKnowledge?code=860975"
+          }
+        }
+      ]
+    },
+    {
+      "name": "DeviceDefinition",
+      "item": [
+        {
+          "name": "Create DeviceDefinition",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/fhir+json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"DeviceDefinition\",\n  \"manufacturerString\": \"Acme Medical Devices Inc.\",\n  \"deviceName\": [{\"name\": \"Blood Pressure Monitor Pro\", \"type\": \"user-friendly-name\"}],\n  \"modelNumber\": \"BPM-PRO-2000\",\n  \"type\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"43770009\", \"display\": \"Sphygmomanometer\"}]}\n}"
+            },
+            "url": "{{baseUrl}}/DeviceDefinition"
+          }
+        },
+        {
+          "name": "Read DeviceDefinition",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/DeviceDefinition/device-definition-001"
+          }
+        },
+        {
+          "name": "Search DeviceDefinition by Type",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/DeviceDefinition?type=43770009"
+          }
+        }
+      ]
+    },
+    {
+      "name": "DeviceMetric",
+      "item": [
+        {
+          "name": "Create DeviceMetric",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/fhir+json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"DeviceMetric\",\n  \"type\": {\"coding\": [{\"system\": \"urn:iso:std:iso:11073:10101\", \"code\": \"150456\", \"display\": \"Heart rate\"}]},\n  \"unit\": {\"coding\": [{\"system\": \"http://unitsofmeasure.org\", \"code\": \"/min\", \"display\": \"beats per minute\"}]},\n  \"source\": {\"reference\": \"Device/device-001\"},\n  \"operationalStatus\": \"on\",\n  \"category\": \"measurement\"\n}"
+            },
+            "url": "{{baseUrl}}/DeviceMetric"
+          }
+        },
+        {
+          "name": "Read DeviceMetric",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/DeviceMetric/device-metric-001"
+          }
+        },
+        {
+          "name": "Search DeviceMetric by Source",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/DeviceMetric?source=Device/device-001"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ResearchStudy",
+      "item": [
+        {
+          "name": "Create ResearchStudy",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/fhir+json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"ResearchStudy\",\n  \"identifier\": [{\"system\": \"http://clinicaltrials.gov\", \"value\": \"NCT12345678\"}],\n  \"title\": \"Efficacy of Novel Diabetes Treatment\",\n  \"status\": \"active\",\n  \"phase\": {\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/research-study-phase\", \"code\": \"phase-3\", \"display\": \"Phase 3\"}]},\n  \"condition\": [{\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"44054006\", \"display\": \"Type 2 diabetes mellitus\"}]}]\n}"
+            },
+            "url": "{{baseUrl}}/ResearchStudy"
+          }
+        },
+        {
+          "name": "Read ResearchStudy",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/ResearchStudy/research-study-001"
+          }
+        },
+        {
+          "name": "Search ResearchStudy by Status",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/ResearchStudy?status=active"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ResearchSubject",
+      "item": [
+        {
+          "name": "Create ResearchSubject",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/fhir+json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"ResearchSubject\",\n  \"status\": \"on-study\",\n  \"study\": {\"reference\": \"ResearchStudy/research-study-001\"},\n  \"individual\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"assignedArm\": \"Treatment Arm\",\n  \"actualArm\": \"Treatment Arm\",\n  \"period\": {\"start\": \"2024-06-15\"}\n}"
+            },
+            "url": "{{baseUrl}}/ResearchSubject"
+          }
+        },
+        {
+          "name": "Read ResearchSubject",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/ResearchSubject/research-subject-001"
+          }
+        },
+        {
+          "name": "Search ResearchSubject by Patient",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/ResearchSubject?patient=Patient/{{patientId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Endpoint",
+      "item": [
+        {
+          "name": "Create Endpoint",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/fhir+json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Endpoint\",\n  \"status\": \"active\",\n  \"connectionType\": {\"system\": \"http://terminology.hl7.org/CodeSystem/endpoint-connection-type\", \"code\": \"hl7-fhir-rest\", \"display\": \"HL7 FHIR REST\"},\n  \"name\": \"Hospital FHIR Server\",\n  \"managingOrganization\": {\"reference\": \"Organization/{{organizationId}}\"},\n  \"payloadType\": [{\"coding\": [{\"code\": \"any\", \"display\": \"Any\"}]}],\n  \"payloadMimeType\": [\"application/fhir+json\"],\n  \"address\": \"https://fhir.hospital.org/baseR4\"\n}"
+            },
+            "url": "{{baseUrl}}/Endpoint"
+          }
+        },
+        {
+          "name": "Read Endpoint",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/Endpoint/endpoint-001"
+          }
+        },
+        {
+          "name": "Search Endpoint by Status",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/Endpoint?status=active"
+          }
+        }
+      ]
+    },
+    {
+      "name": "OrganizationAffiliation",
+      "item": [
+        {
+          "name": "Create OrganizationAffiliation",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/fhir+json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"OrganizationAffiliation\",\n  \"active\": true,\n  \"organization\": {\"reference\": \"Organization/{{organizationId}}\"},\n  \"participatingOrganization\": {\"reference\": \"Organization/clinic-001\"},\n  \"code\": [{\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/organization-role\", \"code\": \"provider\", \"display\": \"Provider\"}]}],\n  \"period\": {\"start\": \"2024-01-01\"}\n}"
+            },
+            "url": "{{baseUrl}}/OrganizationAffiliation"
+          }
+        },
+        {
+          "name": "Read OrganizationAffiliation",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/OrganizationAffiliation/organization-affiliation-001"
+          }
+        },
+        {
+          "name": "Search OrganizationAffiliation by Role",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/OrganizationAffiliation?role=provider"
+          }
+        }
+      ]
+    },
+    {
+      "name": "SupplyRequest",
+      "item": [
+        {
+          "name": "Create SupplyRequest",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/fhir+json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"SupplyRequest\",\n  \"status\": \"active\",\n  \"priority\": \"routine\",\n  \"category\": {\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/supply-kind\", \"code\": \"central\", \"display\": \"Central Supply\"}]},\n  \"itemCodeableConcept\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"468063009\", \"display\": \"Surgical mask\"}]},\n  \"quantity\": {\"value\": 500, \"unit\": \"units\"},\n  \"authoredOn\": \"2024-06-15T10:00:00Z\"\n}"
+            },
+            "url": "{{baseUrl}}/SupplyRequest"
+          }
+        },
+        {
+          "name": "Read SupplyRequest",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/SupplyRequest/supply-request-001"
+          }
+        },
+        {
+          "name": "Search SupplyRequest by Status",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/SupplyRequest?status=active"
+          }
+        }
+      ]
+    },
+    {
+      "name": "SupplyDelivery",
+      "item": [
+        {
+          "name": "Create SupplyDelivery",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/fhir+json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"SupplyDelivery\",\n  \"status\": \"completed\",\n  \"patient\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"type\": {\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/supply-item-type\", \"code\": \"device\", \"display\": \"Device\"}]},\n  \"suppliedItem\": {\n    \"quantity\": {\"value\": 100, \"unit\": \"units\"},\n    \"itemCodeableConcept\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"468063009\", \"display\": \"Surgical mask\"}]}\n  },\n  \"occurrenceDateTime\": \"2024-06-15T14:30:00Z\"\n}"
+            },
+            "url": "{{baseUrl}}/SupplyDelivery"
+          }
+        },
+        {
+          "name": "Read SupplyDelivery",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/SupplyDelivery/supply-delivery-001"
+          }
+        },
+        {
+          "name": "Search SupplyDelivery by Patient",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/fhir+json"}],
+            "url": "{{baseUrl}}/SupplyDelivery?patient=Patient/{{patientId}}"
+          }
+        }
+      ]
     }
   ]
 }

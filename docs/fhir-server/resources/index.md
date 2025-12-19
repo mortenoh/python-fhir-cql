@@ -4,27 +4,30 @@ This page provides an overview of all FHIR R4 resource types supported by the fh
 
 ## Resource Categories
 
-The server supports **54 resource types** organized into the following categories:
+The server supports **90 resource types** organized into the following categories:
 
 | Category | Resources | Count |
 |----------|-----------|-------|
-| [Administrative](#administrative-resources) | Patient, Practitioner, PractitionerRole, Organization, Location, RelatedPerson | 6 |
-| [Clinical](#clinical-resources) | Encounter, Condition, Observation, Procedure, DiagnosticReport, AllergyIntolerance, Immunization, ClinicalImpression, FamilyMemberHistory | 9 |
-| [Medications](#medication-resources) | Medication, MedicationRequest, MedicationAdministration, MedicationStatement, MedicationDispense | 5 |
-| [Care Management](#care-management-resources) | CarePlan, CareTeam, Goal, Task | 4 |
+| [Administrative](#administrative-resources) | Patient, Practitioner, PractitionerRole, Organization, OrganizationAffiliation, Location, RelatedPerson, Endpoint | 8 |
+| [Clinical](#clinical-resources) | Encounter, EpisodeOfCare, Condition, Observation, Procedure, DiagnosticReport, AllergyIntolerance, Immunization, ClinicalImpression, FamilyMemberHistory, BodyStructure | 11 |
+| [Imaging](#imaging-resources) | ImagingStudy | 1 |
+| [Medications](#medication-resources) | Medication, MedicationRequest, MedicationAdministration, MedicationStatement, MedicationDispense, MedicationKnowledge | 6 |
+| [Care Management](#care-management-resources) | CarePlan, CareTeam, Goal, Task, RequestGroup, List | 6 |
 | [Scheduling](#scheduling-resources) | Appointment, Schedule, Slot, HealthcareService | 4 |
 | [Financial](#financial-resources) | Coverage, Claim, ExplanationOfBenefit | 3 |
-| [Devices](#device-resources) | Device | 1 |
+| [Devices](#device-resources) | Device, DeviceDefinition, DeviceMetric | 3 |
 | [Documents](#document-resources) | ServiceRequest, DocumentReference, Media, Binary | 4 |
 | [Forms & Consent](#forms--consent-resources) | Questionnaire, QuestionnaireResponse, Consent | 3 |
 | [Quality Measures](#quality-measure-resources) | Measure, MeasureReport, Library | 3 |
 | [Terminology](#terminology-resources) | ValueSet, CodeSystem | 2 |
 | [Groups](#group-resources) | Group | 1 |
-| [Communication & Alerts](#communication--alerts-resources) | Communication, Flag | 2 |
+| [Communication & Alerts](#communication--alerts-resources) | Communication, CommunicationRequest, Flag | 3 |
 | [Diagnostics](#diagnostics-resources) | Specimen | 1 |
 | [Orders](#orders-resources) | NutritionOrder | 1 |
+| [Supply Chain](#supply-chain-resources) | SupplyRequest, SupplyDelivery | 2 |
 | [Clinical Decision Support](#clinical-decision-support-resources) | RiskAssessment, DetectedIssue | 2 |
 | [Safety](#safety-resources) | AdverseEvent | 1 |
+| [Research](#research-resources) | ResearchStudy, ResearchSubject | 2 |
 | [Infrastructure](#infrastructure-resources) | Provenance, AuditEvent | 2 |
 
 ---
@@ -1569,6 +1572,62 @@ Security audit logging.
 
 ---
 
+## Imaging Resources
+
+### ImagingStudy
+
+DICOM imaging studies including X-rays, CT scans, MRIs, and ultrasounds.
+
+See [detailed documentation](imaging-study.md)
+
+[FHIR R4 Specification](https://hl7.org/fhir/R4/imagingstudy.html)
+
+---
+
+## Supply Chain Resources
+
+### SupplyRequest
+
+Requests for medical supplies and equipment.
+
+See [detailed documentation](supply-request.md)
+
+[FHIR R4 Specification](https://hl7.org/fhir/R4/supplyrequest.html)
+
+---
+
+### SupplyDelivery
+
+Fulfillment records for supply requests.
+
+See [detailed documentation](supply-delivery.md)
+
+[FHIR R4 Specification](https://hl7.org/fhir/R4/supplydelivery.html)
+
+---
+
+## Research Resources
+
+### ResearchStudy
+
+Clinical trial and research study definitions.
+
+See [detailed documentation](research-study.md)
+
+[FHIR R4 Specification](https://hl7.org/fhir/R4/researchstudy.html)
+
+---
+
+### ResearchSubject
+
+Patient participation in clinical trials.
+
+See [detailed documentation](research-subject.md)
+
+[FHIR R4 Specification](https://hl7.org/fhir/R4/researchsubject.html)
+
+---
+
 ## Example Files
 
 Complete example JSON files for all resource types are available in the `examples/fhir/` directory:
@@ -1612,6 +1671,21 @@ Complete example JSON files for all resource types are available in the `example
 | QuestionnaireResponse | `questionnaire_response.json` |
 | Group | `group.json` |
 | Bundle | `bundle.json`, `bundle_patient_diabetic.json`, `bundle_comprehensive.json` |
+| ImagingStudy | `imaging_study.json` |
+| BodyStructure | `body_structure.json` |
+| EpisodeOfCare | `episode_of_care.json` |
+| List | `list.json` |
+| CommunicationRequest | `communication_request.json` |
+| RequestGroup | `request_group.json` |
+| MedicationKnowledge | `medication_knowledge.json` |
+| DeviceDefinition | `device_definition.json` |
+| DeviceMetric | `device_metric.json` |
+| ResearchStudy | `research_study.json` |
+| ResearchSubject | `research_subject.json` |
+| Endpoint | `endpoint.json` |
+| OrganizationAffiliation | `organization_affiliation.json` |
+| SupplyRequest | `supply_request.json` |
+| SupplyDelivery | `supply_delivery.json` |
 
 ---
 

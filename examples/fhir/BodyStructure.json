@@ -1,0 +1,57 @@
+{
+  "resourceType": "BodyStructure",
+  "id": "body-structure-001",
+  "meta": {
+    "versionId": "1",
+    "lastUpdated": "2025-12-19T12:38:06.286751+00:00"
+  },
+  "identifier": [
+    {
+      "system": "http://example.org/body-structure-ids",
+      "value": "BS-43321819"
+    }
+  ],
+  "active": true,
+  "morphology": {
+    "coding": [
+      {
+        "code": "4147007",
+        "display": "Mass",
+        "system": "http://snomed.info/sct"
+      }
+    ],
+    "text": "Mass"
+  },
+  "location": {
+    "coding": [
+      {
+        "code": "71341001",
+        "display": "Bone",
+        "system": "http://snomed.info/sct"
+      }
+    ],
+    "text": "Bone"
+  },
+  "locationQualifier": [
+    {
+      "coding": [
+        {
+          "code": "51440002",
+          "display": "Bilateral",
+          "system": "http://snomed.info/sct"
+        }
+      ],
+      "text": "Bilateral"
+    }
+  ],
+  "description": "Mass located in Bone (Bilateral)",
+  "patient": {
+    "reference": "Patient/patient-1"
+  },
+  "image": [
+    {
+      "contentType": "image/jpeg",
+      "title": "Image of Mass"
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "resourceType": "ImagingStudy",
+  "id": "imaging-study-001",
+  "meta": {
+    "versionId": "1",
+    "lastUpdated": "2025-12-19T12:38:06.286134+00:00"
+  },
+  "identifier": [
+    {
+      "system": "urn:dicom:uid",
+      "value": "urn:oid:1.2.826.0.1.218196.00133890"
+    }
+  ],
+  "status": "available",
+  "modality": [
+    {
+      "code": "MR",
+      "display": "Magnetic Resonance",
+      "system": "http://dicom.nema.org/resources/ontology/DCM"
+    }
+  ],
+  "description": "Magnetic Resonance of Thorax",
+  "started": "2025-10-12T13:36:05.055176+00:00",
+  "numberOfSeries": 5,
+  "numberOfInstances": 60,
+  "reasonCode": [
+    {
+      "coding": [
+        {
+          "code": "29857009",
+          "display": "Chest pain",
+          "system": "http://snomed.info/sct"
+        }
+      ],
+      "text": "Chest pain"
+    }
+  ],
+  "series": [
+    {
+      "uid": "1.2.826.0.1.218196.00133890.1",
+      "number": 1,
+      "modality": {
+        "code": "MR",
+        "display": "Magnetic Resonance",
+        "system": "http://dicom.nema.org/resources/ontology/DCM"
+      },
+      "description": "Thorax Magnetic Resonance",
+      "numberOfInstances": 50,
+      "bodySite": {
+        "coding": [
+          {
+            "code": "51185008",
+            "display": "Thorax",
+            "system": "http://snomed.info/sct"
+          }
+        ],
+        "text": "Thorax"
+      },
+      "instance": [
+        {
+          "uid": "1.2.826.0.1.218196.00133890.1.1",
+          "sopClass": {
+            "system": "urn:ietf:rfc:3986",
+            "code": "urn:oid:1.2.840.10008.5.1.4.1.1.2"
+          },
+          "number": 1
+        }
+      ]
+    }
+  ],
+  "note": [
+    {
+      "text": "Imaging study performed using Magnetic Resonance"
+    }
+  ],
+  "subject": {
+    "reference": "Patient/patient-1"
+  },
+  "encounter": {
+    "reference": "Encounter/encounter-1"
+  }
+}

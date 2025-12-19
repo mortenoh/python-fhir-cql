@@ -13,10 +13,14 @@ VALID_RESOURCE_TYPES = {
     "Practitioner",
     "PractitionerRole",
     "Organization",
+    "OrganizationAffiliation",
     "Location",
     "RelatedPerson",
+    "HealthcareService",
+    "Endpoint",
     # Clinical
     "Encounter",
+    "EpisodeOfCare",
     "Condition",
     "Observation",
     "Procedure",
@@ -25,28 +29,35 @@ VALID_RESOURCE_TYPES = {
     "Immunization",
     "ClinicalImpression",
     "FamilyMemberHistory",
+    "BodyStructure",
+    # Imaging
+    "ImagingStudy",
     # Medications
     "Medication",
     "MedicationRequest",
     "MedicationAdministration",
     "MedicationStatement",
     "MedicationDispense",
+    "MedicationKnowledge",
     # Care Management
     "CarePlan",
     "CareTeam",
     "Goal",
     "Task",
+    "RequestGroup",
+    "List",
     # Scheduling
     "Appointment",
     "Schedule",
     "Slot",
-    "HealthcareService",
     # Financial
     "Coverage",
     "Claim",
     "ExplanationOfBenefit",
     # Devices
     "Device",
+    "DeviceDefinition",
+    "DeviceMetric",
     # Documents
     "ServiceRequest",
     "DocumentReference",
@@ -69,16 +80,23 @@ VALID_RESOURCE_TYPES = {
     "Consent",
     # Communication & Alerts
     "Communication",
+    "CommunicationRequest",
     "Flag",
     # Diagnostics
     "Specimen",
     # Orders
     "NutritionOrder",
+    # Supply Chain
+    "SupplyRequest",
+    "SupplyDelivery",
     # Clinical Decision Support
     "RiskAssessment",
     "DetectedIssue",
     # Safety
     "AdverseEvent",
+    # Research
+    "ResearchStudy",
+    "ResearchSubject",
     # Infrastructure
     "Bundle",
     "Binary",

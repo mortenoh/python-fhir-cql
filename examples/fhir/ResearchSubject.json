@@ -1,0 +1,26 @@
+{
+  "resourceType": "ResearchSubject",
+  "id": "research-subject-001",
+  "meta": {
+    "versionId": "1",
+    "lastUpdated": "2025-12-19T12:38:06.291868+00:00"
+  },
+  "identifier": [
+    {
+      "system": "http://example.org/research-subject-ids",
+      "value": "SUBJ-1043"
+    }
+  ],
+  "status": "on-study",
+  "period": {
+    "start": "2025-10-10"
+  },
+  "individual": {
+    "reference": "Patient/patient-1"
+  },
+  "study": {
+    "reference": "ResearchStudy/research-study-001"
+  },
+  "assignedArm": "Treatment Arm",
+  "actualArm": "Treatment Arm"
+}

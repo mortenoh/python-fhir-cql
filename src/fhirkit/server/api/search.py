@@ -687,6 +687,166 @@ SEARCH_PARAMS: dict[str, dict[str, dict[str, Any]]] = {
         "title": {"path": "title", "type": "string"},
         "encounter": {"path": "encounter.reference", "type": "reference"},
     },
+    # === ImagingStudy ===
+    "ImagingStudy": {
+        "_id": {"path": "id", "type": "token"},
+        "identifier": {"path": "identifier", "type": "token"},
+        "patient": {"path": "subject.reference", "type": "reference"},
+        "subject": {"path": "subject.reference", "type": "reference"},
+        "status": {"path": "status", "type": "token"},
+        "modality": {"path": "modality.code", "type": "token"},
+        "started": {"path": "started", "type": "date"},
+        "referrer": {"path": "referrer.reference", "type": "reference"},
+        "encounter": {"path": "encounter.reference", "type": "reference"},
+        "endpoint": {"path": "endpoint.reference", "type": "reference"},
+    },
+    # === BodyStructure ===
+    "BodyStructure": {
+        "_id": {"path": "id", "type": "token"},
+        "identifier": {"path": "identifier", "type": "token"},
+        "patient": {"path": "patient.reference", "type": "reference"},
+        "morphology": {"path": "morphology.coding", "type": "token"},
+        "location": {"path": "location.coding", "type": "token"},
+    },
+    # === EpisodeOfCare ===
+    "EpisodeOfCare": {
+        "_id": {"path": "id", "type": "token"},
+        "identifier": {"path": "identifier", "type": "token"},
+        "patient": {"path": "patient.reference", "type": "reference"},
+        "status": {"path": "status", "type": "token"},
+        "type": {"path": "type.coding", "type": "token"},
+        "organization": {"path": "managingOrganization.reference", "type": "reference"},
+        "care-manager": {"path": "careManager.reference", "type": "reference"},
+        "date": {"path": "period.start", "type": "date"},
+    },
+    # === List ===
+    "List": {
+        "_id": {"path": "id", "type": "token"},
+        "identifier": {"path": "identifier", "type": "token"},
+        "patient": {"path": "subject.reference", "type": "reference"},
+        "subject": {"path": "subject.reference", "type": "reference"},
+        "status": {"path": "status", "type": "token"},
+        "code": {"path": "code.coding", "type": "token"},
+        "date": {"path": "date", "type": "date"},
+        "source": {"path": "source.reference", "type": "reference"},
+        "encounter": {"path": "encounter.reference", "type": "reference"},
+    },
+    # === CommunicationRequest ===
+    "CommunicationRequest": {
+        "_id": {"path": "id", "type": "token"},
+        "identifier": {"path": "identifier", "type": "token"},
+        "patient": {"path": "subject.reference", "type": "reference"},
+        "subject": {"path": "subject.reference", "type": "reference"},
+        "status": {"path": "status", "type": "token"},
+        "category": {"path": "category.coding", "type": "token"},
+        "priority": {"path": "priority", "type": "token"},
+        "authored": {"path": "authoredOn", "type": "date"},
+        "requester": {"path": "requester.reference", "type": "reference"},
+        "recipient": {"path": "recipient.reference", "type": "reference"},
+        "sender": {"path": "sender.reference", "type": "reference"},
+    },
+    # === RequestGroup ===
+    "RequestGroup": {
+        "_id": {"path": "id", "type": "token"},
+        "identifier": {"path": "identifier", "type": "token"},
+        "patient": {"path": "subject.reference", "type": "reference"},
+        "subject": {"path": "subject.reference", "type": "reference"},
+        "status": {"path": "status", "type": "token"},
+        "intent": {"path": "intent", "type": "token"},
+        "priority": {"path": "priority", "type": "token"},
+        "code": {"path": "code.coding", "type": "token"},
+        "authored": {"path": "authoredOn", "type": "date"},
+        "author": {"path": "author.reference", "type": "reference"},
+        "encounter": {"path": "encounter.reference", "type": "reference"},
+    },
+    # === MedicationKnowledge ===
+    "MedicationKnowledge": {
+        "_id": {"path": "id", "type": "token"},
+        "code": {"path": "code.coding", "type": "token"},
+        "status": {"path": "status", "type": "token"},
+        "manufacturer": {"path": "manufacturer.reference", "type": "reference"},
+        "doseform": {"path": "doseForm.coding", "type": "token"},
+    },
+    # === DeviceMetric ===
+    "DeviceMetric": {
+        "_id": {"path": "id", "type": "token"},
+        "identifier": {"path": "identifier", "type": "token"},
+        "type": {"path": "type.coding", "type": "token"},
+        "source": {"path": "source.reference", "type": "reference"},
+        "parent": {"path": "parent.reference", "type": "reference"},
+        "category": {"path": "category", "type": "token"},
+    },
+    # === DeviceDefinition ===
+    "DeviceDefinition": {
+        "_id": {"path": "id", "type": "token"},
+        "identifier": {"path": "identifier", "type": "token"},
+        "type": {"path": "type.coding", "type": "token"},
+        "manufacturer": {"path": "manufacturerString", "type": "string"},
+    },
+    # === ResearchStudy ===
+    "ResearchStudy": {
+        "_id": {"path": "id", "type": "token"},
+        "identifier": {"path": "identifier", "type": "token"},
+        "title": {"path": "title", "type": "string"},
+        "status": {"path": "status", "type": "token"},
+        "phase": {"path": "phase.coding", "type": "token"},
+        "focus": {"path": "focus.coding", "type": "token"},
+        "sponsor": {"path": "sponsor.reference", "type": "reference"},
+        "principalinvestigator": {"path": "principalInvestigator.reference", "type": "reference"},
+        "site": {"path": "site.reference", "type": "reference"},
+        "date": {"path": "period.start", "type": "date"},
+    },
+    # === ResearchSubject ===
+    "ResearchSubject": {
+        "_id": {"path": "id", "type": "token"},
+        "identifier": {"path": "identifier", "type": "token"},
+        "patient": {"path": "individual.reference", "type": "reference"},
+        "individual": {"path": "individual.reference", "type": "reference"},
+        "status": {"path": "status", "type": "token"},
+        "study": {"path": "study.reference", "type": "reference"},
+        "date": {"path": "period.start", "type": "date"},
+    },
+    # === Endpoint ===
+    "Endpoint": {
+        "_id": {"path": "id", "type": "token"},
+        "identifier": {"path": "identifier", "type": "token"},
+        "name": {"path": "name", "type": "string"},
+        "status": {"path": "status", "type": "token"},
+        "connection-type": {"path": "connectionType.code", "type": "token"},
+        "organization": {"path": "managingOrganization.reference", "type": "reference"},
+        "payload-type": {"path": "payloadType.coding", "type": "token"},
+    },
+    # === OrganizationAffiliation ===
+    "OrganizationAffiliation": {
+        "_id": {"path": "id", "type": "token"},
+        "identifier": {"path": "identifier", "type": "token"},
+        "active": {"path": "active", "type": "token"},
+        "primary-organization": {"path": "organization.reference", "type": "reference"},
+        "participating-organization": {"path": "participatingOrganization.reference", "type": "reference"},
+        "role": {"path": "code.coding", "type": "token"},
+        "specialty": {"path": "specialty.coding", "type": "token"},
+        "location": {"path": "location.reference", "type": "reference"},
+        "service": {"path": "healthcareService.reference", "type": "reference"},
+    },
+    # === SupplyRequest ===
+    "SupplyRequest": {
+        "_id": {"path": "id", "type": "token"},
+        "identifier": {"path": "identifier", "type": "token"},
+        "status": {"path": "status", "type": "token"},
+        "category": {"path": "category.coding", "type": "token"},
+        "supplier": {"path": "supplier.reference", "type": "reference"},
+        "requester": {"path": "requester.reference", "type": "reference"},
+        "date": {"path": "authoredOn", "type": "date"},
+    },
+    # === SupplyDelivery ===
+    "SupplyDelivery": {
+        "_id": {"path": "id", "type": "token"},
+        "identifier": {"path": "identifier", "type": "token"},
+        "patient": {"path": "patient.reference", "type": "reference"},
+        "status": {"path": "status", "type": "token"},
+        "supplier": {"path": "supplier.reference", "type": "reference"},
+        "receiver": {"path": "receiver.reference", "type": "reference"},
+    },
 }
 
 
