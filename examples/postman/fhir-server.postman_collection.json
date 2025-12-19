@@ -4165,6 +4165,1089 @@
           }
         }
       ]
+    },
+    {
+      "name": "Showcase - Complete Feature Demo",
+      "description": "Comprehensive showcase demonstrating all FHIRKit server capabilities with realistic clinical data. Run 'Setup - Load Sample Data' first to populate test data.",
+      "item": [
+        {
+          "name": "Setup",
+          "description": "Load sample data for showcase demonstrations",
+          "item": [
+            {
+              "name": "Load Sample Data Bundle",
+              "description": "Creates 10 patients with comprehensive clinical data: conditions, observations, medications, encounters, procedures, immunizations, allergies, practitioners, and organizations. Run this first!",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/fhir+json"},
+                  {"key": "Accept", "value": "application/fhir+json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resourceType\": \"Bundle\",\n  \"type\": \"transaction\",\n  \"entry\": [\n    {\"resource\": {\"resourceType\": \"Organization\", \"id\": \"showcase-org1\", \"name\": \"Springfield General Hospital\", \"type\": [{\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/organization-type\", \"code\": \"prov\"}]}]}, \"request\": {\"method\": \"PUT\", \"url\": \"Organization/showcase-org1\"}},\n    {\"resource\": {\"resourceType\": \"Organization\", \"id\": \"showcase-org2\", \"name\": \"LabCorp Diagnostics\", \"type\": [{\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/organization-type\", \"code\": \"other\"}]}]}, \"request\": {\"method\": \"PUT\", \"url\": \"Organization/showcase-org2\"}},\n    {\"resource\": {\"resourceType\": \"Practitioner\", \"id\": \"showcase-dr1\", \"name\": [{\"family\": \"Wilson\", \"given\": [\"Sarah\"], \"prefix\": [\"Dr.\"]}], \"qualification\": [{\"code\": {\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/v2-0360\", \"code\": \"MD\"}]}}]}, \"request\": {\"method\": \"PUT\", \"url\": \"Practitioner/showcase-dr1\"}},\n    {\"resource\": {\"resourceType\": \"Practitioner\", \"id\": \"showcase-dr2\", \"name\": [{\"family\": \"Patel\", \"given\": [\"Raj\"], \"prefix\": [\"Dr.\"]}], \"qualification\": [{\"code\": {\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/v2-0360\", \"code\": \"MD\"}]}}]}, \"request\": {\"method\": \"PUT\", \"url\": \"Practitioner/showcase-dr2\"}},\n    {\"resource\": {\"resourceType\": \"Practitioner\", \"id\": \"showcase-dr3\", \"name\": [{\"family\": \"Chen\", \"given\": [\"Lisa\"], \"prefix\": [\"Dr.\"]}], \"qualification\": [{\"code\": {\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/v2-0360\", \"code\": \"MD\"}]}}]}, \"request\": {\"method\": \"PUT\", \"url\": \"Practitioner/showcase-dr3\"}},\n    {\"resource\": {\"resourceType\": \"Patient\", \"id\": \"showcase-p1\", \"identifier\": [{\"system\": \"http://hospital.example.org/mrn\", \"value\": \"MRN001\"}], \"name\": [{\"family\": \"Smith\", \"given\": [\"John\", \"Robert\"]}], \"gender\": \"male\", \"birthDate\": \"1970-06-15\", \"address\": [{\"city\": \"Springfield\", \"state\": \"IL\"}], \"telecom\": [{\"system\": \"phone\", \"value\": \"555-0101\"}]}, \"request\": {\"method\": \"PUT\", \"url\": \"Patient/showcase-p1\"}},\n    {\"resource\": {\"resourceType\": \"Patient\", \"id\": \"showcase-p2\", \"identifier\": [{\"system\": \"http://hospital.example.org/mrn\", \"value\": \"MRN002\"}], \"name\": [{\"family\": \"Johnson\", \"given\": [\"Sarah\", \"Marie\"]}], \"gender\": \"female\", \"birthDate\": \"1979-03-22\", \"address\": [{\"city\": \"Chicago\", \"state\": \"IL\"}], \"telecom\": [{\"system\": \"phone\", \"value\": \"555-0102\"}]}, \"request\": {\"method\": \"PUT\", \"url\": \"Patient/showcase-p2\"}},\n    {\"resource\": {\"resourceType\": \"Patient\", \"id\": \"showcase-p3\", \"identifier\": [{\"system\": \"http://hospital.example.org/mrn\", \"value\": \"MRN003\"}], \"name\": [{\"family\": \"Chen\", \"given\": [\"Robert\", \"Wei\"]}], \"gender\": \"male\", \"birthDate\": \"1952-11-08\", \"address\": [{\"city\": \"Peoria\", \"state\": \"IL\"}], \"telecom\": [{\"system\": \"phone\", \"value\": \"555-0103\"}]}, \"request\": {\"method\": \"PUT\", \"url\": \"Patient/showcase-p3\"}},\n    {\"resource\": {\"resourceType\": \"Patient\", \"id\": \"showcase-p4\", \"identifier\": [{\"system\": \"http://hospital.example.org/mrn\", \"value\": \"MRN004\"}], \"name\": [{\"family\": \"Garcia\", \"given\": [\"Maria\", \"Isabella\"]}], \"gender\": \"female\", \"birthDate\": \"1996-08-30\", \"address\": [{\"city\": \"Naperville\", \"state\": \"IL\"}], \"telecom\": [{\"system\": \"phone\", \"value\": \"555-0104\"}]}, \"request\": {\"method\": \"PUT\", \"url\": \"Patient/showcase-p4\"}},\n    {\"resource\": {\"resourceType\": \"Patient\", \"id\": \"showcase-p5\", \"identifier\": [{\"system\": \"http://hospital.example.org/mrn\", \"value\": \"MRN005\"}], \"name\": [{\"family\": \"Wilson\", \"given\": [\"James\", \"Edward\"]}], \"gender\": \"male\", \"birthDate\": \"1959-01-17\", \"address\": [{\"city\": \"Rockford\", \"state\": \"IL\"}], \"telecom\": [{\"system\": \"phone\", \"value\": \"555-0105\"}]}, \"request\": {\"method\": \"PUT\", \"url\": \"Patient/showcase-p5\"}},\n    {\"resource\": {\"resourceType\": \"Patient\", \"id\": \"showcase-p6\", \"identifier\": [{\"system\": \"http://hospital.example.org/mrn\", \"value\": \"MRN006\"}], \"name\": [{\"family\": \"Davis\", \"given\": [\"Emily\", \"Rose\"]}], \"gender\": \"female\", \"birthDate\": \"1989-12-05\", \"address\": [{\"city\": \"Champaign\", \"state\": \"IL\"}], \"telecom\": [{\"system\": \"phone\", \"value\": \"555-0106\"}]}, \"request\": {\"method\": \"PUT\", \"url\": \"Patient/showcase-p6\"}},\n    {\"resource\": {\"resourceType\": \"Patient\", \"id\": \"showcase-p7\", \"identifier\": [{\"system\": \"http://hospital.example.org/mrn\", \"value\": \"MRN007\"}], \"name\": [{\"family\": \"Brown\", \"given\": [\"Michael\", \"James\"]}], \"gender\": \"male\", \"birthDate\": \"2016-04-20\", \"address\": [{\"city\": \"Evanston\", \"state\": \"IL\"}], \"telecom\": [{\"system\": \"phone\", \"value\": \"555-0107\"}]}, \"request\": {\"method\": \"PUT\", \"url\": \"Patient/showcase-p7\"}},\n    {\"resource\": {\"resourceType\": \"Patient\", \"id\": \"showcase-p8\", \"identifier\": [{\"system\": \"http://hospital.example.org/mrn\", \"value\": \"MRN008\"}], \"name\": [{\"family\": \"Martinez\", \"given\": [\"Linda\", \"Grace\"]}], \"gender\": \"female\", \"birthDate\": \"1942-07-12\", \"address\": [{\"city\": \"Aurora\", \"state\": \"IL\"}], \"telecom\": [{\"system\": \"phone\", \"value\": \"555-0108\"}]}, \"request\": {\"method\": \"PUT\", \"url\": \"Patient/showcase-p8\"}},\n    {\"resource\": {\"resourceType\": \"Patient\", \"id\": \"showcase-p9\", \"identifier\": [{\"system\": \"http://hospital.example.org/mrn\", \"value\": \"MRN009\"}], \"name\": [{\"family\": \"Lee\", \"given\": [\"David\", \"Michael\"]}], \"gender\": \"male\", \"birthDate\": \"1983-09-25\", \"address\": [{\"city\": \"Joliet\", \"state\": \"IL\"}], \"telecom\": [{\"system\": \"phone\", \"value\": \"555-0109\"}]}, \"request\": {\"method\": \"PUT\", \"url\": \"Patient/showcase-p9\"}},\n    {\"resource\": {\"resourceType\": \"Patient\", \"id\": \"showcase-p10\", \"identifier\": [{\"system\": \"http://hospital.example.org/mrn\", \"value\": \"MRN010\"}], \"name\": [{\"family\": \"Taylor\", \"given\": [\"Jennifer\", \"Ann\"]}], \"gender\": \"female\", \"birthDate\": \"2005-02-14\", \"address\": [{\"city\": \"Bloomington\", \"state\": \"IL\"}], \"telecom\": [{\"system\": \"phone\", \"value\": \"555-0110\"}]}, \"request\": {\"method\": \"PUT\", \"url\": \"Patient/showcase-p10\"}},\n    {\"resource\": {\"resourceType\": \"Condition\", \"id\": \"showcase-cond1\", \"clinicalStatus\": {\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/condition-clinical\", \"code\": \"active\"}]}, \"code\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"44054006\", \"display\": \"Type 2 diabetes mellitus\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p1\"}, \"onsetDateTime\": \"2015-03-15\"}, \"request\": {\"method\": \"PUT\", \"url\": \"Condition/showcase-cond1\"}},\n    {\"resource\": {\"resourceType\": \"Condition\", \"id\": \"showcase-cond2\", \"clinicalStatus\": {\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/condition-clinical\", \"code\": \"active\"}]}, \"code\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"38341003\", \"display\": \"Essential hypertension\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p1\"}, \"onsetDateTime\": \"2012-08-20\"}, \"request\": {\"method\": \"PUT\", \"url\": \"Condition/showcase-cond2\"}},\n    {\"resource\": {\"resourceType\": \"Condition\", \"id\": \"showcase-cond3\", \"clinicalStatus\": {\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/condition-clinical\", \"code\": \"active\"}]}, \"code\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"195967001\", \"display\": \"Asthma\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p2\"}, \"onsetDateTime\": \"1995-06-10\"}, \"request\": {\"method\": \"PUT\", \"url\": \"Condition/showcase-cond3\"}},\n    {\"resource\": {\"resourceType\": \"Condition\", \"id\": \"showcase-cond4\", \"clinicalStatus\": {\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/condition-clinical\", \"code\": \"active\"}]}, \"code\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"254637007\", \"display\": \"Non-small cell lung cancer\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p3\"}, \"onsetDateTime\": \"2023-01-05\"}, \"request\": {\"method\": \"PUT\", \"url\": \"Condition/showcase-cond4\"}},\n    {\"resource\": {\"resourceType\": \"Condition\", \"id\": \"showcase-cond5\", \"clinicalStatus\": {\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/condition-clinical\", \"code\": \"active\"}]}, \"code\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"84114007\", \"display\": \"Heart failure\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p3\"}, \"onsetDateTime\": \"2020-11-18\"}, \"request\": {\"method\": \"PUT\", \"url\": \"Condition/showcase-cond5\"}},\n    {\"resource\": {\"resourceType\": \"Condition\", \"id\": \"showcase-cond6\", \"clinicalStatus\": {\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/condition-clinical\", \"code\": \"active\"}]}, \"code\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"11687002\", \"display\": \"Gestational diabetes mellitus\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p4\"}, \"onsetDateTime\": \"2024-06-01\"}, \"request\": {\"method\": \"PUT\", \"url\": \"Condition/showcase-cond6\"}},\n    {\"resource\": {\"resourceType\": \"Condition\", \"id\": \"showcase-cond7\", \"clinicalStatus\": {\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/condition-clinical\", \"code\": \"active\"}]}, \"code\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"13645005\", \"display\": \"Chronic obstructive lung disease\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p5\"}, \"onsetDateTime\": \"2018-04-12\"}, \"request\": {\"method\": \"PUT\", \"url\": \"Condition/showcase-cond7\"}},\n    {\"resource\": {\"resourceType\": \"Condition\", \"id\": \"showcase-cond8\", \"clinicalStatus\": {\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/condition-clinical\", \"code\": \"active\"}]}, \"code\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"396275006\", \"display\": \"Osteoarthritis\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p5\"}, \"onsetDateTime\": \"2019-09-08\"}, \"request\": {\"method\": \"PUT\", \"url\": \"Condition/showcase-cond8\"}},\n    {\"resource\": {\"resourceType\": \"Condition\", \"id\": \"showcase-cond9\", \"clinicalStatus\": {\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/condition-clinical\", \"code\": \"active\"}]}, \"code\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"35489007\", \"display\": \"Depressive disorder\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p6\"}, \"onsetDateTime\": \"2021-02-28\"}, \"request\": {\"method\": \"PUT\", \"url\": \"Condition/showcase-cond9\"}},\n    {\"resource\": {\"resourceType\": \"Condition\", \"id\": \"showcase-cond10\", \"clinicalStatus\": {\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/condition-clinical\", \"code\": \"active\"}]}, \"code\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"197480006\", \"display\": \"Anxiety disorder\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p6\"}, \"onsetDateTime\": \"2021-02-28\"}, \"request\": {\"method\": \"PUT\", \"url\": \"Condition/showcase-cond10\"}},\n    {\"resource\": {\"resourceType\": \"Condition\", \"id\": \"showcase-cond11\", \"clinicalStatus\": {\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/condition-clinical\", \"code\": \"active\"}]}, \"code\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"195967001\", \"display\": \"Asthma\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p7\"}, \"onsetDateTime\": \"2020-05-15\"}, \"request\": {\"method\": \"PUT\", \"url\": \"Condition/showcase-cond11\"}},\n    {\"resource\": {\"resourceType\": \"Condition\", \"id\": \"showcase-cond12\", \"clinicalStatus\": {\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/condition-clinical\", \"code\": \"active\"}]}, \"code\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"26929004\", \"display\": \"Alzheimer's disease\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p8\"}, \"onsetDateTime\": \"2022-08-10\"}, \"request\": {\"method\": \"PUT\", \"url\": \"Condition/showcase-cond12\"}},\n    {\"resource\": {\"resourceType\": \"Condition\", \"id\": \"showcase-cond13\", \"clinicalStatus\": {\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/condition-clinical\", \"code\": \"active\"}]}, \"code\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"64859006\", \"display\": \"Osteoporosis\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p8\"}, \"onsetDateTime\": \"2018-12-01\"}, \"request\": {\"method\": \"PUT\", \"url\": \"Condition/showcase-cond13\"}},\n    {\"resource\": {\"resourceType\": \"Condition\", \"id\": \"showcase-cond14\", \"clinicalStatus\": {\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/condition-clinical\", \"code\": \"active\"}]}, \"code\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"86406008\", \"display\": \"Human immunodeficiency virus infection\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p9\"}, \"onsetDateTime\": \"2019-07-22\"}, \"request\": {\"method\": \"PUT\", \"url\": \"Condition/showcase-cond14\"}},\n    {\"resource\": {\"resourceType\": \"Condition\", \"id\": \"showcase-cond15\", \"clinicalStatus\": {\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/condition-clinical\", \"code\": \"resolved\"}]}, \"code\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"233604007\", \"display\": \"Pneumonia\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p9\"}, \"onsetDateTime\": \"2024-01-10\", \"abatementDateTime\": \"2024-02-15\"}, \"request\": {\"method\": \"PUT\", \"url\": \"Condition/showcase-cond15\"}},\n    {\"resource\": {\"resourceType\": \"Condition\", \"id\": \"showcase-cond16\", \"clinicalStatus\": {\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/condition-clinical\", \"code\": \"active\"}]}, \"code\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"46635009\", \"display\": \"Type 1 diabetes mellitus\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p10\"}, \"onsetDateTime\": \"2012-09-05\"}, \"request\": {\"method\": \"PUT\", \"url\": \"Condition/showcase-cond16\"}},\n    {\"resource\": {\"resourceType\": \"Observation\", \"id\": \"showcase-obs1\", \"status\": \"final\", \"category\": [{\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/observation-category\", \"code\": \"vital-signs\"}]}], \"code\": {\"coding\": [{\"system\": \"http://loinc.org\", \"code\": \"8480-6\", \"display\": \"Systolic blood pressure\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p1\"}, \"effectiveDateTime\": \"2024-06-15T10:30:00Z\", \"valueQuantity\": {\"value\": 142, \"unit\": \"mmHg\", \"system\": \"http://unitsofmeasure.org\", \"code\": \"mm[Hg]\"}}, \"request\": {\"method\": \"PUT\", \"url\": \"Observation/showcase-obs1\"}},\n    {\"resource\": {\"resourceType\": \"Observation\", \"id\": \"showcase-obs2\", \"status\": \"final\", \"category\": [{\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/observation-category\", \"code\": \"vital-signs\"}]}], \"code\": {\"coding\": [{\"system\": \"http://loinc.org\", \"code\": \"8462-4\", \"display\": \"Diastolic blood pressure\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p1\"}, \"effectiveDateTime\": \"2024-06-15T10:30:00Z\", \"valueQuantity\": {\"value\": 88, \"unit\": \"mmHg\", \"system\": \"http://unitsofmeasure.org\", \"code\": \"mm[Hg]\"}}, \"request\": {\"method\": \"PUT\", \"url\": \"Observation/showcase-obs2\"}},\n    {\"resource\": {\"resourceType\": \"Observation\", \"id\": \"showcase-obs3\", \"status\": \"final\", \"category\": [{\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/observation-category\", \"code\": \"laboratory\"}]}], \"code\": {\"coding\": [{\"system\": \"http://loinc.org\", \"code\": \"4548-4\", \"display\": \"Hemoglobin A1c\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p1\"}, \"effectiveDateTime\": \"2024-06-10T08:00:00Z\", \"valueQuantity\": {\"value\": 7.8, \"unit\": \"%\", \"system\": \"http://unitsofmeasure.org\", \"code\": \"%\"}}, \"request\": {\"method\": \"PUT\", \"url\": \"Observation/showcase-obs3\"}},\n    {\"resource\": {\"resourceType\": \"Observation\", \"id\": \"showcase-obs4\", \"status\": \"final\", \"category\": [{\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/observation-category\", \"code\": \"laboratory\"}]}], \"code\": {\"coding\": [{\"system\": \"http://loinc.org\", \"code\": \"2345-7\", \"display\": \"Glucose [Mass/volume] in Serum or Plasma\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p1\"}, \"effectiveDateTime\": \"2024-06-10T08:00:00Z\", \"valueQuantity\": {\"value\": 156, \"unit\": \"mg/dL\", \"system\": \"http://unitsofmeasure.org\", \"code\": \"mg/dL\"}}, \"request\": {\"method\": \"PUT\", \"url\": \"Observation/showcase-obs4\"}},\n    {\"resource\": {\"resourceType\": \"Observation\", \"id\": \"showcase-obs5\", \"status\": \"final\", \"category\": [{\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/observation-category\", \"code\": \"vital-signs\"}]}], \"code\": {\"coding\": [{\"system\": \"http://loinc.org\", \"code\": \"29463-7\", \"display\": \"Body weight\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p1\"}, \"effectiveDateTime\": \"2024-06-15T10:30:00Z\", \"valueQuantity\": {\"value\": 210, \"unit\": \"[lb_av]\", \"system\": \"http://unitsofmeasure.org\", \"code\": \"[lb_av]\"}}, \"request\": {\"method\": \"PUT\", \"url\": \"Observation/showcase-obs5\"}},\n    {\"resource\": {\"resourceType\": \"Observation\", \"id\": \"showcase-obs6\", \"status\": \"final\", \"category\": [{\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/observation-category\", \"code\": \"vital-signs\"}]}], \"code\": {\"coding\": [{\"system\": \"http://loinc.org\", \"code\": \"8310-5\", \"display\": \"Body temperature\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p2\"}, \"effectiveDateTime\": \"2024-06-14T09:15:00Z\", \"valueQuantity\": {\"value\": 98.6, \"unit\": \"[degF]\", \"system\": \"http://unitsofmeasure.org\", \"code\": \"[degF]\"}}, \"request\": {\"method\": \"PUT\", \"url\": \"Observation/showcase-obs6\"}},\n    {\"resource\": {\"resourceType\": \"Observation\", \"id\": \"showcase-obs7\", \"status\": \"final\", \"category\": [{\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/observation-category\", \"code\": \"vital-signs\"}]}], \"code\": {\"coding\": [{\"system\": \"http://loinc.org\", \"code\": \"8867-4\", \"display\": \"Heart rate\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p2\"}, \"effectiveDateTime\": \"2024-06-14T09:15:00Z\", \"valueQuantity\": {\"value\": 72, \"unit\": \"/min\", \"system\": \"http://unitsofmeasure.org\", \"code\": \"/min\"}}, \"request\": {\"method\": \"PUT\", \"url\": \"Observation/showcase-obs7\"}},\n    {\"resource\": {\"resourceType\": \"Observation\", \"id\": \"showcase-obs8\", \"status\": \"final\", \"category\": [{\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/observation-category\", \"code\": \"laboratory\"}]}], \"code\": {\"coding\": [{\"system\": \"http://loinc.org\", \"code\": \"2093-3\", \"display\": \"Cholesterol [Mass/volume] in Serum or Plasma\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p3\"}, \"effectiveDateTime\": \"2024-05-20T07:30:00Z\", \"valueQuantity\": {\"value\": 245, \"unit\": \"mg/dL\", \"system\": \"http://unitsofmeasure.org\", \"code\": \"mg/dL\"}}, \"request\": {\"method\": \"PUT\", \"url\": \"Observation/showcase-obs8\"}},\n    {\"resource\": {\"resourceType\": \"Observation\", \"id\": \"showcase-obs9\", \"status\": \"final\", \"category\": [{\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/observation-category\", \"code\": \"laboratory\"}]}], \"code\": {\"coding\": [{\"system\": \"http://loinc.org\", \"code\": \"2571-8\", \"display\": \"Triglycerides\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p3\"}, \"effectiveDateTime\": \"2024-05-20T07:30:00Z\", \"valueQuantity\": {\"value\": 180, \"unit\": \"mg/dL\", \"system\": \"http://unitsofmeasure.org\", \"code\": \"mg/dL\"}}, \"request\": {\"method\": \"PUT\", \"url\": \"Observation/showcase-obs9\"}},\n    {\"resource\": {\"resourceType\": \"Observation\", \"id\": \"showcase-obs10\", \"status\": \"final\", \"category\": [{\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/observation-category\", \"code\": \"vital-signs\"}]}], \"code\": {\"coding\": [{\"system\": \"http://loinc.org\", \"code\": \"8302-2\", \"display\": \"Body height\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p4\"}, \"effectiveDateTime\": \"2024-06-01T11:00:00Z\", \"valueQuantity\": {\"value\": 64, \"unit\": \"[in_i]\", \"system\": \"http://unitsofmeasure.org\", \"code\": \"[in_i]\"}}, \"request\": {\"method\": \"PUT\", \"url\": \"Observation/showcase-obs10\"}},\n    {\"resource\": {\"resourceType\": \"Observation\", \"id\": \"showcase-obs11\", \"status\": \"final\", \"category\": [{\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/observation-category\", \"code\": \"laboratory\"}]}], \"code\": {\"coding\": [{\"system\": \"http://loinc.org\", \"code\": \"2339-0\", \"display\": \"Glucose [Mass/volume] in Blood\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p4\"}, \"effectiveDateTime\": \"2024-06-01T08:00:00Z\", \"valueQuantity\": {\"value\": 135, \"unit\": \"mg/dL\", \"system\": \"http://unitsofmeasure.org\", \"code\": \"mg/dL\"}}, \"request\": {\"method\": \"PUT\", \"url\": \"Observation/showcase-obs11\"}},\n    {\"resource\": {\"resourceType\": \"Observation\", \"id\": \"showcase-obs12\", \"status\": \"final\", \"category\": [{\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/observation-category\", \"code\": \"vital-signs\"}]}], \"code\": {\"coding\": [{\"system\": \"http://loinc.org\", \"code\": \"59408-5\", \"display\": \"Oxygen saturation\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p5\"}, \"effectiveDateTime\": \"2024-06-12T14:00:00Z\", \"valueQuantity\": {\"value\": 94, \"unit\": \"%\", \"system\": \"http://unitsofmeasure.org\", \"code\": \"%\"}}, \"request\": {\"method\": \"PUT\", \"url\": \"Observation/showcase-obs12\"}},\n    {\"resource\": {\"resourceType\": \"Observation\", \"id\": \"showcase-obs13\", \"status\": \"final\", \"category\": [{\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/observation-category\", \"code\": \"laboratory\"}]}], \"code\": {\"coding\": [{\"system\": \"http://loinc.org\", \"code\": \"718-7\", \"display\": \"Hemoglobin [Mass/volume] in Blood\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p9\"}, \"effectiveDateTime\": \"2024-01-15T09:00:00Z\", \"valueQuantity\": {\"value\": 12.1, \"unit\": \"g/dL\", \"system\": \"http://unitsofmeasure.org\", \"code\": \"g/dL\"}}, \"request\": {\"method\": \"PUT\", \"url\": \"Observation/showcase-obs13\"}},\n    {\"resource\": {\"resourceType\": \"Observation\", \"id\": \"showcase-obs14\", \"status\": \"final\", \"category\": [{\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/observation-category\", \"code\": \"laboratory\"}]}], \"code\": {\"coding\": [{\"system\": \"http://loinc.org\", \"code\": \"4548-4\", \"display\": \"Hemoglobin A1c\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p10\"}, \"effectiveDateTime\": \"2024-06-05T08:30:00Z\", \"valueQuantity\": {\"value\": 6.5, \"unit\": \"%\", \"system\": \"http://unitsofmeasure.org\", \"code\": \"%\"}}, \"request\": {\"method\": \"PUT\", \"url\": \"Observation/showcase-obs14\"}},\n    {\"resource\": {\"resourceType\": \"MedicationRequest\", \"id\": \"showcase-med1\", \"status\": \"active\", \"intent\": \"order\", \"medicationCodeableConcept\": {\"coding\": [{\"system\": \"http://www.nlm.nih.gov/research/umls/rxnorm\", \"code\": \"860975\", \"display\": \"Metformin 500 MG Oral Tablet\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p1\"}, \"authoredOn\": \"2024-01-10\", \"dosageInstruction\": [{\"text\": \"Take 500mg twice daily\"}]}, \"request\": {\"method\": \"PUT\", \"url\": \"MedicationRequest/showcase-med1\"}},\n    {\"resource\": {\"resourceType\": \"MedicationRequest\", \"id\": \"showcase-med2\", \"status\": \"active\", \"intent\": \"order\", \"medicationCodeableConcept\": {\"coding\": [{\"system\": \"http://www.nlm.nih.gov/research/umls/rxnorm\", \"code\": \"314076\", \"display\": \"Lisinopril 10 MG Oral Tablet\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p1\"}, \"authoredOn\": \"2024-01-10\", \"dosageInstruction\": [{\"text\": \"Take 10mg once daily\"}]}, \"request\": {\"method\": \"PUT\", \"url\": \"MedicationRequest/showcase-med2\"}},\n    {\"resource\": {\"resourceType\": \"MedicationRequest\", \"id\": \"showcase-med3\", \"status\": \"active\", \"intent\": \"order\", \"medicationCodeableConcept\": {\"coding\": [{\"system\": \"http://www.nlm.nih.gov/research/umls/rxnorm\", \"code\": \"746030\", \"display\": \"Albuterol 90 MCG Inhalation\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p2\"}, \"authoredOn\": \"2024-03-15\", \"dosageInstruction\": [{\"text\": \"2 puffs as needed\"}]}, \"request\": {\"method\": \"PUT\", \"url\": \"MedicationRequest/showcase-med3\"}},\n    {\"resource\": {\"resourceType\": \"MedicationRequest\", \"id\": \"showcase-med4\", \"status\": \"active\", \"intent\": \"order\", \"medicationCodeableConcept\": {\"coding\": [{\"system\": \"http://www.nlm.nih.gov/research/umls/rxnorm\", \"code\": \"1049621\", \"display\": \"Insulin Glargine 100 UNT/ML\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p10\"}, \"authoredOn\": \"2024-02-20\", \"dosageInstruction\": [{\"text\": \"20 units subcutaneously at bedtime\"}]}, \"request\": {\"method\": \"PUT\", \"url\": \"MedicationRequest/showcase-med4\"}},\n    {\"resource\": {\"resourceType\": \"MedicationRequest\", \"id\": \"showcase-med5\", \"status\": \"active\", \"intent\": \"order\", \"medicationCodeableConcept\": {\"coding\": [{\"system\": \"http://www.nlm.nih.gov/research/umls/rxnorm\", \"code\": \"617318\", \"display\": \"Sertraline 50 MG Oral Tablet\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p6\"}, \"authoredOn\": \"2024-03-01\", \"dosageInstruction\": [{\"text\": \"Take 50mg once daily\"}]}, \"request\": {\"method\": \"PUT\", \"url\": \"MedicationRequest/showcase-med5\"}},\n    {\"resource\": {\"resourceType\": \"Encounter\", \"id\": \"showcase-enc1\", \"status\": \"finished\", \"class\": {\"system\": \"http://terminology.hl7.org/CodeSystem/v3-ActCode\", \"code\": \"AMB\", \"display\": \"ambulatory\"}, \"type\": [{\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"185349003\", \"display\": \"Encounter for check up\"}]}], \"subject\": {\"reference\": \"Patient/showcase-p1\"}, \"period\": {\"start\": \"2024-06-15T10:00:00Z\", \"end\": \"2024-06-15T11:00:00Z\"}}, \"request\": {\"method\": \"PUT\", \"url\": \"Encounter/showcase-enc1\"}},\n    {\"resource\": {\"resourceType\": \"Encounter\", \"id\": \"showcase-enc2\", \"status\": \"finished\", \"class\": {\"system\": \"http://terminology.hl7.org/CodeSystem/v3-ActCode\", \"code\": \"EMER\", \"display\": \"emergency\"}, \"type\": [{\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"183452005\", \"display\": \"Emergency hospital admission\"}]}], \"subject\": {\"reference\": \"Patient/showcase-p2\"}, \"period\": {\"start\": \"2024-04-10T03:00:00Z\", \"end\": \"2024-04-10T08:00:00Z\"}}, \"request\": {\"method\": \"PUT\", \"url\": \"Encounter/showcase-enc2\"}},\n    {\"resource\": {\"resourceType\": \"Encounter\", \"id\": \"showcase-enc3\", \"status\": \"in-progress\", \"class\": {\"system\": \"http://terminology.hl7.org/CodeSystem/v3-ActCode\", \"code\": \"IMP\", \"display\": \"inpatient\"}, \"type\": [{\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"32485007\", \"display\": \"Hospital admission\"}]}], \"subject\": {\"reference\": \"Patient/showcase-p3\"}, \"period\": {\"start\": \"2024-06-10T14:00:00Z\"}}, \"request\": {\"method\": \"PUT\", \"url\": \"Encounter/showcase-enc3\"}},\n    {\"resource\": {\"resourceType\": \"Procedure\", \"id\": \"showcase-proc1\", \"status\": \"completed\", \"code\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"174041007\", \"display\": \"Appendectomy\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p1\"}, \"performedDateTime\": \"2010-05-20\"}, \"request\": {\"method\": \"PUT\", \"url\": \"Procedure/showcase-proc1\"}},\n    {\"resource\": {\"resourceType\": \"Procedure\", \"id\": \"showcase-proc2\", \"status\": \"completed\", \"code\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"80146002\", \"display\": \"Lobectomy of lung\"}]}, \"subject\": {\"reference\": \"Patient/showcase-p3\"}, \"performedDateTime\": \"2023-02-15\"}, \"request\": {\"method\": \"PUT\", \"url\": \"Procedure/showcase-proc2\"}},\n    {\"resource\": {\"resourceType\": \"AllergyIntolerance\", \"id\": \"showcase-allergy1\", \"clinicalStatus\": {\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical\", \"code\": \"active\"}]}, \"code\": {\"coding\": [{\"system\": \"http://www.nlm.nih.gov/research/umls/rxnorm\", \"code\": \"7980\", \"display\": \"Penicillin\"}]}, \"patient\": {\"reference\": \"Patient/showcase-p2\"}, \"reaction\": [{\"manifestation\": [{\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"271807003\", \"display\": \"Rash\"}]}]}]}, \"request\": {\"method\": \"PUT\", \"url\": \"AllergyIntolerance/showcase-allergy1\"}},\n    {\"resource\": {\"resourceType\": \"AllergyIntolerance\", \"id\": \"showcase-allergy2\", \"clinicalStatus\": {\"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical\", \"code\": \"active\"}]}, \"code\": {\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"91935009\", \"display\": \"Peanut allergy\"}]}, \"patient\": {\"reference\": \"Patient/showcase-p7\"}, \"reaction\": [{\"manifestation\": [{\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"39579001\", \"display\": \"Anaphylaxis\"}]}], \"severity\": \"severe\"}]}, \"request\": {\"method\": \"PUT\", \"url\": \"AllergyIntolerance/showcase-allergy2\"}},\n    {\"resource\": {\"resourceType\": \"Immunization\", \"id\": \"showcase-imm1\", \"status\": \"completed\", \"vaccineCode\": {\"coding\": [{\"system\": \"http://hl7.org/fhir/sid/cvx\", \"code\": \"141\", \"display\": \"Influenza, seasonal\"}]}, \"patient\": {\"reference\": \"Patient/showcase-p1\"}, \"occurrenceDateTime\": \"2024-10-01\"}, \"request\": {\"method\": \"PUT\", \"url\": \"Immunization/showcase-imm1\"}},\n    {\"resource\": {\"resourceType\": \"Immunization\", \"id\": \"showcase-imm2\", \"status\": \"completed\", \"vaccineCode\": {\"coding\": [{\"system\": \"http://hl7.org/fhir/sid/cvx\", \"code\": \"207\", \"display\": \"COVID-19 vaccine\"}]}, \"patient\": {\"reference\": \"Patient/showcase-p1\"}, \"occurrenceDateTime\": \"2024-01-15\"}, \"request\": {\"method\": \"PUT\", \"url\": \"Immunization/showcase-imm2\"}},\n    {\"resource\": {\"resourceType\": \"Immunization\", \"id\": \"showcase-imm3\", \"status\": \"completed\", \"vaccineCode\": {\"coding\": [{\"system\": \"http://hl7.org/fhir/sid/cvx\", \"code\": \"33\", \"display\": \"Pneumococcal\"}]}, \"patient\": {\"reference\": \"Patient/showcase-p8\"}, \"occurrenceDateTime\": \"2023-11-20\"}, \"request\": {\"method\": \"PUT\", \"url\": \"Immunization/showcase-imm3\"}},\n    {\"resource\": {\"resourceType\": \"Group\", \"id\": \"showcase-group1\", \"type\": \"person\", \"actual\": true, \"name\": \"Diabetes Patient Cohort\", \"member\": [{\"entity\": {\"reference\": \"Patient/showcase-p1\"}}, {\"entity\": {\"reference\": \"Patient/showcase-p4\"}}, {\"entity\": {\"reference\": \"Patient/showcase-p10\"}}]}, \"request\": {\"method\": \"PUT\", \"url\": \"Group/showcase-group1\"}}\n  ]\n}"
+                },
+                "url": "{{baseUrl}}/"
+              }
+            },
+            {
+              "name": "Verify Data Loaded - Count Patients",
+              "description": "Verify that all 10 showcase patients were loaded",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/Patient?_id=showcase-p1,showcase-p2,showcase-p3,showcase-p4,showcase-p5,showcase-p6,showcase-p7,showcase-p8,showcase-p9,showcase-p10&_summary=count"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Search Showcase",
+          "description": "Demonstrates all search capabilities",
+          "item": [
+            {
+              "name": "_include - Conditions with Patient",
+              "description": "Search Conditions and include the referenced Patient resources",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/Condition?subject=Patient/showcase-p1&_include=Condition:subject"
+              }
+            },
+            {
+              "name": "_revinclude - Patient with Conditions",
+              "description": "Get a Patient and reverse-include all Conditions that reference them",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/Patient?_id=showcase-p1&_revinclude=Condition:subject"
+              }
+            },
+            {
+              "name": "_sort - Observations by Date (Descending)",
+              "description": "Get observations sorted by date, newest first",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/Observation?subject=Patient/showcase-p1&_sort=-date"
+              }
+            },
+            {
+              "name": "_sort - Observations by Date (Ascending)",
+              "description": "Get observations sorted by date, oldest first",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/Observation?subject=Patient/showcase-p1&_sort=date"
+              }
+            },
+            {
+              "name": "Pagination - First Page",
+              "description": "Get first 3 observations with pagination",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/Observation?_count=3&_offset=0"
+              }
+            },
+            {
+              "name": "Pagination - Second Page",
+              "description": "Get next 3 observations starting from offset 3",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/Observation?_count=3&_offset=3"
+              }
+            },
+            {
+              "name": "Chained Search - Conditions by Patient Name",
+              "description": "Find Conditions where Patient's family name is 'Smith'",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/Condition?subject:Patient.name=Smith"
+              }
+            },
+            {
+              "name": "Date Range Search",
+              "description": "Find Observations in 2024",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/Observation?date=ge2024-01-01&date=le2024-12-31"
+              }
+            },
+            {
+              "name": "Token Search - Condition by SNOMED Code",
+              "description": "Find Conditions with Type 2 Diabetes code",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/Condition?code=http://snomed.info/sct|44054006"
+              }
+            },
+            {
+              "name": "Token Search - Active Conditions",
+              "description": "Find all active Conditions",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/Condition?clinical-status=active"
+              }
+            },
+            {
+              "name": "Quantity Search - High BP",
+              "description": "Find systolic BP observations > 140",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/Observation?code=8480-6&value-quantity=gt140"
+              }
+            },
+            {
+              "name": "Multiple Parameters",
+              "description": "Search with multiple criteria: systolic BP, final status",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/Observation?code=8480-6&status=final"
+              }
+            },
+            {
+              "name": "Patient Compartment - All Data",
+              "description": "Get everything in patient's compartment",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/Patient/showcase-p1/$everything"
+              }
+            },
+            {
+              "name": "_summary - Count Only",
+              "description": "Get count of matching resources without data",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/Condition?clinical-status=active&_summary=count"
+              }
+            },
+            {
+              "name": "_elements - Specific Fields",
+              "description": "Return only specific elements (id, name, birthDate)",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/Patient?_elements=id,name,birthDate"
+              }
+            }
+          ]
+        },
+        {
+          "name": "CQL Showcase",
+          "description": "Demonstrates all CQL capabilities including UCUM, intervals, and advanced features",
+          "item": [
+            {
+              "name": "Basic Arithmetic",
+              "description": "Simple arithmetic operations",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"define Addition: 5 + 3\\ndefine Subtraction: 10 - 4\\ndefine Multiplication: 6 * 7\\ndefine Division: 15 / 3\\ndefine Modulo: 17 mod 5\\ndefine Power: 2 ^ 8\"\n}"
+                },
+                "url": "{{baseUrl}}/$cql"
+              }
+            },
+            {
+              "name": "UCUM - Mass Conversions",
+              "description": "Convert between mass units (lb, kg, g, mg)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"define PatientWeight: ConvertQuantity(210 '[lb_av]', 'kg')\\ndefine MedicationDose: ConvertQuantity(500 'mg', 'g')\\ndefine InfantWeight: ConvertQuantity(3.5 'kg', 'g')\\ndefine DrugAmount: ConvertQuantity(0.025 'g', 'mg')\"\n}"
+                },
+                "url": "{{baseUrl}}/$cql"
+              }
+            },
+            {
+              "name": "UCUM - Temperature Conversions",
+              "description": "Convert between temperature units (F, C, K)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"define BodyTemp: ConvertQuantity(98.6 '[degF]', 'Cel')\\ndefine HighFever: ConvertQuantity(40 'Cel', '[degF]')\\ndefine FreezingPoint: ConvertQuantity(32 '[degF]', 'Cel')\\ndefine AbsoluteZero: ConvertQuantity(-273.15 'Cel', 'K')\"\n}"
+                },
+                "url": "{{baseUrl}}/$cql"
+              }
+            },
+            {
+              "name": "UCUM - Volume Conversions",
+              "description": "Convert between volume units (L, mL, dL, gal)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"define IVFluid: ConvertQuantity(1000 'mL', 'L')\\ndefine BloodDraw: ConvertQuantity(10 'mL', 'dL')\\ndefine LargeBag: ConvertQuantity(3 'L', 'mL')\\ndefine DailyIntake: ConvertQuantity(2 'L', '[gal_us]')\"\n}"
+                },
+                "url": "{{baseUrl}}/$cql"
+              }
+            },
+            {
+              "name": "UCUM - Length Conversions",
+              "description": "Convert between length units (in, cm, m, ft)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"define PatientHeight: ConvertQuantity(70 '[in_i]', 'cm')\\ndefine HeightMeters: ConvertQuantity(180 'cm', 'm')\\ndefine TallPatient: ConvertQuantity(6 '[ft_i]', 'cm')\\ndefine WoundSize: ConvertQuantity(2.5 'cm', 'mm')\"\n}"
+                },
+                "url": "{{baseUrl}}/$cql"
+              }
+            },
+            {
+              "name": "UCUM - Clinical Rates",
+              "description": "Convert clinical rate units",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"define InfusionRate: ConvertQuantity(125 'mL/h', 'L/h')\\ndefine DrugConcentration: ConvertQuantity(50 'mg/mL', 'g/L')\\ndefine GlucoseConversion: ConvertQuantity(180 'mg/dL', 'mg/L')\"\n}"
+                },
+                "url": "{{baseUrl}}/$cql"
+              }
+            },
+            {
+              "name": "String Functions",
+              "description": "String manipulation functions",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"define UpperCase: Upper('hello world')\\ndefine LowerCase: Lower('HELLO WORLD')\\ndefine Concatenate: 'Hello' + ' ' + 'CQL'\\ndefine GetLength: Length('FHIRKit')\\ndefine Substring: Substring('Clinical Query Language', 9, 5)\\ndefine StartCheck: StartsWith('Patient', 'Pat')\\ndefine EndCheck: EndsWith('Observation', 'tion')\"\n}"
+                },
+                "url": "{{baseUrl}}/$cql"
+              }
+            },
+            {
+              "name": "Date/Time Functions",
+              "description": "Date and time operations",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"define CurrentDate: Today()\\ndefine CurrentTime: Now()\\ndefine NextWeek: Today() + 7 days\\ndefine LastMonth: Today() - 1 month\\ndefine YearPart: year from Today()\\ndefine MonthPart: month from Today()\\ndefine SpecificDate: @2024-06-15\"\n}"
+                },
+                "url": "{{baseUrl}}/$cql"
+              }
+            },
+            {
+              "name": "CalculateAgeAt - Age Calculations",
+              "description": "Calculate age at specific dates",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"define PatientBirthDate: @1970-06-15\\ndefine AgeToday: CalculateAgeInYearsAt(PatientBirthDate, Today())\\ndefine AgeIn2020: CalculateAgeInYearsAt(PatientBirthDate, @2020-06-15)\\ndefine AgeBeforeBirthday2020: CalculateAgeInYearsAt(PatientBirthDate, @2020-06-14)\\ndefine AgeInMonths: CalculateAgeInMonthsAt(@2024-01-15, Today())\"\n}"
+                },
+                "url": "{{baseUrl}}/$cql"
+              }
+            },
+            {
+              "name": "Interval Operations - Before/After",
+              "description": "Interval temporal relationships",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"define Interval1: Interval[1, 5]\\ndefine Interval2: Interval[6, 10]\\ndefine Interval3: Interval[3, 8]\\ndefine BeforeCheck: Interval1 before Interval2\\ndefine AfterCheck: Interval2 after Interval1\\ndefine OverlapsCheck: Interval1 overlaps Interval3\\ndefine PointBefore: 0 before Interval1\\ndefine IntervalBeforePoint: Interval1 before 10\"\n}"
+                },
+                "url": "{{baseUrl}}/$cql"
+              }
+            },
+            {
+              "name": "Date Intervals",
+              "description": "Date range operations",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"define MeasurementPeriod: Interval[@2024-01-01, @2024-12-31]\\ndefine Q1: Interval[@2024-01-01, @2024-03-31]\\ndefine Q2: Interval[@2024-04-01, @2024-06-30]\\ndefine Q1BeforeQ2: Q1 before Q2\\ndefine DateInPeriod: @2024-06-15 in MeasurementPeriod\\ndefine PeriodStart: start of MeasurementPeriod\\ndefine PeriodEnd: end of MeasurementPeriod\"\n}"
+                },
+                "url": "{{baseUrl}}/$cql"
+              }
+            },
+            {
+              "name": "List Operations",
+              "description": "List manipulation functions",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"define Numbers: {1, 2, 3, 4, 5}\\ndefine FirstItem: First(Numbers)\\ndefine LastItem: Last(Numbers)\\ndefine ItemCount: Count(Numbers)\\ndefine HasItems: exists Numbers\\ndefine IsEmpty: empty {}\\ndefine SumAll: Sum(Numbers)\\ndefine Average: Avg(Numbers)\\ndefine Maximum: Max(Numbers)\\ndefine Minimum: Min(Numbers)\"\n}"
+                },
+                "url": "{{baseUrl}}/$cql"
+              }
+            },
+            {
+              "name": "Conditional Logic",
+              "description": "If-then-else and case expressions",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"define HbA1c: 7.8\\ndefine DiabetesControl: if HbA1c < 7 then 'Well Controlled' else if HbA1c < 8 then 'Fair Control' else 'Poor Control'\\ndefine BMI: 28.5\\ndefine BMICategory: case when BMI < 18.5 then 'Underweight' when BMI < 25 then 'Normal' when BMI < 30 then 'Overweight' else 'Obese' end\"\n}"
+                },
+                "url": "{{baseUrl}}/$cql"
+              }
+            },
+            {
+              "name": "Message Expression - Warning",
+              "description": "Log a warning message during evaluation",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"define CalculatedValue: 42\\ndefine ResultWithWarning: Message(CalculatedValue, true, 'calc-001', 'Calculation completed successfully', 'Warning')\"\n}"
+                },
+                "url": "{{baseUrl}}/$cql"
+              }
+            },
+            {
+              "name": "Message Expression - Error",
+              "description": "Log an error message during evaluation",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"define CriticalValue: 200\\ndefine HighValueAlert: Message(CriticalValue, CriticalValue > 100, 'alert-001', 'Critical value detected', 'Error')\"\n}"
+                },
+                "url": "{{baseUrl}}/$cql"
+              }
+            },
+            {
+              "name": "Boolean Logic",
+              "description": "Boolean operations and comparisons",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"define AndLogic: true and false\\ndefine OrLogic: true or false\\ndefine NotLogic: not false\\ndefine XorLogic: true xor false\\ndefine ImpliesLogic: true implies true\\ndefine Comparison: 5 > 3\\ndefine Equality: 'test' = 'test'\\ndefine Inequality: 5 != 3\"\n}"
+                },
+                "url": "{{baseUrl}}/$cql"
+              }
+            },
+            {
+              "name": "Null Handling",
+              "description": "Coalesce and null checks",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"define NullValue: null\\ndefine CoalesceResult: Coalesce(null, null, 'default')\\ndefine IsNullCheck: NullValue is null\\ndefine IsNotNull: 'value' is not null\"\n}"
+                },
+                "url": "{{baseUrl}}/$cql"
+              }
+            },
+            {
+              "name": "Tuple Operations",
+              "description": "Working with structured data",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"define PatientInfo: Tuple { name: 'John Smith', age: 54, diabetic: true }\\ndefine PatientName: PatientInfo.name\\ndefine PatientAge: PatientInfo.age\\ndefine IsDiabetic: PatientInfo.diabetic\"\n}"
+                },
+                "url": "{{baseUrl}}/$cql"
+              }
+            }
+          ]
+        },
+        {
+          "name": "FHIRPath Showcase",
+          "description": "Demonstrates FHIRPath expression evaluation",
+          "item": [
+            {
+              "name": "Navigation - Patient Name",
+              "description": "Navigate to patient family name",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expression\": \"Patient.name.family\",\n  \"resource\": {\n    \"resourceType\": \"Patient\",\n    \"id\": \"example\",\n    \"name\": [{\"family\": \"Smith\", \"given\": [\"John\", \"Robert\"]}],\n    \"gender\": \"male\",\n    \"birthDate\": \"1970-06-15\"\n  }\n}"
+                },
+                "url": "{{baseUrl}}/$fhirpath"
+              }
+            },
+            {
+              "name": "Navigation - Given Names",
+              "description": "Get all given names",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expression\": \"Patient.name.given\",\n  \"resource\": {\n    \"resourceType\": \"Patient\",\n    \"name\": [{\"family\": \"Smith\", \"given\": [\"John\", \"Robert\"]}]\n  }\n}"
+                },
+                "url": "{{baseUrl}}/$fhirpath"
+              }
+            },
+            {
+              "name": "First/Last Functions",
+              "description": "Get first and last elements",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expression\": \"Patient.name.given.first()\",\n  \"resource\": {\n    \"resourceType\": \"Patient\",\n    \"name\": [{\"family\": \"Smith\", \"given\": [\"John\", \"Robert\", \"Michael\"]}]\n  }\n}"
+                },
+                "url": "{{baseUrl}}/$fhirpath"
+              }
+            },
+            {
+              "name": "Exists Function",
+              "description": "Check if elements exist",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expression\": \"Patient.telecom.exists()\",\n  \"resource\": {\n    \"resourceType\": \"Patient\",\n    \"name\": [{\"family\": \"Smith\"}],\n    \"telecom\": [{\"system\": \"phone\", \"value\": \"555-1234\"}]\n  }\n}"
+                },
+                "url": "{{baseUrl}}/$fhirpath"
+              }
+            },
+            {
+              "name": "Empty Function",
+              "description": "Check if collection is empty",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expression\": \"Patient.address.empty()\",\n  \"resource\": {\n    \"resourceType\": \"Patient\",\n    \"name\": [{\"family\": \"Smith\"}]\n  }\n}"
+                },
+                "url": "{{baseUrl}}/$fhirpath"
+              }
+            },
+            {
+              "name": "Count Function",
+              "description": "Count elements in collection",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expression\": \"Patient.name.given.count()\",\n  \"resource\": {\n    \"resourceType\": \"Patient\",\n    \"name\": [{\"family\": \"Smith\", \"given\": [\"John\", \"Robert\", \"Michael\"]}]\n  }\n}"
+                },
+                "url": "{{baseUrl}}/$fhirpath"
+              }
+            },
+            {
+              "name": "Where Filter",
+              "description": "Filter elements with condition",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expression\": \"Patient.telecom.where(system = 'phone').value\",\n  \"resource\": {\n    \"resourceType\": \"Patient\",\n    \"telecom\": [\n      {\"system\": \"phone\", \"value\": \"555-1234\"},\n      {\"system\": \"email\", \"value\": \"john@example.com\"},\n      {\"system\": \"phone\", \"value\": \"555-5678\"}\n    ]\n  }\n}"
+                },
+                "url": "{{baseUrl}}/$fhirpath"
+              }
+            },
+            {
+              "name": "String StartsWith",
+              "description": "Check string prefix",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expression\": \"Patient.name.family.startsWith('Sm')\",\n  \"resource\": {\n    \"resourceType\": \"Patient\",\n    \"name\": [{\"family\": \"Smith\"}]\n  }\n}"
+                },
+                "url": "{{baseUrl}}/$fhirpath"
+              }
+            },
+            {
+              "name": "String Contains",
+              "description": "Check if string contains substring",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expression\": \"Patient.name.family.contains('mit')\",\n  \"resource\": {\n    \"resourceType\": \"Patient\",\n    \"name\": [{\"family\": \"Smith\"}]\n  }\n}"
+                },
+                "url": "{{baseUrl}}/$fhirpath"
+              }
+            },
+            {
+              "name": "Observation Value Access",
+              "description": "Access Observation value quantity",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expression\": \"Observation.valueQuantity.value\",\n  \"resource\": {\n    \"resourceType\": \"Observation\",\n    \"status\": \"final\",\n    \"code\": {\"coding\": [{\"system\": \"http://loinc.org\", \"code\": \"8480-6\"}]},\n    \"valueQuantity\": {\"value\": 142, \"unit\": \"mmHg\"}\n  }\n}"
+                },
+                "url": "{{baseUrl}}/$fhirpath"
+              }
+            },
+            {
+              "name": "Coding Code Access",
+              "description": "Get code from coding array",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expression\": \"Condition.code.coding.code\",\n  \"resource\": {\n    \"resourceType\": \"Condition\",\n    \"code\": {\n      \"coding\": [\n        {\"system\": \"http://snomed.info/sct\", \"code\": \"44054006\", \"display\": \"Diabetes\"}\n      ]\n    },\n    \"subject\": {\"reference\": \"Patient/1\"}\n  }\n}"
+                },
+                "url": "{{baseUrl}}/$fhirpath"
+              }
+            },
+            {
+              "name": "All Function",
+              "description": "Check if all elements match condition",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expression\": \"Patient.name.all(family.exists())\",\n  \"resource\": {\n    \"resourceType\": \"Patient\",\n    \"name\": [\n      {\"family\": \"Smith\", \"given\": [\"John\"]},\n      {\"family\": \"Jones\", \"given\": [\"Jane\"]}\n    ]\n  }\n}"
+                },
+                "url": "{{baseUrl}}/$fhirpath"
+              }
+            },
+            {
+              "name": "Complex Bundle Navigation",
+              "description": "Navigate through Bundle entries",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expression\": \"Bundle.entry.resource.where(resourceType = 'Patient').name.family\",\n  \"resource\": {\n    \"resourceType\": \"Bundle\",\n    \"type\": \"searchset\",\n    \"entry\": [\n      {\"resource\": {\"resourceType\": \"Patient\", \"name\": [{\"family\": \"Smith\"}]}},\n      {\"resource\": {\"resourceType\": \"Observation\", \"status\": \"final\"}},\n      {\"resource\": {\"resourceType\": \"Patient\", \"name\": [{\"family\": \"Jones\"}]}}\n    ]\n  }\n}"
+                },
+                "url": "{{baseUrl}}/$fhirpath"
+              }
+            },
+            {
+              "name": "Extension Access",
+              "description": "Access extension values",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expression\": \"Patient.extension.where(url = 'http://example.org/birthPlace').valueString\",\n  \"resource\": {\n    \"resourceType\": \"Patient\",\n    \"name\": [{\"family\": \"Smith\"}],\n    \"extension\": [\n      {\"url\": \"http://example.org/birthPlace\", \"valueString\": \"Springfield, IL\"},\n      {\"url\": \"http://example.org/religion\", \"valueString\": \"None specified\"}\n    ]\n  }\n}"
+                },
+                "url": "{{baseUrl}}/$fhirpath"
+              }
+            },
+            {
+              "name": "Boolean Expressions",
+              "description": "Complex boolean logic",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"expression\": \"Patient.gender = 'male' and Patient.birthDate < @1980-01-01\",\n  \"resource\": {\n    \"resourceType\": \"Patient\",\n    \"gender\": \"male\",\n    \"birthDate\": \"1970-06-15\"\n  }\n}"
+                },
+                "url": "{{baseUrl}}/$fhirpath"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Terminology Showcase",
+          "description": "Demonstrates terminology operations",
+          "item": [
+            {
+              "name": "$expand - Expand ValueSet",
+              "description": "Expand a ValueSet to get all codes",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/ValueSet/$expand?url=http://example.org/fhir/ValueSet/example"
+              }
+            },
+            {
+              "name": "$validate-code - Valid Code",
+              "description": "Validate that a code is in a ValueSet",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/ValueSet/$validate-code?url=http://example.org/fhir/ValueSet/example&code=test"
+              }
+            },
+            {
+              "name": "$validate-code - POST with Coding",
+              "description": "Validate code with full Coding structure",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/fhir+json"},
+                  {"key": "Accept", "value": "application/fhir+json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resourceType\": \"Parameters\",\n  \"parameter\": [\n    {\"name\": \"url\", \"valueUri\": \"http://example.org/fhir/ValueSet/example\"},\n    {\"name\": \"coding\", \"valueCoding\": {\"system\": \"http://example.org/codesystem\", \"code\": \"test\"}}\n  ]\n}"
+                },
+                "url": "{{baseUrl}}/ValueSet/$validate-code"
+              }
+            },
+            {
+              "name": "$lookup - Code Lookup",
+              "description": "Look up details for a code",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/CodeSystem/$lookup?system=http://loinc.org&code=8480-6"
+              }
+            },
+            {
+              "name": "$subsumes - Check Subsumption (GET)",
+              "description": "Check if one code subsumes another",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/CodeSystem/$subsumes?system=http://hl7.org/fhir/sid/icd-10&codeA=E11&codeB=E11.9"
+              }
+            },
+            {
+              "name": "$subsumes - Check Subsumption (POST)",
+              "description": "Check subsumption with Coding parameters",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/fhir+json"},
+                  {"key": "Accept", "value": "application/fhir+json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resourceType\": \"Parameters\",\n  \"parameter\": [\n    {\"name\": \"codingA\", \"valueCoding\": {\"system\": \"http://snomed.info/sct\", \"code\": \"73211009\"}},\n    {\"name\": \"codingB\", \"valueCoding\": {\"system\": \"http://snomed.info/sct\", \"code\": \"44054006\"}}\n  ]\n}"
+                },
+                "url": "{{baseUrl}}/CodeSystem/$subsumes"
+              }
+            },
+            {
+              "name": "$translate - Code Translation",
+              "description": "Translate code from one system to another using ConceptMap",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/ConceptMap/$translate?code=E11.9&system=http://hl7.org/fhir/sid/icd-10&target=http://snomed.info/sct"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GraphQL Showcase",
+          "description": "Demonstrates GraphQL queries and mutations",
+          "item": [
+            {
+              "name": "Schema Introspection",
+              "description": "Get GraphQL schema information",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"query\": \"{ __schema { queryType { name } mutationType { name } types { name kind } } }\"\n}"
+                },
+                "url": "{{baseUrl}}/$graphql"
+              }
+            },
+            {
+              "name": "Patient Query - Basic",
+              "description": "Query patient by ID with basic fields",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"query\": \"{ Patient(id: \\\"showcase-p1\\\") { id name { family given } gender birthDate } }\"\n}"
+                },
+                "url": "{{baseUrl}}/$graphql"
+              }
+            },
+            {
+              "name": "Patient Query - With Address",
+              "description": "Query patient with address details",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"query\": \"{ Patient(id: \\\"showcase-p1\\\") { id name { family given } address { city state postalCode } telecom { system value } } }\"\n}"
+                },
+                "url": "{{baseUrl}}/$graphql"
+              }
+            },
+            {
+              "name": "Observation Query",
+              "description": "Query observation with code and value",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"query\": \"{ Observation(id: \\\"showcase-obs1\\\") { id status code { coding { system code display } } valueQuantity { value unit } effectiveDateTime } }\"\n}"
+                },
+                "url": "{{baseUrl}}/$graphql"
+              }
+            },
+            {
+              "name": "PatientList Query",
+              "description": "Query multiple patients",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"query\": \"{ PatientList(name: \\\"Smith\\\") { id name { family given } gender birthDate } }\"\n}"
+                },
+                "url": "{{baseUrl}}/$graphql"
+              }
+            },
+            {
+              "name": "Condition Query with Patient",
+              "description": "Query condition with referenced patient",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json"},
+                  {"key": "Accept", "value": "application/json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"query\": \"{ Condition(id: \\\"showcase-cond1\\\") { id code { coding { code display } } clinicalStatus { coding { code } } subject { reference } } }\"\n}"
+                },
+                "url": "{{baseUrl}}/$graphql"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operations Showcase",
+          "description": "Demonstrates FHIR operations",
+          "item": [
+            {
+              "name": "$validate - Valid Patient",
+              "description": "Validate a valid Patient resource",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/fhir+json"},
+                  {"key": "Accept", "value": "application/fhir+json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resourceType\": \"Patient\",\n  \"name\": [{\"family\": \"Test\", \"given\": [\"Validation\"]}],\n  \"gender\": \"male\",\n  \"birthDate\": \"1990-01-15\"\n}"
+                },
+                "url": "{{baseUrl}}/Patient/$validate"
+              }
+            },
+            {
+              "name": "$validate - Invalid Observation",
+              "description": "Validate an invalid Observation (missing required fields)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/fhir+json"},
+                  {"key": "Accept", "value": "application/fhir+json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resourceType\": \"Observation\",\n  \"subject\": {\"reference\": \"Patient/1\"}\n}"
+                },
+                "url": "{{baseUrl}}/Observation/$validate"
+              }
+            },
+            {
+              "name": "$everything - Patient Compartment",
+              "description": "Get all resources for a patient",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/Patient/showcase-p1/$everything"
+              }
+            },
+            {
+              "name": "$diff - Compare Versions",
+              "description": "Compare current patient with version 1",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/Patient/showcase-p1/$diff?version=1"
+              }
+            },
+            {
+              "name": "$diff - Compare Two Resources",
+              "description": "Compare two resource versions",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/fhir+json"},
+                  {"key": "Accept", "value": "application/fhir+json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resourceType\": \"Parameters\",\n  \"parameter\": [\n    {\"name\": \"source\", \"resource\": {\"resourceType\": \"Patient\", \"id\": \"1\", \"name\": [{\"family\": \"Original\"}], \"gender\": \"male\"}},\n    {\"name\": \"target\", \"resource\": {\"resourceType\": \"Patient\", \"id\": \"1\", \"name\": [{\"family\": \"Modified\", \"given\": [\"New\"]}], \"gender\": \"male\", \"active\": true}}\n  ]\n}"
+                },
+                "url": "{{baseUrl}}/Patient/$diff"
+              }
+            },
+            {
+              "name": "$export - System Export",
+              "description": "Export all resources from server",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {"key": "Accept", "value": "application/fhir+ndjson"},
+                  {"key": "Prefer", "value": "respond-async"}
+                ],
+                "url": "{{baseUrl}}/$export"
+              }
+            },
+            {
+              "name": "$export - Patient Type Export",
+              "description": "Export all Patient data",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {"key": "Accept", "value": "application/fhir+ndjson"},
+                  {"key": "Prefer", "value": "respond-async"}
+                ],
+                "url": "{{baseUrl}}/Patient/$export"
+              }
+            },
+            {
+              "name": "$export - Group Export",
+              "description": "Export data for patients in a Group",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {"key": "Accept", "value": "application/fhir+ndjson"},
+                  {"key": "Prefer", "value": "respond-async"}
+                ],
+                "url": "{{baseUrl}}/Group/showcase-group1/$export"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Advanced Features",
+          "description": "Demonstrates advanced FHIR operations",
+          "item": [
+            {
+              "name": "Transaction Bundle",
+              "description": "Atomic transaction with multiple operations",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/fhir+json"},
+                  {"key": "Accept", "value": "application/fhir+json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resourceType\": \"Bundle\",\n  \"type\": \"transaction\",\n  \"entry\": [\n    {\n      \"resource\": {\n        \"resourceType\": \"Patient\",\n        \"id\": \"showcase-transaction-pt\",\n        \"name\": [{\"family\": \"Transaction\", \"given\": [\"Test\"]}]\n      },\n      \"request\": {\"method\": \"PUT\", \"url\": \"Patient/showcase-transaction-pt\"}\n    },\n    {\n      \"resource\": {\n        \"resourceType\": \"Observation\",\n        \"id\": \"showcase-transaction-obs\",\n        \"status\": \"final\",\n        \"code\": {\"coding\": [{\"system\": \"http://loinc.org\", \"code\": \"8480-6\"}]},\n        \"subject\": {\"reference\": \"Patient/showcase-transaction-pt\"},\n        \"valueQuantity\": {\"value\": 120, \"unit\": \"mmHg\"}\n      },\n      \"request\": {\"method\": \"PUT\", \"url\": \"Observation/showcase-transaction-obs\"}\n    }\n  ]\n}"
+                },
+                "url": "{{baseUrl}}/"
+              }
+            },
+            {
+              "name": "Batch Bundle",
+              "description": "Batch of independent operations",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {"key": "Content-Type", "value": "application/fhir+json"},
+                  {"key": "Accept", "value": "application/fhir+json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resourceType\": \"Bundle\",\n  \"type\": \"batch\",\n  \"entry\": [\n    {\"request\": {\"method\": \"GET\", \"url\": \"Patient/showcase-p1\"}},\n    {\"request\": {\"method\": \"GET\", \"url\": \"Patient/showcase-p2\"}},\n    {\"request\": {\"method\": \"GET\", \"url\": \"Condition?subject=Patient/showcase-p1\"}}\n  ]\n}"
+                },
+                "url": "{{baseUrl}}/"
+              }
+            },
+            {
+              "name": "JSON Patch",
+              "description": "Apply JSON Patch operations to a resource",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {"key": "Content-Type", "value": "application/json-patch+json"},
+                  {"key": "Accept", "value": "application/fhir+json"}
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "[\n  {\"op\": \"replace\", \"path\": \"/active\", \"value\": true},\n  {\"op\": \"add\", \"path\": \"/telecom/-\", \"value\": {\"system\": \"email\", \"value\": \"updated@example.com\"}}\n]"
+                },
+                "url": "{{baseUrl}}/Patient/showcase-p1"
+              }
+            },
+            {
+              "name": "History - Patient History",
+              "description": "Get version history for a patient",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/Patient/showcase-p1/_history"
+              }
+            },
+            {
+              "name": "History - With Since",
+              "description": "Get history since a specific time",
+              "request": {
+                "method": "GET",
+                "header": [{"key": "Accept", "value": "application/fhir+json"}],
+                "url": "{{baseUrl}}/Patient/showcase-p1/_history?_since=2024-01-01"
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }
