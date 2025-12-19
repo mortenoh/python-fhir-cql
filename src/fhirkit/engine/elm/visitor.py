@@ -6,6 +6,7 @@ Each expression type is handled by a registered handler method.
 
 from __future__ import annotations
 
+import logging
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any, Callable
@@ -17,6 +18,9 @@ from fhirkit.engine.types import FHIRDate, FHIRDateTime, FHIRTime, Quantity
 
 if TYPE_CHECKING:
     from fhirkit.engine.elm.models.library import ELMLibrary
+
+# Logger for CQL Message expressions
+cql_logger = logging.getLogger("fhirkit.cql.message")
 
 
 class ELMExpressionVisitor:
@@ -1713,7 +1717,7 @@ class ELMExpressionVisitor:
     # =========================================================================
 
     def _eval_query(self, node: dict[str, Any]) -> list[Any]:
-        """Evaluate query expression."""
+        """Evaluate query expression with support for multiple sources (cross join)."""
         sources = node.get("source", [])
         let_clauses = node.get("let", [])
         relationships = node.get("relationship", [])
@@ -1726,26 +1730,40 @@ class ELMExpressionVisitor:
         if not sources:
             return []
 
-        # Start with first source
-        first_source = sources[0]
-        alias = first_source.get("alias")
-        source_expr = first_source.get("expression")
-        source_data = self.evaluate(source_expr)
+        # Evaluate all sources and get their data
+        source_data_list: list[tuple[str, list[Any]]] = []
+        for source in sources:
+            alias = source.get("alias")
+            source_expr = source.get("expression")
+            source_data = self.evaluate(source_expr)
 
-        if source_data is None:
+            if source_data is None:
+                source_data = []
+            if not isinstance(source_data, list):
+                source_data = [source_data]
+
+            source_data_list.append((alias, source_data))
+
+        # If any source is empty, result is empty (but still process aggregate)
+        if any(len(data) == 0 for _, data in source_data_list):
+            # Still need to process aggregate with empty results
+            if aggregate:
+                first_alias = source_data_list[0][0] if source_data_list else None
+                return self._apply_aggregate([], aggregate, first_alias)
             return []
-        if not isinstance(source_data, list):
-            source_data = [source_data]
+
+        # Generate cross product of all sources
+        source_combinations = self._generate_cross_product(source_data_list)
 
         results = []
+        first_alias = source_data_list[0][0] if source_data_list else None
 
-        for item in source_data:
+        for combination in source_combinations:
             self.context.push_alias_scope()
             try:
-                self.context.set_alias(alias, item)
-
-                # Process additional sources (cross join)
-                # TODO: Handle multiple sources
+                # Set aliases for all sources in this combination
+                for alias, item in combination:
+                    self.context.set_alias(alias, item)
 
                 # Process let clauses
                 for let_clause in let_clauses or []:
@@ -1800,7 +1818,8 @@ class ELMExpressionVisitor:
                     return_expr = return_clause.get("expression")
                     result = self.evaluate(return_expr)
                 else:
-                    result = item
+                    # Default: return first source item
+                    result = combination[0][1] if combination else None
 
                 results.append(result)
 
@@ -1813,13 +1832,40 @@ class ELMExpressionVisitor:
 
         # Process aggregate
         if aggregate:
-            return self._apply_aggregate(results, aggregate, alias)
+            return self._apply_aggregate(results, aggregate, first_alias)
 
         # Process sort
         if sort:
             results = self._apply_sort(results, sort)
 
         return results
+
+    def _generate_cross_product(self, source_data_list: list[tuple[str, list[Any]]]) -> list[list[tuple[str, Any]]]:
+        """Generate cross product of multiple source lists.
+
+        Args:
+            source_data_list: List of (alias, data_list) tuples
+
+        Returns:
+            List of combinations, where each combination is a list of (alias, item) tuples
+        """
+        if not source_data_list:
+            return []
+
+        if len(source_data_list) == 1:
+            alias, data = source_data_list[0]
+            return [[(alias, item)] for item in data]
+
+        # Recursive: combine first source with cross product of rest
+        first_alias, first_data = source_data_list[0]
+        rest_product = self._generate_cross_product(source_data_list[1:])
+
+        result = []
+        for item in first_data:
+            for rest_combo in rest_product:
+                result.append([(first_alias, item)] + rest_combo)
+
+        return result
 
     def _make_distinct(self, items: list[Any]) -> list[Any]:
         """Make list distinct while preserving order."""
@@ -3112,12 +3158,74 @@ class ELMExpressionVisitor:
         return None
 
     def _eval_calculate_age_at(self, node: dict[str, Any]) -> int | None:
-        """Calculate age at a specific date."""
+        """Calculate age at a specific date.
+
+        Args:
+            node: ELM node with operands:
+                - left: birthdate (FHIRDate or string)
+                - right: as-of date (FHIRDate or string)
+
+        Returns:
+            Age in the specified precision unit at the given date
+        """
         left, right = self._get_binary_operands(node)
         if left is None or right is None:
             return None
 
-        # TODO: Implement age calculation at specific date
+        precision = node.get("precision", "Year")
+
+        # Parse birthdate
+        if isinstance(left, FHIRDate):
+            birth_year = left.year
+            birth_month = left.month or 1
+            birth_day = left.day or 1
+        elif isinstance(left, str):
+            parsed = FHIRDate.parse(left)
+            if parsed is None:
+                return None
+            birth_year = parsed.year
+            birth_month = parsed.month or 1
+            birth_day = parsed.day or 1
+        else:
+            return None
+
+        # Parse as-of date
+        if isinstance(right, FHIRDate):
+            as_of_year = right.year
+            as_of_month = right.month or 1
+            as_of_day = right.day or 1
+        elif isinstance(right, str):
+            parsed = FHIRDate.parse(right)
+            if parsed is None:
+                return None
+            as_of_year = parsed.year
+            as_of_month = parsed.month or 1
+            as_of_day = parsed.day or 1
+        elif hasattr(right, "year"):
+            # datetime.date or similar
+            as_of_year = right.year
+            as_of_month = right.month
+            as_of_day = right.day
+        else:
+            return None
+
+        if precision.lower() == "year":
+            age = as_of_year - birth_year
+            if (as_of_month, as_of_day) < (birth_month, birth_day):
+                age -= 1
+            return age
+        elif precision.lower() == "month":
+            age_months = (as_of_year - birth_year) * 12 + (as_of_month - birth_month)
+            if as_of_day < birth_day:
+                age_months -= 1
+            return age_months
+        elif precision.lower() == "day":
+            from datetime import date
+
+            birth_date = date(birth_year, birth_month, birth_day)
+            as_of_date = date(as_of_year, as_of_month, as_of_day)
+            return (as_of_date - birth_date).days
+
         return None
 
     # =========================================================================
@@ -3125,14 +3233,42 @@ class ELMExpressionVisitor:
     # =========================================================================
 
     def _eval_message(self, node: dict[str, Any]) -> Any:
-        """Evaluate message expression."""
+        """Evaluate CQL Message expression.
+
+        The Message expression logs a message and returns the source value.
+
+        CQL Spec:
+            Message(source T, condition Boolean, code String, severity String, message String) T
+
+        Severity levels (mapped to Python logging):
+            - Trace -> DEBUG
+            - Message -> INFO
+            - Warning -> WARNING
+            - Error -> ERROR
+        """
         source = self.evaluate(node.get("source"))
         condition = self.evaluate(node.get("condition"))
 
         if condition is None or condition is True:
-            _ = self.evaluate(node.get("message"))  # message - for future logging
-            _ = self.evaluate(node.get("severity"))  # severity - for future logging
-            # TODO: Log message based on severity
+            message = self.evaluate(node.get("message"))
+            severity = self.evaluate(node.get("severity"))
+            code = self.evaluate(node.get("code"))
+
+            # Build log message with optional code
+            log_msg = str(message) if message else ""
+            if code:
+                log_msg = f"[{code}] {log_msg}"
+
+            # Map CQL severity to Python log level
+            severity_str = str(severity).lower() if severity else "message"
+            if severity_str == "trace":
+                cql_logger.debug(log_msg)
+            elif severity_str == "warning":
+                cql_logger.warning(log_msg)
+            elif severity_str == "error":
+                cql_logger.error(log_msg)
+            else:  # "message" or default
+                cql_logger.info(log_msg)
 
         return source
 
