@@ -1818,6 +1818,45 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
                 agent=agent,
             )
 
+        # --- StructureDefinition (Conformance) ---
+        @strawberry.field(description="Fetch a StructureDefinition by ID")
+        def structureDefinition(self, _id: FhirId) -> Optional[Resource]:
+            return resource_resolver.resolve("StructureDefinition", _id)
+
+        @strawberry.field(description="Search StructureDefinition resources")
+        def structureDefinitions(
+            self,
+            _count: FhirCount = 100,
+            _offset: FhirOffset = 0,
+            _sort: FhirSort = None,
+            url: Optional[str] = None,
+            name: Optional[str] = None,
+            title: Optional[str] = None,
+            version: Optional[str] = None,
+            status: Optional[str] = None,
+            publisher: Optional[str] = None,
+            type: Optional[str] = None,
+            kind: Optional[str] = None,
+            base: Optional[str] = None,
+            derivation: Optional[str] = None,
+        ) -> list[Resource]:
+            return list_resolver.resolve(
+                "StructureDefinition",
+                _count=_count,
+                _offset=_offset,
+                _sort=_sort,
+                url=url,
+                name=name,
+                title=title,
+                version=version,
+                status=status,
+                publisher=publisher,
+                type=type,
+                kind=kind,
+                base=base,
+                derivation=derivation,
+            )
+
     # =========================================================================
     # Mutation Type
     # =========================================================================
@@ -2195,6 +2234,19 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
         @strawberry.mutation(description="Delete a Provenance resource")
         def deleteProvenance(self, _id: FhirId) -> Optional[Resource]:
             return mutation_resolver.delete("Provenance", _id)
+
+        # --- StructureDefinition (Conformance) ---
+        @strawberry.mutation(description="Create a StructureDefinition resource")
+        def createStructureDefinition(self, data: JSON) -> Resource:  # type: ignore[valid-type]
+            return mutation_resolver.create("StructureDefinition", dict(data))
+
+        @strawberry.mutation(description="Update a StructureDefinition resource")
+        def updateStructureDefinition(self, _id: FhirId, data: JSON) -> Optional[Resource]:  # type: ignore[valid-type]
+            return mutation_resolver.update("StructureDefinition", _id, dict(data))
+
+        @strawberry.mutation(description="Delete a StructureDefinition resource")
+        def deleteStructureDefinition(self, _id: FhirId) -> Optional[Resource]:
+            return mutation_resolver.delete("StructureDefinition", _id)
 
     # Create and return schema
     return strawberry.Schema(query=Query, mutation=Mutation)

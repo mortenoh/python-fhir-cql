@@ -20,11 +20,13 @@ Example:
             print(f"{issue.severity}: {issue.message} at {issue.location}")
 """
 
+from .profile_validator import ProfileValidator
 from .rules import RESOURCE_RULES
 from .validator import FHIRValidator, ValidationIssue, ValidationResult
 
 __all__ = [
     "FHIRValidator",
+    "ProfileValidator",
     "ValidationResult",
     "ValidationIssue",
     "RESOURCE_RULES",

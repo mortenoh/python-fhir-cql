@@ -105,6 +105,8 @@ VALID_RESOURCE_TYPES = {
     "CapabilityStatement",
     "Provenance",
     "AuditEvent",
+    # Conformance
+    "StructureDefinition",
 }
 
 # Validation rules per resource type

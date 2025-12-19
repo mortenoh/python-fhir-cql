@@ -76,6 +76,12 @@ class FHIRServerSettings(BaseSettings):
         description="Exclude read operations from audit log (reduce noise)",
     )
 
+    # Profile Validation
+    validate_profiles_on_write: bool = Field(
+        default=False,
+        description="Validate resources against declared meta.profile on create/update",
+    )
+
     # Security
     enable_cors: bool = True
     cors_origins: list[str] = Field(default=["*"])

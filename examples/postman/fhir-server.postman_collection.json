@@ -676,6 +676,116 @@
       ]
     },
     {
+      "name": "StructureDefinition",
+      "item": [
+        {
+          "name": "Create Simple Patient Profile",
+          "description": "Create a StructureDefinition profile that requires identifier and name",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"StructureDefinition\",\n  \"id\": \"simple-patient\",\n  \"url\": \"http://example.org/fhir/StructureDefinition/simple-patient\",\n  \"version\": \"1.0.0\",\n  \"name\": \"SimplePatient\",\n  \"title\": \"Simple Patient Profile\",\n  \"status\": \"active\",\n  \"date\": \"2024-01-15\",\n  \"publisher\": \"Example Organization\",\n  \"description\": \"A simple Patient profile that requires identifier and at least one name.\",\n  \"fhirVersion\": \"4.0.1\",\n  \"kind\": \"resource\",\n  \"abstract\": false,\n  \"type\": \"Patient\",\n  \"baseDefinition\": \"http://hl7.org/fhir/StructureDefinition/Patient\",\n  \"derivation\": \"constraint\",\n  \"snapshot\": {\n    \"element\": [\n      {\"id\": \"Patient\", \"path\": \"Patient\", \"min\": 0, \"max\": \"*\"},\n      {\"id\": \"Patient.identifier\", \"path\": \"Patient.identifier\", \"min\": 1, \"max\": \"*\"},\n      {\"id\": \"Patient.name\", \"path\": \"Patient.name\", \"min\": 1, \"max\": \"*\"},\n      {\"id\": \"Patient.name.family\", \"path\": \"Patient.name.family\", \"min\": 1, \"max\": \"1\"}\n    ]\n  }\n}"
+            },
+            "url": "{{baseUrl}}/StructureDefinition/simple-patient"
+          }
+        },
+        {
+          "name": "Create Vital Signs Observation Profile",
+          "description": "Create a StructureDefinition profile for vital signs observations",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"StructureDefinition\",\n  \"id\": \"vital-signs-observation\",\n  \"url\": \"http://example.org/fhir/StructureDefinition/vital-signs-observation\",\n  \"version\": \"1.0.0\",\n  \"name\": \"VitalSignsObservation\",\n  \"title\": \"Vital Signs Observation Profile\",\n  \"status\": \"active\",\n  \"fhirVersion\": \"4.0.1\",\n  \"kind\": \"resource\",\n  \"abstract\": false,\n  \"type\": \"Observation\",\n  \"baseDefinition\": \"http://hl7.org/fhir/StructureDefinition/Observation\",\n  \"derivation\": \"constraint\",\n  \"snapshot\": {\n    \"element\": [\n      {\"id\": \"Observation\", \"path\": \"Observation\", \"min\": 0, \"max\": \"*\"},\n      {\"id\": \"Observation.status\", \"path\": \"Observation.status\", \"min\": 1, \"max\": \"1\", \"fixedCode\": \"final\"},\n      {\"id\": \"Observation.category\", \"path\": \"Observation.category\", \"min\": 1, \"max\": \"*\"},\n      {\"id\": \"Observation.code\", \"path\": \"Observation.code\", \"min\": 1, \"max\": \"1\"},\n      {\"id\": \"Observation.subject\", \"path\": \"Observation.subject\", \"min\": 1, \"max\": \"1\"},\n      {\"id\": \"Observation.effective[x]\", \"path\": \"Observation.effective[x]\", \"min\": 1, \"max\": \"1\"}\n    ]\n  }\n}"
+            },
+            "url": "{{baseUrl}}/StructureDefinition/vital-signs-observation"
+          }
+        },
+        {
+          "name": "Read StructureDefinition",
+          "description": "Read a StructureDefinition by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/StructureDefinition/simple-patient"
+          }
+        },
+        {
+          "name": "Search StructureDefinition by URL",
+          "description": "Search for StructureDefinition by canonical URL",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/StructureDefinition?url=http://example.org/fhir/StructureDefinition/simple-patient"
+          }
+        },
+        {
+          "name": "Search StructureDefinition by Type",
+          "description": "Search for StructureDefinitions by constrained type (e.g., Patient profiles)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/StructureDefinition?type=Patient"
+          }
+        },
+        {
+          "name": "Search StructureDefinition by Kind",
+          "description": "Search for resource-type StructureDefinitions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/StructureDefinition?kind=resource"
+          }
+        },
+        {
+          "name": "Search StructureDefinition by Status",
+          "description": "Search for active StructureDefinitions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/StructureDefinition?status=active"
+          }
+        },
+        {
+          "name": "List All StructureDefinitions",
+          "description": "List all StructureDefinition resources in the server",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "url": "{{baseUrl}}/StructureDefinition"
+          }
+        },
+        {
+          "name": "Delete StructureDefinition",
+          "description": "Delete a StructureDefinition by ID",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/StructureDefinition/simple-patient"
+          }
+        }
+      ]
+    },
+    {
       "name": "Terminology",
       "item": [
         {
@@ -960,6 +1070,91 @@
               "raw": "{\n  \"resourceType\": \"Condition\",\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"clinicalStatus\": {\n    \"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/condition-clinical\", \"code\": \"invalid-status\"}]\n  }\n}"
             },
             "url": "{{baseUrl}}/Condition/$validate"
+          }
+        },
+        {
+          "name": "Patient $validate with Profile",
+          "description": "Validate a Patient against a StructureDefinition profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"},
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Patient\",\n  \"identifier\": [{\"system\": \"http://hospital.example.org\", \"value\": \"12345\"}],\n  \"name\": [{\"family\": \"Smith\", \"given\": [\"John\"]}],\n  \"gender\": \"male\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/Patient/$validate?profile=http://example.org/fhir/StructureDefinition/simple-patient",
+              "host": ["{{baseUrl}}"],
+              "path": ["Patient", "$validate"],
+              "query": [
+                {"key": "profile", "value": "http://example.org/fhir/StructureDefinition/simple-patient"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Patient $validate with Profile (Missing Identifier)",
+          "description": "Validate a Patient against profile - shows error for missing required identifier",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"},
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Patient\",\n  \"name\": [{\"family\": \"Smith\", \"given\": [\"John\"]}],\n  \"gender\": \"male\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/Patient/$validate?profile=http://example.org/fhir/StructureDefinition/simple-patient",
+              "host": ["{{baseUrl}}"],
+              "path": ["Patient", "$validate"],
+              "query": [
+                {"key": "profile", "value": "http://example.org/fhir/StructureDefinition/simple-patient"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Observation $validate with Vital Signs Profile",
+          "description": "Validate an Observation against the vital signs profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"},
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Observation\",\n  \"status\": \"final\",\n  \"category\": [{\n    \"coding\": [{\"system\": \"http://terminology.hl7.org/CodeSystem/observation-category\", \"code\": \"vital-signs\"}]\n  }],\n  \"code\": {\n    \"coding\": [{\"system\": \"http://loinc.org\", \"code\": \"8480-6\", \"display\": \"Systolic BP\"}]\n  },\n  \"subject\": {\"reference\": \"Patient/{{patientId}}\"},\n  \"effectiveDateTime\": \"2024-01-15T10:30:00Z\",\n  \"valueQuantity\": {\n    \"value\": 120,\n    \"unit\": \"mmHg\",\n    \"system\": \"http://unitsofmeasure.org\",\n    \"code\": \"mm[Hg]\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/Observation/$validate?profile=http://example.org/fhir/StructureDefinition/vital-signs-observation",
+              "host": ["{{baseUrl}}"],
+              "path": ["Observation", "$validate"],
+              "query": [
+                {"key": "profile", "value": "http://example.org/fhir/StructureDefinition/vital-signs-observation"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "$validate with Parameters",
+          "description": "Validate using Parameters wrapper with embedded resource and profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/fhir+json"},
+              {"key": "Accept", "value": "application/fhir+json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resourceType\": \"Parameters\",\n  \"parameter\": [\n    {\n      \"name\": \"resource\",\n      \"resource\": {\n        \"resourceType\": \"Patient\",\n        \"identifier\": [{\"system\": \"http://hospital.example.org\", \"value\": \"12345\"}],\n        \"name\": [{\"family\": \"Smith\", \"given\": [\"John\"]}]\n      }\n    },\n    {\n      \"name\": \"profile\",\n      \"valueUri\": \"http://example.org/fhir/StructureDefinition/simple-patient\"\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/Patient/$validate"
           }
         },
         {

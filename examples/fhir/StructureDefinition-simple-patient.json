@@ -1,0 +1,91 @@
+{
+  "resourceType": "StructureDefinition",
+  "id": "simple-patient",
+  "url": "http://example.org/fhir/StructureDefinition/simple-patient",
+  "version": "1.0.0",
+  "name": "SimplePatient",
+  "title": "Simple Patient Profile",
+  "status": "active",
+  "date": "2024-01-15",
+  "publisher": "Example Organization",
+  "description": "A simple Patient profile that requires identifier and at least one name.",
+  "fhirVersion": "4.0.1",
+  "kind": "resource",
+  "abstract": false,
+  "type": "Patient",
+  "baseDefinition": "http://hl7.org/fhir/StructureDefinition/Patient",
+  "derivation": "constraint",
+  "differential": {
+    "element": [
+      {
+        "id": "Patient",
+        "path": "Patient",
+        "short": "Simple Patient with required identifier and name"
+      },
+      {
+        "id": "Patient.identifier",
+        "path": "Patient.identifier",
+        "min": 1,
+        "max": "*",
+        "mustSupport": true
+      },
+      {
+        "id": "Patient.name",
+        "path": "Patient.name",
+        "min": 1,
+        "max": "*",
+        "mustSupport": true
+      },
+      {
+        "id": "Patient.name.family",
+        "path": "Patient.name.family",
+        "min": 1,
+        "mustSupport": true
+      }
+    ]
+  },
+  "snapshot": {
+    "element": [
+      {
+        "id": "Patient",
+        "path": "Patient",
+        "short": "Simple Patient with required identifier and name",
+        "min": 0,
+        "max": "*"
+      },
+      {
+        "id": "Patient.identifier",
+        "path": "Patient.identifier",
+        "min": 1,
+        "max": "*",
+        "mustSupport": true
+      },
+      {
+        "id": "Patient.name",
+        "path": "Patient.name",
+        "min": 1,
+        "max": "*",
+        "mustSupport": true
+      },
+      {
+        "id": "Patient.name.family",
+        "path": "Patient.name.family",
+        "min": 1,
+        "max": "1",
+        "mustSupport": true
+      },
+      {
+        "id": "Patient.birthDate",
+        "path": "Patient.birthDate",
+        "min": 0,
+        "max": "1"
+      },
+      {
+        "id": "Patient.gender",
+        "path": "Patient.gender",
+        "min": 0,
+        "max": "1"
+      }
+    ]
+  }
+}

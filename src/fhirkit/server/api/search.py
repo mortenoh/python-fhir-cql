@@ -847,6 +847,25 @@ SEARCH_PARAMS: dict[str, dict[str, dict[str, Any]]] = {
         "supplier": {"path": "supplier.reference", "type": "reference"},
         "receiver": {"path": "receiver.reference", "type": "reference"},
     },
+    # === StructureDefinition ===
+    "StructureDefinition": {
+        "_id": {"path": "id", "type": "token"},
+        "url": {"path": "url", "type": "uri"},
+        "name": {"path": "name", "type": "string"},
+        "title": {"path": "title", "type": "string"},
+        "version": {"path": "version", "type": "token"},
+        "status": {"path": "status", "type": "token"},
+        "publisher": {"path": "publisher", "type": "string"},
+        "description": {"path": "description", "type": "string"},
+        "type": {"path": "type", "type": "token"},
+        "base": {"path": "baseDefinition", "type": "uri"},
+        "kind": {"path": "kind", "type": "token"},
+        "derivation": {"path": "derivation", "type": "token"},
+        "abstract": {"path": "abstract", "type": "token"},
+        "context-type": {"path": "context.type", "type": "token"},
+        "identifier": {"path": "identifier", "type": "token"},
+        "date": {"path": "date", "type": "date"},
+    },
 }
 
 

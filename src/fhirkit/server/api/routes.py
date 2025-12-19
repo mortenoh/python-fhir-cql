@@ -118,6 +118,8 @@ SUPPORTED_TYPES = [
     "AuditEvent",
     "Consent",
     "Provenance",
+    # Conformance
+    "StructureDefinition",
 ]
 
 # Summary elements per resource type (per FHIR spec)
@@ -2400,6 +2402,10 @@ def create_router(
         request: Request,
         resource_type: str,
         mode: str = Query(default="validation"),
+        profile: str | None = Query(
+            default=None,
+            description="Canonical URL of StructureDefinition profile to validate against",
+        ),
     ) -> Response:
         """Validate a resource against FHIR R4 rules.
 
@@ -2409,11 +2415,12 @@ def create_router(
         Parameters:
             resource_type: The expected resource type
             mode: Validation mode (validation, create, update, delete)
+            profile: Optional profile URL to validate against
 
         Returns:
             OperationOutcome with validation results
         """
-        from ..validation import FHIRValidator
+        from ..validation import FHIRValidator, ProfileValidator
 
         if resource_type not in SUPPORTED_TYPES:
             outcome = OperationOutcome.error(
@@ -2441,12 +2448,19 @@ def create_router(
 
         # Handle Parameters wrapper (FHIR $validate can accept Parameters)
         resource = body
+        profile_from_params = None
         if body.get("resourceType") == "Parameters":
-            # Extract resource from Parameters
+            # Extract resource and profile from Parameters
             for param in body.get("parameter", []):
                 if param.get("name") == "resource" and "resource" in param:
                     resource = param["resource"]
-                    break
+                elif param.get("name") == "profile" and "valueUri" in param:
+                    profile_from_params = param["valueUri"]
+                elif param.get("name") == "profile" and "valueCanonical" in param:
+                    profile_from_params = param["valueCanonical"]
+
+        # Use profile from Parameters if not specified in query
+        effective_profile = profile or profile_from_params
 
         # Validate resource type matches endpoint
         if resource.get("resourceType") != resource_type:
@@ -2460,8 +2474,17 @@ def create_router(
                 media_type=FHIR_JSON,
             )
 
+        # Standard FHIR validation
         validator = FHIRValidator(store)
         result = validator.validate(resource, mode)
+
+        # Profile validation if requested
+        if effective_profile:
+            profile_validator = ProfileValidator(store)
+            profile_result = profile_validator.validate_against_profile(resource, effective_profile)
+            # Combine issues from both validations
+            result.issues.extend(profile_result.issues)
+            result.valid = result.valid and profile_result.valid
 
         # Return 200 even for invalid resources (per FHIR spec)
         return JSONResponse(
@@ -2476,6 +2499,10 @@ def create_router(
         resource_type: str,
         resource_id: str,
         mode: str = Query(default="validation"),
+        profile: str | None = Query(
+            default=None,
+            description="Canonical URL of StructureDefinition profile to validate against",
+        ),
     ) -> Response:
         """Validate an existing resource by ID.
 
@@ -2486,11 +2513,12 @@ def create_router(
             resource_type: The resource type
             resource_id: The resource ID
             mode: Validation mode (validation, create, update, delete)
+            profile: Optional profile URL to validate against
 
         Returns:
             OperationOutcome with validation results
         """
-        from ..validation import FHIRValidator
+        from ..validation import FHIRValidator, ProfileValidator
 
         if resource_type not in SUPPORTED_TYPES:
             outcome = OperationOutcome.error(
@@ -2512,8 +2540,23 @@ def create_router(
                 media_type=FHIR_JSON,
             )
 
+        # Standard FHIR validation
         validator = FHIRValidator(store)
         result = validator.validate(resource, mode)
+
+        # Profile validation if requested (or from resource meta.profile)
+        effective_profile = profile
+        if not effective_profile:
+            # Check resource's declared profiles
+            meta_profiles = resource.get("meta", {}).get("profile", [])
+            if meta_profiles:
+                effective_profile = meta_profiles[0]  # Validate against first declared profile
+
+        if effective_profile:
+            profile_validator = ProfileValidator(store)
+            profile_result = profile_validator.validate_against_profile(resource, effective_profile)
+            result.issues.extend(profile_result.issues)
+            result.valid = result.valid and profile_result.valid
 
         return JSONResponse(
             content=result.to_operation_outcome(),
