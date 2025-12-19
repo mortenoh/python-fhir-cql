@@ -321,8 +321,24 @@ class FHIRStore(InMemoryDataSource):
         Returns:
             Filtered resources
         """
+        # Build list of all search values (FHIR OR semantics)
+        # Values can come from:
+        # 1. Multiple params: ?_id=a&_id=b (value is list)
+        # 2. Comma-separated: ?_id=a,b,c (value contains commas)
+        search_values: list[str] = []
         if isinstance(value, list):
-            value = value[0]  # Take first value for now
+            for v in value:
+                # Split each value by comma
+                search_values.extend(v.split(","))
+        else:
+            # Single value, may contain commas
+            search_values.extend(value.split(","))
+
+        # Strip whitespace from values
+        search_values = [v.strip() for v in search_values if v.strip()]
+
+        if not search_values:
+            return resources
 
         # Common search parameter mappings
         param_paths = self._get_search_param_paths(resource_type, param)
@@ -333,7 +349,11 @@ class FHIRStore(InMemoryDataSource):
         for resource in resources:
             for path in param_paths:
                 resource_value = self._get_nested_value(resource, path)
-                if self._matches_search_value(resource_value, value, param):
+                # Match if ANY of the search values match (OR semantics)
+                if any(
+                    self._matches_search_value(resource_value, sv, param)
+                    for sv in search_values
+                ):
                     result.append(resource)
                     break
 
