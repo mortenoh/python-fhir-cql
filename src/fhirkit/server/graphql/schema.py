@@ -1264,6 +1264,472 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
                 code=code,
             )
 
+        # =====================================================================
+        # Imaging Resources
+        # =====================================================================
+
+        @strawberry.field(description="Fetch an ImagingStudy by ID")
+        def imagingStudy(self, _id: FhirId) -> Optional[Resource]:
+            return resource_resolver.resolve("ImagingStudy", _id)
+
+        @strawberry.field(description="Search ImagingStudy resources")
+        def imagingStudies(
+            self,
+            _count: FhirCount = 100,
+            _offset: FhirOffset = 0,
+            _sort: FhirSort = None,
+            patient: Optional[str] = None,
+            subject: Optional[str] = None,
+            status: Optional[str] = None,
+            modality: Optional[str] = None,
+            started: Optional[str] = None,
+            referrer: Optional[str] = None,
+            encounter: Optional[str] = None,
+            endpoint: Optional[str] = None,
+        ) -> list[Resource]:
+            return list_resolver.resolve(
+                "ImagingStudy",
+                _count=_count,
+                _offset=_offset,
+                _sort=_sort,
+                patient=patient,
+                subject=subject,
+                status=status,
+                modality=modality,
+                started=started,
+                referrer=referrer,
+                encounter=encounter,
+                endpoint=endpoint,
+            )
+
+        @strawberry.field(description="Fetch a BodyStructure by ID")
+        def bodyStructure(self, _id: FhirId) -> Optional[Resource]:
+            return resource_resolver.resolve("BodyStructure", _id)
+
+        @strawberry.field(description="Search BodyStructure resources")
+        def bodyStructures(
+            self,
+            _count: FhirCount = 100,
+            _offset: FhirOffset = 0,
+            _sort: FhirSort = None,
+            patient: Optional[str] = None,
+            morphology: Optional[str] = None,
+            location: Optional[str] = None,
+        ) -> list[Resource]:
+            return list_resolver.resolve(
+                "BodyStructure",
+                _count=_count,
+                _offset=_offset,
+                _sort=_sort,
+                patient=patient,
+                morphology=morphology,
+                location=location,
+            )
+
+        # =====================================================================
+        # Care Management Resources (Phase 2)
+        # =====================================================================
+
+        @strawberry.field(description="Fetch an EpisodeOfCare by ID")
+        def episodeOfCare(self, _id: FhirId) -> Optional[Resource]:
+            return resource_resolver.resolve("EpisodeOfCare", _id)
+
+        @strawberry.field(description="Search EpisodeOfCare resources")
+        def episodesOfCare(
+            self,
+            _count: FhirCount = 100,
+            _offset: FhirOffset = 0,
+            _sort: FhirSort = None,
+            patient: Optional[str] = None,
+            status: Optional[str] = None,
+            type: Optional[str] = None,
+            organization: Optional[str] = None,
+            care_manager: Optional[str] = None,
+            date: Optional[str] = None,
+        ) -> list[Resource]:
+            return list_resolver.resolve(
+                "EpisodeOfCare",
+                _count=_count,
+                _offset=_offset,
+                _sort=_sort,
+                patient=patient,
+                status=status,
+                type=type,
+                organization=organization,
+                care_manager=care_manager,
+                date=date,
+            )
+
+        @strawberry.field(description="Fetch a List by ID")
+        def fhirList(self, _id: FhirId) -> Optional[Resource]:
+            return resource_resolver.resolve("List", _id)
+
+        @strawberry.field(description="Search List resources")
+        def fhirLists(
+            self,
+            _count: FhirCount = 100,
+            _offset: FhirOffset = 0,
+            _sort: FhirSort = None,
+            patient: Optional[str] = None,
+            subject: Optional[str] = None,
+            status: Optional[str] = None,
+            code: Optional[str] = None,
+            date: Optional[str] = None,
+            source: Optional[str] = None,
+            encounter: Optional[str] = None,
+        ) -> list[Resource]:
+            return list_resolver.resolve(
+                "List",
+                _count=_count,
+                _offset=_offset,
+                _sort=_sort,
+                patient=patient,
+                subject=subject,
+                status=status,
+                code=code,
+                date=date,
+                source=source,
+                encounter=encounter,
+            )
+
+        @strawberry.field(description="Fetch a CommunicationRequest by ID")
+        def communicationRequest(self, _id: FhirId) -> Optional[Resource]:
+            return resource_resolver.resolve("CommunicationRequest", _id)
+
+        @strawberry.field(description="Search CommunicationRequest resources")
+        def communicationRequests(
+            self,
+            _count: FhirCount = 100,
+            _offset: FhirOffset = 0,
+            _sort: FhirSort = None,
+            patient: Optional[str] = None,
+            subject: Optional[str] = None,
+            status: Optional[str] = None,
+            category: Optional[str] = None,
+            priority: Optional[str] = None,
+            authored: Optional[str] = None,
+            requester: Optional[str] = None,
+            recipient: Optional[str] = None,
+            sender: Optional[str] = None,
+        ) -> list[Resource]:
+            return list_resolver.resolve(
+                "CommunicationRequest",
+                _count=_count,
+                _offset=_offset,
+                _sort=_sort,
+                patient=patient,
+                subject=subject,
+                status=status,
+                category=category,
+                priority=priority,
+                authored=authored,
+                requester=requester,
+                recipient=recipient,
+                sender=sender,
+            )
+
+        @strawberry.field(description="Fetch a RequestGroup by ID")
+        def requestGroup(self, _id: FhirId) -> Optional[Resource]:
+            return resource_resolver.resolve("RequestGroup", _id)
+
+        @strawberry.field(description="Search RequestGroup resources")
+        def requestGroups(
+            self,
+            _count: FhirCount = 100,
+            _offset: FhirOffset = 0,
+            _sort: FhirSort = None,
+            patient: Optional[str] = None,
+            subject: Optional[str] = None,
+            status: Optional[str] = None,
+            intent: Optional[str] = None,
+            priority: Optional[str] = None,
+            code: Optional[str] = None,
+            authored: Optional[str] = None,
+            author: Optional[str] = None,
+            encounter: Optional[str] = None,
+        ) -> list[Resource]:
+            return list_resolver.resolve(
+                "RequestGroup",
+                _count=_count,
+                _offset=_offset,
+                _sort=_sort,
+                patient=patient,
+                subject=subject,
+                status=status,
+                intent=intent,
+                priority=priority,
+                code=code,
+                authored=authored,
+                author=author,
+                encounter=encounter,
+            )
+
+        # =====================================================================
+        # Medication Knowledge Resources
+        # =====================================================================
+
+        @strawberry.field(description="Fetch a MedicationKnowledge by ID")
+        def medicationKnowledge(self, _id: FhirId) -> Optional[Resource]:
+            return resource_resolver.resolve("MedicationKnowledge", _id)
+
+        @strawberry.field(description="Search MedicationKnowledge resources")
+        def medicationKnowledges(
+            self,
+            _count: FhirCount = 100,
+            _offset: FhirOffset = 0,
+            _sort: FhirSort = None,
+            code: Optional[str] = None,
+            status: Optional[str] = None,
+            manufacturer: Optional[str] = None,
+            doseform: Optional[str] = None,
+        ) -> list[Resource]:
+            return list_resolver.resolve(
+                "MedicationKnowledge",
+                _count=_count,
+                _offset=_offset,
+                _sort=_sort,
+                code=code,
+                status=status,
+                manufacturer=manufacturer,
+                doseform=doseform,
+            )
+
+        # =====================================================================
+        # Device Resources (Phase 2)
+        # =====================================================================
+
+        @strawberry.field(description="Fetch a DeviceMetric by ID")
+        def deviceMetric(self, _id: FhirId) -> Optional[Resource]:
+            return resource_resolver.resolve("DeviceMetric", _id)
+
+        @strawberry.field(description="Search DeviceMetric resources")
+        def deviceMetrics(
+            self,
+            _count: FhirCount = 100,
+            _offset: FhirOffset = 0,
+            _sort: FhirSort = None,
+            type: Optional[str] = None,
+            source: Optional[str] = None,
+            parent: Optional[str] = None,
+            category: Optional[str] = None,
+        ) -> list[Resource]:
+            return list_resolver.resolve(
+                "DeviceMetric",
+                _count=_count,
+                _offset=_offset,
+                _sort=_sort,
+                type=type,
+                source=source,
+                parent=parent,
+                category=category,
+            )
+
+        @strawberry.field(description="Fetch a DeviceDefinition by ID")
+        def deviceDefinition(self, _id: FhirId) -> Optional[Resource]:
+            return resource_resolver.resolve("DeviceDefinition", _id)
+
+        @strawberry.field(description="Search DeviceDefinition resources")
+        def deviceDefinitions(
+            self,
+            _count: FhirCount = 100,
+            _offset: FhirOffset = 0,
+            _sort: FhirSort = None,
+            type: Optional[str] = None,
+            manufacturer: Optional[str] = None,
+        ) -> list[Resource]:
+            return list_resolver.resolve(
+                "DeviceDefinition",
+                _count=_count,
+                _offset=_offset,
+                _sort=_sort,
+                type=type,
+                manufacturer=manufacturer,
+            )
+
+        # =====================================================================
+        # Research Resources
+        # =====================================================================
+
+        @strawberry.field(description="Fetch a ResearchStudy by ID")
+        def researchStudy(self, _id: FhirId) -> Optional[Resource]:
+            return resource_resolver.resolve("ResearchStudy", _id)
+
+        @strawberry.field(description="Search ResearchStudy resources")
+        def researchStudies(
+            self,
+            _count: FhirCount = 100,
+            _offset: FhirOffset = 0,
+            _sort: FhirSort = None,
+            title: Optional[str] = None,
+            status: Optional[str] = None,
+            phase: Optional[str] = None,
+            focus: Optional[str] = None,
+            sponsor: Optional[str] = None,
+            principalinvestigator: Optional[str] = None,
+            site: Optional[str] = None,
+            date: Optional[str] = None,
+        ) -> list[Resource]:
+            return list_resolver.resolve(
+                "ResearchStudy",
+                _count=_count,
+                _offset=_offset,
+                _sort=_sort,
+                title=title,
+                status=status,
+                phase=phase,
+                focus=focus,
+                sponsor=sponsor,
+                principalinvestigator=principalinvestigator,
+                site=site,
+                date=date,
+            )
+
+        @strawberry.field(description="Fetch a ResearchSubject by ID")
+        def researchSubject(self, _id: FhirId) -> Optional[Resource]:
+            return resource_resolver.resolve("ResearchSubject", _id)
+
+        @strawberry.field(description="Search ResearchSubject resources")
+        def researchSubjects(
+            self,
+            _count: FhirCount = 100,
+            _offset: FhirOffset = 0,
+            _sort: FhirSort = None,
+            patient: Optional[str] = None,
+            individual: Optional[str] = None,
+            status: Optional[str] = None,
+            study: Optional[str] = None,
+            date: Optional[str] = None,
+        ) -> list[Resource]:
+            return list_resolver.resolve(
+                "ResearchSubject",
+                _count=_count,
+                _offset=_offset,
+                _sort=_sort,
+                patient=patient,
+                individual=individual,
+                status=status,
+                study=study,
+                date=date,
+            )
+
+        # =====================================================================
+        # Infrastructure Resources
+        # =====================================================================
+
+        @strawberry.field(description="Fetch an Endpoint by ID")
+        def fhirEndpoint(self, _id: FhirId) -> Optional[Resource]:
+            return resource_resolver.resolve("Endpoint", _id)
+
+        @strawberry.field(description="Search Endpoint resources")
+        def fhirEndpoints(
+            self,
+            _count: FhirCount = 100,
+            _offset: FhirOffset = 0,
+            _sort: FhirSort = None,
+            name: Optional[str] = None,
+            status: Optional[str] = None,
+            connection_type: Optional[str] = None,
+            organization: Optional[str] = None,
+            payload_type: Optional[str] = None,
+        ) -> list[Resource]:
+            return list_resolver.resolve(
+                "Endpoint",
+                _count=_count,
+                _offset=_offset,
+                _sort=_sort,
+                name=name,
+                status=status,
+                connection_type=connection_type,
+                organization=organization,
+                payload_type=payload_type,
+            )
+
+        @strawberry.field(description="Fetch an OrganizationAffiliation by ID")
+        def organizationAffiliation(self, _id: FhirId) -> Optional[Resource]:
+            return resource_resolver.resolve("OrganizationAffiliation", _id)
+
+        @strawberry.field(description="Search OrganizationAffiliation resources")
+        def organizationAffiliations(
+            self,
+            _count: FhirCount = 100,
+            _offset: FhirOffset = 0,
+            _sort: FhirSort = None,
+            active: Optional[str] = None,
+            primary_organization: Optional[str] = None,
+            participating_organization: Optional[str] = None,
+            role: Optional[str] = None,
+            specialty: Optional[str] = None,
+            location: Optional[str] = None,
+            service: Optional[str] = None,
+        ) -> list[Resource]:
+            return list_resolver.resolve(
+                "OrganizationAffiliation",
+                _count=_count,
+                _offset=_offset,
+                _sort=_sort,
+                active=active,
+                primary_organization=primary_organization,
+                participating_organization=participating_organization,
+                role=role,
+                specialty=specialty,
+                location=location,
+                service=service,
+            )
+
+        @strawberry.field(description="Fetch a SupplyRequest by ID")
+        def supplyRequest(self, _id: FhirId) -> Optional[Resource]:
+            return resource_resolver.resolve("SupplyRequest", _id)
+
+        @strawberry.field(description="Search SupplyRequest resources")
+        def supplyRequests(
+            self,
+            _count: FhirCount = 100,
+            _offset: FhirOffset = 0,
+            _sort: FhirSort = None,
+            status: Optional[str] = None,
+            category: Optional[str] = None,
+            supplier: Optional[str] = None,
+            requester: Optional[str] = None,
+            date: Optional[str] = None,
+        ) -> list[Resource]:
+            return list_resolver.resolve(
+                "SupplyRequest",
+                _count=_count,
+                _offset=_offset,
+                _sort=_sort,
+                status=status,
+                category=category,
+                supplier=supplier,
+                requester=requester,
+                date=date,
+            )
+
+        @strawberry.field(description="Fetch a SupplyDelivery by ID")
+        def supplyDelivery(self, _id: FhirId) -> Optional[Resource]:
+            return resource_resolver.resolve("SupplyDelivery", _id)
+
+        @strawberry.field(description="Search SupplyDelivery resources")
+        def supplyDeliveries(
+            self,
+            _count: FhirCount = 100,
+            _offset: FhirOffset = 0,
+            _sort: FhirSort = None,
+            patient: Optional[str] = None,
+            status: Optional[str] = None,
+            supplier: Optional[str] = None,
+            receiver: Optional[str] = None,
+        ) -> list[Resource]:
+            return list_resolver.resolve(
+                "SupplyDelivery",
+                _count=_count,
+                _offset=_offset,
+                _sort=_sort,
+                patient=patient,
+                status=status,
+                supplier=supplier,
+                receiver=receiver,
+            )
+
     # =========================================================================
     # Mutation Type
     # =========================================================================
@@ -1397,6 +1863,210 @@ def create_schema(store: FHIRStore) -> strawberry.Schema:
         @strawberry.mutation(description="Delete a MedicationRequest resource")
         def deleteMedicationRequest(self, _id: FhirId) -> Optional[Resource]:
             return mutation_resolver.delete("MedicationRequest", _id)
+
+        # =====================================================================
+        # Imaging Resource Mutations
+        # =====================================================================
+
+        @strawberry.mutation(description="Create an ImagingStudy resource")
+        def createImagingStudy(self, data: JSON) -> Resource:  # type: ignore[valid-type]
+            return mutation_resolver.create("ImagingStudy", dict(data))
+
+        @strawberry.mutation(description="Update an ImagingStudy resource")
+        def updateImagingStudy(self, _id: FhirId, data: JSON) -> Optional[Resource]:  # type: ignore[valid-type]
+            return mutation_resolver.update("ImagingStudy", _id, dict(data))
+
+        @strawberry.mutation(description="Delete an ImagingStudy resource")
+        def deleteImagingStudy(self, _id: FhirId) -> Optional[Resource]:
+            return mutation_resolver.delete("ImagingStudy", _id)
+
+        @strawberry.mutation(description="Create a BodyStructure resource")
+        def createBodyStructure(self, data: JSON) -> Resource:  # type: ignore[valid-type]
+            return mutation_resolver.create("BodyStructure", dict(data))
+
+        @strawberry.mutation(description="Update a BodyStructure resource")
+        def updateBodyStructure(self, _id: FhirId, data: JSON) -> Optional[Resource]:  # type: ignore[valid-type]
+            return mutation_resolver.update("BodyStructure", _id, dict(data))
+
+        @strawberry.mutation(description="Delete a BodyStructure resource")
+        def deleteBodyStructure(self, _id: FhirId) -> Optional[Resource]:
+            return mutation_resolver.delete("BodyStructure", _id)
+
+        # =====================================================================
+        # Care Management Mutations
+        # =====================================================================
+
+        @strawberry.mutation(description="Create an EpisodeOfCare resource")
+        def createEpisodeOfCare(self, data: JSON) -> Resource:  # type: ignore[valid-type]
+            return mutation_resolver.create("EpisodeOfCare", dict(data))
+
+        @strawberry.mutation(description="Update an EpisodeOfCare resource")
+        def updateEpisodeOfCare(self, _id: FhirId, data: JSON) -> Optional[Resource]:  # type: ignore[valid-type]
+            return mutation_resolver.update("EpisodeOfCare", _id, dict(data))
+
+        @strawberry.mutation(description="Delete an EpisodeOfCare resource")
+        def deleteEpisodeOfCare(self, _id: FhirId) -> Optional[Resource]:
+            return mutation_resolver.delete("EpisodeOfCare", _id)
+
+        @strawberry.mutation(description="Create a List resource")
+        def createList(self, data: JSON) -> Resource:  # type: ignore[valid-type]
+            return mutation_resolver.create("List", dict(data))
+
+        @strawberry.mutation(description="Update a List resource")
+        def updateList(self, _id: FhirId, data: JSON) -> Optional[Resource]:  # type: ignore[valid-type]
+            return mutation_resolver.update("List", _id, dict(data))
+
+        @strawberry.mutation(description="Delete a List resource")
+        def deleteList(self, _id: FhirId) -> Optional[Resource]:
+            return mutation_resolver.delete("List", _id)
+
+        @strawberry.mutation(description="Create a CommunicationRequest resource")
+        def createCommunicationRequest(self, data: JSON) -> Resource:  # type: ignore[valid-type]
+            return mutation_resolver.create("CommunicationRequest", dict(data))
+
+        @strawberry.mutation(description="Update a CommunicationRequest resource")
+        def updateCommunicationRequest(self, _id: FhirId, data: JSON) -> Optional[Resource]:  # type: ignore[valid-type]
+            return mutation_resolver.update("CommunicationRequest", _id, dict(data))
+
+        @strawberry.mutation(description="Delete a CommunicationRequest resource")
+        def deleteCommunicationRequest(self, _id: FhirId) -> Optional[Resource]:
+            return mutation_resolver.delete("CommunicationRequest", _id)
+
+        @strawberry.mutation(description="Create a RequestGroup resource")
+        def createRequestGroup(self, data: JSON) -> Resource:  # type: ignore[valid-type]
+            return mutation_resolver.create("RequestGroup", dict(data))
+
+        @strawberry.mutation(description="Update a RequestGroup resource")
+        def updateRequestGroup(self, _id: FhirId, data: JSON) -> Optional[Resource]:  # type: ignore[valid-type]
+            return mutation_resolver.update("RequestGroup", _id, dict(data))
+
+        @strawberry.mutation(description="Delete a RequestGroup resource")
+        def deleteRequestGroup(self, _id: FhirId) -> Optional[Resource]:
+            return mutation_resolver.delete("RequestGroup", _id)
+
+        # =====================================================================
+        # Medication Knowledge Mutations
+        # =====================================================================
+
+        @strawberry.mutation(description="Create a MedicationKnowledge resource")
+        def createMedicationKnowledge(self, data: JSON) -> Resource:  # type: ignore[valid-type]
+            return mutation_resolver.create("MedicationKnowledge", dict(data))
+
+        @strawberry.mutation(description="Update a MedicationKnowledge resource")
+        def updateMedicationKnowledge(self, _id: FhirId, data: JSON) -> Optional[Resource]:  # type: ignore[valid-type]
+            return mutation_resolver.update("MedicationKnowledge", _id, dict(data))
+
+        @strawberry.mutation(description="Delete a MedicationKnowledge resource")
+        def deleteMedicationKnowledge(self, _id: FhirId) -> Optional[Resource]:
+            return mutation_resolver.delete("MedicationKnowledge", _id)
+
+        # =====================================================================
+        # Device Mutations
+        # =====================================================================
+
+        @strawberry.mutation(description="Create a DeviceMetric resource")
+        def createDeviceMetric(self, data: JSON) -> Resource:  # type: ignore[valid-type]
+            return mutation_resolver.create("DeviceMetric", dict(data))
+
+        @strawberry.mutation(description="Update a DeviceMetric resource")
+        def updateDeviceMetric(self, _id: FhirId, data: JSON) -> Optional[Resource]:  # type: ignore[valid-type]
+            return mutation_resolver.update("DeviceMetric", _id, dict(data))
+
+        @strawberry.mutation(description="Delete a DeviceMetric resource")
+        def deleteDeviceMetric(self, _id: FhirId) -> Optional[Resource]:
+            return mutation_resolver.delete("DeviceMetric", _id)
+
+        @strawberry.mutation(description="Create a DeviceDefinition resource")
+        def createDeviceDefinition(self, data: JSON) -> Resource:  # type: ignore[valid-type]
+            return mutation_resolver.create("DeviceDefinition", dict(data))
+
+        @strawberry.mutation(description="Update a DeviceDefinition resource")
+        def updateDeviceDefinition(self, _id: FhirId, data: JSON) -> Optional[Resource]:  # type: ignore[valid-type]
+            return mutation_resolver.update("DeviceDefinition", _id, dict(data))
+
+        @strawberry.mutation(description="Delete a DeviceDefinition resource")
+        def deleteDeviceDefinition(self, _id: FhirId) -> Optional[Resource]:
+            return mutation_resolver.delete("DeviceDefinition", _id)
+
+        # =====================================================================
+        # Research Mutations
+        # =====================================================================
+
+        @strawberry.mutation(description="Create a ResearchStudy resource")
+        def createResearchStudy(self, data: JSON) -> Resource:  # type: ignore[valid-type]
+            return mutation_resolver.create("ResearchStudy", dict(data))
+
+        @strawberry.mutation(description="Update a ResearchStudy resource")
+        def updateResearchStudy(self, _id: FhirId, data: JSON) -> Optional[Resource]:  # type: ignore[valid-type]
+            return mutation_resolver.update("ResearchStudy", _id, dict(data))
+
+        @strawberry.mutation(description="Delete a ResearchStudy resource")
+        def deleteResearchStudy(self, _id: FhirId) -> Optional[Resource]:
+            return mutation_resolver.delete("ResearchStudy", _id)
+
+        @strawberry.mutation(description="Create a ResearchSubject resource")
+        def createResearchSubject(self, data: JSON) -> Resource:  # type: ignore[valid-type]
+            return mutation_resolver.create("ResearchSubject", dict(data))
+
+        @strawberry.mutation(description="Update a ResearchSubject resource")
+        def updateResearchSubject(self, _id: FhirId, data: JSON) -> Optional[Resource]:  # type: ignore[valid-type]
+            return mutation_resolver.update("ResearchSubject", _id, dict(data))
+
+        @strawberry.mutation(description="Delete a ResearchSubject resource")
+        def deleteResearchSubject(self, _id: FhirId) -> Optional[Resource]:
+            return mutation_resolver.delete("ResearchSubject", _id)
+
+        # =====================================================================
+        # Infrastructure Mutations
+        # =====================================================================
+
+        @strawberry.mutation(description="Create an Endpoint resource")
+        def createEndpoint(self, data: JSON) -> Resource:  # type: ignore[valid-type]
+            return mutation_resolver.create("Endpoint", dict(data))
+
+        @strawberry.mutation(description="Update an Endpoint resource")
+        def updateEndpoint(self, _id: FhirId, data: JSON) -> Optional[Resource]:  # type: ignore[valid-type]
+            return mutation_resolver.update("Endpoint", _id, dict(data))
+
+        @strawberry.mutation(description="Delete an Endpoint resource")
+        def deleteEndpoint(self, _id: FhirId) -> Optional[Resource]:
+            return mutation_resolver.delete("Endpoint", _id)
+
+        @strawberry.mutation(description="Create an OrganizationAffiliation resource")
+        def createOrganizationAffiliation(self, data: JSON) -> Resource:  # type: ignore[valid-type]
+            return mutation_resolver.create("OrganizationAffiliation", dict(data))
+
+        @strawberry.mutation(description="Update an OrganizationAffiliation resource")
+        def updateOrganizationAffiliation(self, _id: FhirId, data: JSON) -> Optional[Resource]:  # type: ignore[valid-type]
+            return mutation_resolver.update("OrganizationAffiliation", _id, dict(data))
+
+        @strawberry.mutation(description="Delete an OrganizationAffiliation resource")
+        def deleteOrganizationAffiliation(self, _id: FhirId) -> Optional[Resource]:
+            return mutation_resolver.delete("OrganizationAffiliation", _id)
+
+        @strawberry.mutation(description="Create a SupplyRequest resource")
+        def createSupplyRequest(self, data: JSON) -> Resource:  # type: ignore[valid-type]
+            return mutation_resolver.create("SupplyRequest", dict(data))
+
+        @strawberry.mutation(description="Update a SupplyRequest resource")
+        def updateSupplyRequest(self, _id: FhirId, data: JSON) -> Optional[Resource]:  # type: ignore[valid-type]
+            return mutation_resolver.update("SupplyRequest", _id, dict(data))
+
+        @strawberry.mutation(description="Delete a SupplyRequest resource")
+        def deleteSupplyRequest(self, _id: FhirId) -> Optional[Resource]:
+            return mutation_resolver.delete("SupplyRequest", _id)
+
+        @strawberry.mutation(description="Create a SupplyDelivery resource")
+        def createSupplyDelivery(self, data: JSON) -> Resource:  # type: ignore[valid-type]
+            return mutation_resolver.create("SupplyDelivery", dict(data))
+
+        @strawberry.mutation(description="Update a SupplyDelivery resource")
+        def updateSupplyDelivery(self, _id: FhirId, data: JSON) -> Optional[Resource]:  # type: ignore[valid-type]
+            return mutation_resolver.update("SupplyDelivery", _id, dict(data))
+
+        @strawberry.mutation(description="Delete a SupplyDelivery resource")
+        def deleteSupplyDelivery(self, _id: FhirId) -> Optional[Resource]:
+            return mutation_resolver.delete("SupplyDelivery", _id)
 
     # Create and return schema
     return strawberry.Schema(query=Query, mutation=Mutation)
