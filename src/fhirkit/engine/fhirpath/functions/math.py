@@ -6,6 +6,7 @@ from typing import Any
 
 from ...context import EvaluationContext
 from ...functions import FunctionRegistry
+from ...types import Quantity
 
 
 @FunctionRegistry.register("abs")
@@ -16,6 +17,8 @@ def fn_abs(ctx: EvaluationContext, collection: list[Any]) -> list[Any]:
     value = collection[0]
     if isinstance(value, (int, float, Decimal)):
         return [abs(value)]
+    if isinstance(value, Quantity):
+        return [Quantity(value=abs(value.value), unit=value.unit)]
     return []
 
 

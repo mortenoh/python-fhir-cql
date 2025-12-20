@@ -2640,14 +2640,14 @@ class CQLEvaluatorVisitor(cqlVisitor):
     def _truncated_divide(self, left: Any, right: Any) -> int | None:
         """Truncated division (div).
 
-        Per CQL spec: Truncates toward zero (not Python's floor division).
+        Per CQL spec: Performs integer division with floor behavior.
         """
         if right == 0:
             return None
         import math
 
-        # Use math.trunc for truncation toward zero (not floor)
-        return math.trunc(float(left) / float(right))
+        # Use math.floor for integer division
+        return math.floor(float(left) / float(right))
 
     def _modulo(self, left: Any, right: Any) -> Any:
         """Modulo operation."""
@@ -2934,13 +2934,25 @@ class CQLEvaluatorVisitor(cqlVisitor):
         """Calculate difference between two dates in the given unit."""
         unit_lower = unit.lower()
 
-        # For year/month differences, we can work with partial precision dates
+        # For year/month differences, account for whether anniversary has passed
         if unit_lower in ("year", "years"):
-            start_year = self._get_year(start)
-            end_year = self._get_year(end)
+            start_year, start_month = self._get_year_month(start)
+            end_year, end_month = self._get_year_month(end)
             if start_year is None or end_year is None:
                 return None
-            return end_year - start_year
+
+            # If we have month information, check if anniversary has passed
+            if start_month is not None and end_month is not None:
+                start_day = self._get_day(start) or 1
+                end_day = self._get_day(end) or 1
+
+                years = end_year - start_year
+                # If the anniversary hasn't occurred yet, subtract 1
+                if (end_month, end_day) < (start_month, start_day):
+                    years -= 1
+                return years
+            else:
+                return end_year - start_year
 
         if unit_lower in ("month", "months"):
             start_year, start_month = self._get_year_month(start)
@@ -2949,7 +2961,14 @@ class CQLEvaluatorVisitor(cqlVisitor):
                 return None
             if start_month is None or end_month is None:
                 return None
-            return (end_year - start_year) * 12 + (end_month - start_month)
+
+            months = (end_year - start_year) * 12 + (end_month - start_month)
+            # If the day of month hasn't passed yet, subtract 1
+            start_day_val = self._get_day(start)
+            end_day_val = self._get_day(end)
+            if start_day_val is not None and end_day_val is not None and end_day_val < start_day_val:
+                months -= 1
+            return months
 
         if unit_lower in ("hour", "hours"):
             start_dt = self._to_datetime_with_defaults(start)
@@ -3012,6 +3031,14 @@ class CQLEvaluatorVisitor(cqlVisitor):
         if isinstance(value, (date, datetime)):
             return value.year, value.month
         return None, None
+
+    def _get_day(self, value: Any) -> int | None:
+        """Extract day from a date/datetime value."""
+        if isinstance(value, (FHIRDate, FHIRDateTime)):
+            return value.day
+        if isinstance(value, (date, datetime)):
+            return value.day
+        return None
 
     def _to_datetime_with_defaults(self, value: Any) -> datetime | None:
         """Convert to datetime using defaults for missing precision.

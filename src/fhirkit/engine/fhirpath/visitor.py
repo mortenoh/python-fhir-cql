@@ -162,6 +162,12 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
             result = self._date_add(left_val, right_val, op)
             return [result] if result else []
 
+        # Handle string concatenation with +
+        if isinstance(left_val, str) and isinstance(right_val, str):
+            if op == "+":
+                return [left_val + right_val]
+            return []
+
         if not isinstance(left_val, (int, float, Decimal)) or not isinstance(right_val, (int, float, Decimal)):
             return []
 
@@ -810,6 +816,12 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
 
     def _is_type(self, value: Any, type_name: str) -> bool:
         """Check if a value is of the specified type."""
+        # Strip System. or FHIR. prefix if present
+        if type_name.startswith("System."):
+            type_name = type_name[7:]
+        elif type_name.startswith("FHIR."):
+            type_name = type_name[5:]
+
         if isinstance(value, dict):
             if "resourceType" in value:
                 return value["resourceType"] == type_name

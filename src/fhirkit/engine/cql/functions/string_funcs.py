@@ -11,16 +11,15 @@ if TYPE_CHECKING:
     from .registry import FunctionRegistry
 
 
-def _concatenate(args: list[Any]) -> str | None:
+def _concatenate(args: list[Any]) -> str:
     """Concatenate strings.
 
-    Per CQL spec: If any argument is null, the result is null.
+    Per CQL spec: Null arguments are treated as empty strings.
     """
     result = ""
     for arg in args:
-        if arg is None:
-            return None
-        result += str(arg)
+        if arg is not None:
+            result += str(arg)
     return result
 
 
@@ -91,37 +90,39 @@ def _substring(args: list[Any]) -> str | None:
 def _position_of(args: list[Any]) -> int | None:
     """Find position of pattern in string.
 
-    Per CQL spec: Returns -1 if pattern is not found.
+    Per CQL spec: Returns null if pattern is not found.
     """
     if len(args) >= 2 and args[0] is not None and args[1] is not None:
         pattern = str(args[0])
         s = str(args[1])
-        return s.find(pattern)  # Returns -1 if not found
+        pos = s.find(pattern)
+        return pos if pos >= 0 else None
     return None
 
 
 def _last_position_of(args: list[Any]) -> int | None:
     """Find last position of pattern in string.
 
-    Per CQL spec: Returns -1 if pattern is not found.
+    Per CQL spec: Returns null if pattern is not found.
     """
     if len(args) >= 2 and args[0] is not None and args[1] is not None:
         pattern = str(args[0])
         s = str(args[1])
-        return s.rfind(pattern)  # Returns -1 if not found
+        pos = s.rfind(pattern)
+        return pos if pos >= 0 else None
     return None
 
 
 def _matches(args: list[Any]) -> bool | None:
     """Check if string matches regex pattern.
 
-    Per CQL spec: The pattern must match the entire string (fullmatch).
+    Per CQL spec: Returns true if the pattern is found anywhere in the string.
     """
     if len(args) >= 2 and args[0] is not None and args[1] is not None:
         s = str(args[0])
         pattern = str(args[1])
         try:
-            return bool(re.fullmatch(pattern, s))
+            return bool(re.search(pattern, s))
         except re.error:
             return None
     return None

@@ -2777,7 +2777,9 @@ class TestMathFunctions:
         assert evaluate("Round(3.5)") == 4
 
     def test_round_precision(self) -> None:
-        assert evaluate("Round(3.14159, 2)") == 3.14
+        from decimal import Decimal
+
+        assert evaluate("Round(3.14159, 2)") == Decimal("3.14")
 
     def test_sqrt(self) -> None:
         assert evaluate("Sqrt(16)") == 4.0

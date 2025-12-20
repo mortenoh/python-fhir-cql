@@ -51,6 +51,12 @@ def _is_type(item: Any, type_name: str) -> bool:
 
     from ...types import FHIRDate, FHIRDateTime, FHIRTime, Quantity
 
+    # Strip System. or FHIR. prefix if present
+    if type_name.startswith("System."):
+        type_name = type_name[7:]
+    elif type_name.startswith("FHIR."):
+        type_name = type_name[5:]
+
     # Handle FHIRPath system types
     if type_name == "DateTime":
         return isinstance(item, FHIRDateTime)

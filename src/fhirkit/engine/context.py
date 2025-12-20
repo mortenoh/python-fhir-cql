@@ -108,6 +108,14 @@ class EvaluationContext:
         """Set an external constant (%name)."""
         self._constants[name] = value
 
+    # Standard FHIRPath environment constants
+    _DEFAULT_CONSTANTS: dict[str, str] = {
+        "sct": "http://snomed.info/sct",
+        "loinc": "http://loinc.org",
+        "ucum": "http://unitsofmeasure.org",
+        "vs-administrative-gender": "http://hl7.org/fhir/ValueSet/administrative-gender",
+    }
+
     def get_constant(self, name: str) -> Any:
         """Get an external constant (%name)."""
         if name == "resource":
@@ -116,7 +124,10 @@ class EvaluationContext:
             return self.root_resource
         if name == "context":
             return self.resource  # Default context is resource
-        return self._constants.get(name)
+        # Check user-defined constants first, then default FHIRPath constants
+        if name in self._constants:
+            return self._constants[name]
+        return self._DEFAULT_CONSTANTS.get(name)
 
     def register_function(self, name: str, fn: Callable[..., Any]) -> None:
         """Register a custom function override."""
