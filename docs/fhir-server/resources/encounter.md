@@ -4,6 +4,22 @@
 
 The Encounter resource represents an interaction between a patient and healthcare provider(s) for the purpose of providing healthcare services. This includes ambulatory visits, emergency room visits, inpatient stays, and home health visits.
 
+An Encounter encompasses the lifecycle from pre-admission through discharge, including any patient movements during the stay. It provides context for clinical activities such as observations, procedures, and diagnoses.
+
+**Common use cases:**
+- Ambulatory/outpatient visits
+- Emergency department encounters
+- Inpatient admissions
+- Observation stays
+- Virtual/telehealth visits
+- Home health visits
+
+**Scope and Boundaries:**
+- Encounter is for healthcare interactions, not scheduled appointments (use Appointment)
+- Detailed hospitalization info is in the hospitalization element
+- Long-term care episodes use EpisodeOfCare
+- Encounters can be nested (partOf) for complex stays
+
 ## FHIR R4 Specification
 
 See the official HL7 specification: [https://hl7.org/fhir/R4/encounter.html](https://hl7.org/fhir/R4/encounter.html)
@@ -204,3 +220,15 @@ encounters = generator.generate_batch(
 | PRENC | Pre-Admission | Pre-admission |
 | SS | Short Stay | Short stay |
 | VR | Virtual | Virtual/telehealth |
+
+## Related Resources
+
+- [Patient](./patient.md) - Subject of the encounter
+- [Practitioner](./practitioner.md) - Participants in the encounter
+- [Location](./location.md) - Where the encounter took place
+- [Organization](./organization.md) - Service provider
+- [Appointment](./appointment.md) - Scheduled appointments
+- [Condition](./condition.md) - Diagnoses during encounter
+- [Observation](./observation.md) - Observations during encounter
+- [Procedure](./procedure.md) - Procedures performed
+- [EpisodeOfCare](./episode-of-care.md) - Ongoing care episodes

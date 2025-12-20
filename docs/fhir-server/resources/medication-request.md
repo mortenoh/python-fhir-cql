@@ -4,6 +4,22 @@
 
 The MedicationRequest resource represents a prescription or order for medication. This includes both inpatient and outpatient prescriptions, as well as medication recommendations.
 
+The MedicationRequest resource covers the ordering or prescribing of medications, including dosing instructions, quantity, refills, and substitution preferences. It supports the full medication ordering workflow from proposal to order.
+
+**Common use cases:**
+- Outpatient prescriptions
+- Inpatient medication orders
+- Medication recommendations
+- Discharge prescriptions
+- Refill authorization
+- Prior authorization requests
+
+**Scope and Boundaries:**
+- MedicationRequest is for orders/prescriptions, not dispensing (use MedicationDispense)
+- Actual administration is recorded in MedicationAdministration
+- Patient-reported medications use MedicationStatement
+- Medication details go in Medication resource (or inline)
+
 ## FHIR R4 Specification
 
 See the official HL7 specification: [https://hl7.org/fhir/R4/medicationrequest.html](https://hl7.org/fhir/R4/medicationrequest.html)
@@ -182,3 +198,34 @@ curl "http://localhost:8080/baseR4/Patient/123/MedicationRequest?status=active"
 | filler-order | Filler Order | Pharmacy order |
 | instance-order | Instance Order | Specific instance |
 | option | Option | Treatment option |
+
+## Generator Usage
+
+```python
+from fhirkit.server.generator import MedicationRequestGenerator
+
+generator = MedicationRequestGenerator(seed=42)
+
+# Generate a random medication request
+rx = generator.generate(patient_ref="Patient/123")
+
+# Generate with specific prescriber
+rx = generator.generate(
+    patient_ref="Patient/123",
+    requester_ref="Practitioner/456"
+)
+
+# Generate batch
+prescriptions = generator.generate_batch(count=10, patient_ref="Patient/123")
+```
+
+## Related Resources
+
+- [Patient](./patient.md) - Subject of the prescription
+- [Practitioner](./practitioner.md) - Prescriber
+- [Medication](./medication.md) - Medication details
+- [MedicationDispense](./medication-dispense.md) - Pharmacy dispensing
+- [MedicationAdministration](./medication-administration.md) - Actual administration
+- [MedicationStatement](./medication-statement.md) - Patient-reported medications
+- [Encounter](./encounter.md) - Encounter context
+- [Condition](./condition.md) - Reason for prescription

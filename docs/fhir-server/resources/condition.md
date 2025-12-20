@@ -4,6 +4,22 @@
 
 The Condition resource represents a clinical condition, problem, diagnosis, or other event, situation, issue, or clinical concept that has risen to a level of concern. Conditions can be current, historical, or anticipated.
 
+The Condition resource is used to record detailed information about a condition, problem, diagnosis, or other health matter that is relevant to the patient. It is a fundamental clinical resource that supports the problem list, discharge diagnoses, and clinical reasoning.
+
+**Common use cases:**
+- Problem list management
+- Encounter diagnoses
+- Health concerns
+- Discharge diagnoses
+- Reason for admission
+- Chief complaint
+
+**Scope and Boundaries:**
+- Use Condition for diagnoses and problems, not observations (use Observation)
+- Family history conditions use FamilyMemberHistory, not Condition
+- Allergies and intolerances use AllergyIntolerance
+- Condition is for patient health issues, not situational findings
+
 ## FHIR R4 Specification
 
 See the official HL7 specification: [https://hl7.org/fhir/R4/condition.html](https://hl7.org/fhir/R4/condition.html)
@@ -210,3 +226,13 @@ conditions = generator.generate_batch(
 | 255604002 | Mild |
 | 6736007 | Moderate |
 | 24484000 | Severe |
+
+## Related Resources
+
+- [Patient](./patient.md) - Subject of the condition
+- [Encounter](./encounter.md) - Where condition was diagnosed
+- [Practitioner](./practitioner.md) - Who recorded/asserted the condition
+- [Observation](./observation.md) - Supporting evidence
+- [Procedure](./procedure.md) - Procedures to treat the condition
+- [MedicationRequest](./medication-request.md) - Medications for the condition
+- [CarePlan](./care-plan.md) - Care plans addressing the condition

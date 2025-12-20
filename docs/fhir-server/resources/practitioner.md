@@ -4,6 +4,22 @@
 
 The Practitioner resource represents a healthcare provider who delivers care to patients. This includes physicians, nurses, therapists, and other clinical staff involved in patient care.
 
+A Practitioner covers all individuals who are engaged in the healthcare process and healthcare-related services as part of their formal responsibilities. This includes clinical and administrative personnel.
+
+**Common use cases:**
+- Provider directories
+- Care team members
+- Prescriber identification
+- Referral recipients
+- Credential verification
+- Schedule management
+
+**Scope and Boundaries:**
+- Practitioner is for the individual person, not their role (use PractitionerRole)
+- A practitioner can have multiple roles at different organizations
+- For patients who are also providers, create separate Patient and Practitioner resources
+- Non-clinical staff can also be Practitioners (e.g., administrative roles)
+
 ## FHIR R4 Specification
 
 See the official HL7 specification: [https://hl7.org/fhir/R4/practitioner.html](https://hl7.org/fhir/R4/practitioner.html)
@@ -137,3 +153,13 @@ practitioner = generator.generate()
 # Generate batch
 practitioners = generator.generate_batch(count=20)
 ```
+
+## Related Resources
+
+- [PractitionerRole](./practitioner-role.md) - Roles at specific organizations
+- [Organization](./organization.md) - Organizations where practitioner works
+- [Location](./location.md) - Locations where practitioner practices
+- [Schedule](./schedule.md) - Practitioner availability
+- [Appointment](./appointment.md) - Appointments with practitioner
+- [Encounter](./encounter.md) - Encounters where practitioner participated
+- [MedicationRequest](./medication-request.md) - Prescriptions written

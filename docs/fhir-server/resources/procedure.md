@@ -4,6 +4,22 @@
 
 The Procedure resource represents an action performed on a patient for diagnostic or therapeutic purposes. This includes surgeries, diagnostic procedures, therapeutic procedures, and counseling sessions.
 
+A Procedure captures activities such as surgical operations, diagnostic procedures, endoscopic procedures, biopsies, counseling, physiotherapy, and various types of interventions. It records what was done, when, by whom, and the outcome.
+
+**Common use cases:**
+- Surgical procedures
+- Diagnostic procedures (biopsies, imaging)
+- Therapeutic procedures
+- Counseling sessions
+- Physical therapy
+- Vaccinations (simple recording)
+
+**Scope and Boundaries:**
+- Use Procedure for completed or in-progress interventions
+- Planned procedures are often ServiceRequest until performed
+- Medication administration uses MedicationAdministration, not Procedure
+- For simple observations/measurements, use Observation instead
+
 ## FHIR R4 Specification
 
 See the official HL7 specification: [https://hl7.org/fhir/R4/procedure.html](https://hl7.org/fhir/R4/procedure.html)

@@ -4,6 +4,22 @@
 
 The DiagnosticReport resource represents the findings and interpretation of diagnostic tests such as laboratory panels, radiology studies, and pathology reports. It groups related Observations together with clinical interpretations and conclusions.
 
+DiagnosticReport is the key resource for conveying clinical interpretation and context for a set of results. It includes a narrative conclusion and may reference multiple Observation resources that contain the actual result data.
+
+**Common use cases:**
+- Laboratory test results (CBC, metabolic panel)
+- Radiology reports (X-ray, CT, MRI)
+- Pathology reports
+- Cardiology reports (ECG, Echo)
+- Microbiology culture results
+- Genetic test reports
+
+**Scope and Boundaries:**
+- DiagnosticReport contains interpretation; individual results go in Observation
+- For images themselves, use ImagingStudy; findings go in DiagnosticReport
+- Procedure resource records how the specimen was collected
+- Multiple observations can be grouped into one report
+
 ## FHIR R4 Specification
 
 See the official HL7 specification: [https://hl7.org/fhir/R4/diagnosticreport.html](https://hl7.org/fhir/R4/diagnosticreport.html)

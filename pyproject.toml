@@ -31,6 +31,7 @@ dependencies = [
     "pyyaml>=6.0",
     "faker>=38.2.0",
     "strawberry-graphql[fastapi]>=0.252.0",
+    "markdown>=3.10",
 ]
 
 [project.scripts]

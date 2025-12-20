@@ -157,6 +157,76 @@
             border: 4px solid transparent;
             border-bottom-color: #1f2937;
         }
+
+        /* Markdown content styling */
+        .markdown-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.875rem;
+        }
+        .markdown-content th,
+        .markdown-content td {
+            border: 1px solid #e5e7eb;
+            padding: 0.5rem 0.75rem;
+            text-align: left;
+        }
+        .markdown-content th {
+            background-color: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+        }
+        .markdown-content tr:hover {
+            background-color: #f9fafb;
+        }
+        .markdown-content code {
+            background-color: #f3f4f6;
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+            font-size: 0.875em;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        }
+        .markdown-content pre {
+            background-color: #1f2937;
+            color: #e5e7eb;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        .markdown-content pre code {
+            background-color: transparent;
+            padding: 0;
+            color: inherit;
+        }
+        .markdown-content p {
+            margin: 0.75rem 0;
+            line-height: 1.625;
+        }
+        .markdown-content ul,
+        .markdown-content ol {
+            margin: 0.75rem 0;
+            padding-left: 1.5rem;
+        }
+        .markdown-content li {
+            margin: 0.25rem 0;
+        }
+        .markdown-content h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin: 1.5rem 0 0.75rem;
+            color: #111827;
+        }
+        .markdown-content a {
+            color: #0284c7;
+            text-decoration: underline;
+        }
+        .markdown-content a:hover {
+            color: #0369a1;
+        }
+        .markdown-content .highlight {
+            background: transparent;
+        }
     </style>
     {% block extra_head %}{% endblock %}
 </head>

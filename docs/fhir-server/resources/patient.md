@@ -4,6 +4,22 @@
 
 The Patient resource represents an individual receiving healthcare services. It is the foundation of clinical data in FHIR and contains demographic and administrative information about the person.
 
+This resource covers data about patients and animals involved in a wide range of health-related activities, including curative activities, psychiatric care, social services, pregnancy care, nursing and assisted living, dietary services, and tracking of personal health and exercise data.
+
+**Common use cases:**
+- Patient registration and demographics
+- Master patient index (MPI)
+- Patient matching and identity management
+- Clinical record keeping
+- Insurance and billing
+- Public health reporting
+
+**Scope and Boundaries:**
+- Patient is for individuals receiving care, not providers (use Practitioner)
+- For non-patient persons in healthcare context, use RelatedPerson or Person
+- Animal patients should set the species extension
+- Patient linking handles merged/duplicate records
+
 ## FHIR R4 Specification
 
 See the official HL7 specification: [https://hl7.org/fhir/R4/patient.html](https://hl7.org/fhir/R4/patient.html)
@@ -178,3 +194,13 @@ patients = generator.generate_batch(count=100)
 | T | Domestic Partner |
 | U | Unmarried |
 | W | Widowed |
+
+## Related Resources
+
+- [RelatedPerson](./related-person.md) - People related to the patient (family, caregivers)
+- [Person](./person.md) - Links patient records across organizations
+- [Practitioner](./practitioner.md) - Healthcare providers caring for the patient
+- [Organization](./organization.md) - Managing organization
+- [Encounter](./encounter.md) - Patient visits and admissions
+- [Condition](./condition.md) - Patient diagnoses
+- [Observation](./observation.md) - Patient measurements and findings

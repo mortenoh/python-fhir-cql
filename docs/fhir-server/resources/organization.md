@@ -4,6 +4,22 @@
 
 The Organization resource represents a formally or informally recognized grouping of people or organizations formed for the purpose of achieving some form of collective action. This includes healthcare providers, insurers, government agencies, and other entities involved in healthcare.
 
+Organizations can represent hospitals, clinics, departments, insurance companies, government agencies, and any other entity that participates in the healthcare ecosystem.
+
+**Common use cases:**
+- Healthcare facility identification
+- Insurance company records
+- Department hierarchies
+- Provider network directories
+- Billing entities
+- Public health agencies
+
+**Scope and Boundaries:**
+- Use Organization for groups, not individuals (use Practitioner/Patient)
+- Use partOf for organizational hierarchies (department -> hospital)
+- PractitionerRole links practitioners to their organization
+- OrganizationAffiliation describes relationships between organizations
+
 ## FHIR R4 Specification
 
 See the official HL7 specification: [https://hl7.org/fhir/R4/organization.html](https://hl7.org/fhir/R4/organization.html)
@@ -134,3 +150,30 @@ curl "http://localhost:8080/baseR4/Organization?_revinclude=Location:organizatio
 | cg | Community Group |
 | bus | Non-Healthcare Business or Corporation |
 | other | Other |
+
+## Generator Usage
+
+```python
+from fhirkit.server.generator import OrganizationGenerator
+
+generator = OrganizationGenerator(seed=42)
+
+# Generate a random organization
+org = generator.generate()
+
+# Generate with specific type
+hospital = generator.generate(type_code="prov")
+
+# Generate batch
+organizations = generator.generate_batch(count=10)
+```
+
+## Related Resources
+
+- [Practitioner](./practitioner.md) - Staff members
+- [PractitionerRole](./practitioner-role.md) - Practitioner roles at organization
+- [Location](./location.md) - Physical locations
+- [HealthcareService](./healthcare-service.md) - Services offered
+- [Endpoint](./endpoint.md) - Technical endpoints
+- [Patient](./patient.md) - Managing organization for patients
+- [OrganizationAffiliation](./organization-affiliation.md) - Organization relationships

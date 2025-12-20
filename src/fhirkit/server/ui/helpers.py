@@ -5,6 +5,37 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+import markdown
+
+
+def markdown_to_html(content: str) -> str:
+    """Convert markdown content to HTML.
+
+    Args:
+        content: Markdown text
+
+    Returns:
+        HTML string
+    """
+    if not content:
+        return ""
+
+    md = markdown.Markdown(
+        extensions=[
+            "tables",
+            "fenced_code",
+            "codehilite",
+            "nl2br",
+        ],
+        extension_configs={
+            "codehilite": {
+                "css_class": "highlight",
+                "guess_lang": False,
+            }
+        },
+    )
+    return md.convert(content)
+
 
 def format_date(date_str: str | None) -> str:
     """Format a FHIR date/datetime for display.
@@ -698,21 +729,22 @@ def load_resource_documentation(resource_type: str) -> dict[str, Any]:
     """Load and parse markdown documentation for a resource type.
 
     Reads the documentation file for a resource and parses it into
-    structured sections for display in the UI.
+    structured sections for display in the UI. Content is converted
+    from markdown to HTML for proper rendering.
 
     Args:
         resource_type: FHIR resource type (e.g., "Patient", "MedicationRequest")
 
     Returns:
-        Dict containing parsed documentation:
+        Dict containing parsed documentation (as HTML):
         - exists: bool indicating if documentation file exists
         - title: Resource title from # header
-        - overview: Introduction/overview text
-        - supported_fields: Fields section content
-        - search_parameters: Search params section content
-        - examples: CRUD/usage examples section
-        - generator_usage: Python generator usage section
-        - related_resources: Links to related resources
+        - overview: Introduction/overview text (HTML)
+        - supported_fields: Fields section content (HTML)
+        - search_parameters: Search params section content (HTML)
+        - examples: CRUD/usage examples section (HTML)
+        - generator_usage: Python generator usage section (HTML)
+        - related_resources: Links to related resources (HTML)
         - raw_content: Full raw markdown content
     """
     docs_path = _get_docs_path()
@@ -741,23 +773,23 @@ def load_resource_documentation(resource_type: str) -> dict[str, Any]:
 
         sections = parse_markdown_sections(content)
 
-        # Map parsed sections to result keys
+        # Map parsed sections to result keys and convert to HTML
         if "title" in sections:
             result["title"] = sections["title"]
         if "overview" in sections:
-            result["overview"] = sections["overview"]
+            result["overview"] = markdown_to_html(sections["overview"])
         if "supported_fields" in sections:
-            result["supported_fields"] = sections["supported_fields"]
+            result["supported_fields"] = markdown_to_html(sections["supported_fields"])
         if "search_parameters" in sections:
-            result["search_parameters"] = sections["search_parameters"]
+            result["search_parameters"] = markdown_to_html(sections["search_parameters"])
         if "examples" in sections:
-            result["examples"] = sections["examples"]
+            result["examples"] = markdown_to_html(sections["examples"])
         if "crud_examples" in sections:
-            result["examples"] = sections["crud_examples"]
+            result["examples"] = markdown_to_html(sections["crud_examples"])
         if "generator_usage" in sections:
-            result["generator_usage"] = sections["generator_usage"]
+            result["generator_usage"] = markdown_to_html(sections["generator_usage"])
         if "related_resources" in sections:
-            result["related_resources"] = sections["related_resources"]
+            result["related_resources"] = markdown_to_html(sections["related_resources"])
 
     except Exception:
         # If any error reading/parsing, return with exists=False

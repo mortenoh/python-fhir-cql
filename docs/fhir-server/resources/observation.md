@@ -4,6 +4,23 @@
 
 The Observation resource represents measurements, simple assertions, and other observations about a patient. This includes vital signs, laboratory results, imaging reports, clinical findings, and social history observations.
 
+Observations are a central element of healthcare, used to support diagnosis, monitor progress, determine baselines and patterns, and capture demographic characteristics.
+
+**Common use cases:**
+- Vital signs (blood pressure, heart rate, temperature)
+- Laboratory test results
+- Imaging observations
+- Clinical findings
+- Device measurements
+- Social history (smoking status, alcohol use)
+- Personal characteristics reported by patient
+
+**Scope and Boundaries:**
+- Use Observation for measurements and findings, not for diagnoses (use Condition)
+- Imaging study metadata goes in ImagingStudy, findings in Observation
+- Questionnaire answers go in QuestionnaireResponse
+- For allergies, use AllergyIntolerance instead of Observation
+
 ## FHIR R4 Specification
 
 See the official HL7 specification: [https://hl7.org/fhir/R4/observation.html](https://hl7.org/fhir/R4/observation.html)
@@ -295,3 +312,13 @@ observations = generator.generate_batch(
 | HH | Critical High | Critically high |
 | LL | Critical Low | Critically low |
 | A | Abnormal | Abnormal |
+
+## Related Resources
+
+- [Patient](./patient.md) - Subject of the observation
+- [Encounter](./encounter.md) - Healthcare event context
+- [DiagnosticReport](./diagnostic-report.md) - Groups observations into reports
+- [Specimen](./specimen.md) - Sample used for laboratory observations
+- [Device](./device.md) - Device used for measurement
+- [Condition](./condition.md) - Diagnoses derived from observations
+- [ServiceRequest](./service-request.md) - Orders that led to observations
