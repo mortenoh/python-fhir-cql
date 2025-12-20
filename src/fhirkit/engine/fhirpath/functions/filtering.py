@@ -74,6 +74,48 @@ def _is_type(item: Any, type_name: str) -> bool:
     return False
 
 
+def _get_type_name(item: Any) -> str:
+    """Get the FHIRPath type name of an item."""
+    from decimal import Decimal as PyDecimal
+
+    from ...types import FHIRDate, FHIRDateTime, FHIRTime, Quantity
+
+    if isinstance(item, FHIRDateTime):
+        return "DateTime"
+    elif isinstance(item, FHIRDate):
+        return "Date"
+    elif isinstance(item, FHIRTime):
+        return "Time"
+    elif isinstance(item, bool):
+        return "Boolean"
+    elif isinstance(item, int):
+        return "Integer"
+    elif isinstance(item, (float, PyDecimal)):
+        return "Decimal"
+    elif isinstance(item, str):
+        return "String"
+    elif isinstance(item, Quantity):
+        return "Quantity"
+    elif isinstance(item, dict):
+        return item.get("resourceType", "Element")
+    return "Unknown"
+
+
+@FunctionRegistry.register("type")
+def fn_type(ctx: EvaluationContext, collection: list[Any]) -> list[dict[str, str]]:
+    """
+    Returns the type of the input as a type specifier.
+
+    Returns a collection of type information for each element.
+    """
+    if not collection:
+        return []
+    item = collection[0]
+    type_name = _get_type_name(item)
+    # Return as a type specifier structure
+    return [{"namespace": "System", "name": type_name}]
+
+
 @FunctionRegistry.register("is")
 def fn_is(ctx: EvaluationContext, collection: list[Any], type_name: str) -> list[bool]:
     """
@@ -92,6 +134,22 @@ def fn_is(ctx: EvaluationContext, collection: list[Any], type_name: str) -> list
     # For single element, return boolean result
     item = collection[0]
     return [_is_type(item, type_name)]
+
+
+@FunctionRegistry.register("as")
+def fn_as(ctx: EvaluationContext, collection: list[Any], type_name: str) -> list[Any]:
+    """
+    Casts a value to the specified type (or returns empty if not castable).
+
+    Note: This is a simplified implementation that just checks if the value
+    is already of the target type.
+    """
+    if not collection:
+        return []
+    item = collection[0]
+    if _is_type(item, type_name):
+        return [item]
+    return []
 
 
 @FunctionRegistry.register("ofType")
