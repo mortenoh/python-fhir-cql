@@ -49,9 +49,7 @@ def get_successor(value: Any) -> Any:
             if hour >= 24:
                 hour = 0
                 day += 1
-            return FHIRDateTime(
-                year=year, month=month, day=day, hour=hour, minute=minute, second=sec, millisecond=ms
-            )
+            return FHIRDateTime(year=year, month=month, day=day, hour=hour, minute=minute, second=sec, millisecond=ms)
         elif isinstance(value, FHIRDate) or (isinstance(value, FHIRDateTime) and value.hour is None):
             # Date precision - add 1 day
             day = (value.day or 1) + 1
@@ -194,6 +192,15 @@ def interval_timing(left: "CQLInterval[Any]", right: "CQLInterval[Any]", op: str
 
 def interval_point_timing(interval: "CQLInterval[Any]", point: Any, op: str) -> bool | None:
     """Handle interval-to-point timing comparisons."""
+    # Handle "on or before/after" patterns
+    if "on" in op or "same" in op:
+        if "orbefore" in op or "or before" in op:
+            # Interval on or before point: interval.high <= point
+            return interval.high is not None and interval.high <= point
+        elif "orafter" in op or "or after" in op:
+            # Interval on or after point: interval.low >= point
+            return interval.low is not None and interval.low >= point
+
     if "before" in op:
         return interval.high is not None and interval.high < point
     elif "after" in op:
@@ -205,6 +212,15 @@ def interval_point_timing(interval: "CQLInterval[Any]", point: Any, op: str) -> 
 
 def point_interval_timing(point: Any, interval: "CQLInterval[Any]", op: str) -> bool | None:
     """Handle point-to-interval timing comparisons."""
+    # Handle "on or before/after" patterns
+    if "on" in op or "same" in op:
+        if "orbefore" in op or "or before" in op:
+            # Point on or before interval: point <= interval.high
+            return interval.high is not None and point <= interval.high
+        elif "orafter" in op or "or after" in op:
+            # Point on or after interval: point >= interval.low
+            return interval.low is not None and point >= interval.low
+
     if "before" in op:
         return interval.low is not None and point < interval.low
     elif "after" in op:
@@ -221,7 +237,7 @@ def _are_adjacent(high: Any, low: Any) -> bool:
     For dates: next day
     For times: next millisecond
     """
-    from datetime import date, datetime, timedelta
+    from datetime import date, datetime
     from decimal import Decimal
 
     from ...types import FHIRDate, FHIRDateTime, FHIRTime

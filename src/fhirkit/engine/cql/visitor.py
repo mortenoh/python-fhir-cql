@@ -1612,9 +1612,11 @@ class CQLEvaluatorVisitor(cqlVisitor):
 
         # Handle "same X or before/after" and "on or before/after" expressions
         # Note: parser may return "orafter"/"orbefore" or "or after"/"or before"
+        # Only for point-to-point comparisons (DateTime/Time), not intervals
         has_or_before = "orbefore" in op_text or "or before" in op_text
         has_or_after = "orafter" in op_text or "or after" in op_text
-        if ("same" in op_text or "on" in op_text) and (has_or_before or has_or_after):
+        is_point_comparison = not isinstance(left, CQLInterval) and not isinstance(right, CQLInterval)
+        if is_point_comparison and ("same" in op_text or "on" in op_text) and (has_or_before or has_or_after):
             if left is None or right is None:
                 return None
             return self._same_or_before_after(left, right, op_text)
@@ -3538,7 +3540,7 @@ class CQLEvaluatorVisitor(cqlVisitor):
                     return list(range(start, end + 1, int(step)))
                 else:
                     # Decimal step - convert to decimal interval and use decimal expansion
-                    decimal_interval = CQLInterval(
+                    decimal_interval: CQLInterval[Decimal] = CQLInterval(
                         low=Decimal(str(interval.low)),
                         high=Decimal(str(interval.high)),
                         low_closed=interval.low_closed,
@@ -3577,7 +3579,7 @@ class CQLEvaluatorVisitor(cqlVisitor):
         else:
             return []
 
-        result = []
+        result: list[CQLInterval[Any]] = []
         current = low if interval.low_closed else self._add_to_date(low, 1, unit)
 
         while current and current <= high:
@@ -3618,7 +3620,7 @@ class CQLEvaluatorVisitor(cqlVisitor):
             # Integer point - expand to all decimal values within that integer
             high = low + 1 - step
 
-        result = []
+        result: list[CQLInterval[Any]] = []
         current = low if interval.low_closed else low + step
 
         while current <= high:
@@ -3643,21 +3645,33 @@ class CQLEvaluatorVisitor(cqlVisitor):
         else:
             return []
 
+        # Type narrowing - ensure low and high are not None (checked above)
+        if low is None or high is None:
+            return []
+
         # Check if the interval has sufficient precision for the given step
         # If expanding by minute but the interval doesn't have minute precision, return empty
-        if unit == "minute" and (low.minute is None or high.minute is None):
+        if unit == "minute" and (getattr(low, "minute", None) is None or getattr(high, "minute", None) is None):
             return []
-        if unit == "second" and (low.second is None or high.second is None):
+        if unit == "second" and (getattr(low, "second", None) is None or getattr(high, "second", None) is None):
             return []
-        if unit == "millisecond" and (low.millisecond is None or high.millisecond is None):
+        if unit == "millisecond" and (
+            getattr(low, "millisecond", None) is None or getattr(high, "millisecond", None) is None
+        ):
             return []
 
         # Convert to milliseconds for easy arithmetic
         low_ms = (
-            (low.hour * 3600000) + ((low.minute or 0) * 60000) + ((low.second or 0) * 1000) + (low.millisecond or 0)
+            (low.hour * 3600000)
+            + ((getattr(low, "minute", 0) or 0) * 60000)
+            + ((getattr(low, "second", 0) or 0) * 1000)
+            + (getattr(low, "millisecond", 0) or 0)
         )
         high_ms = (
-            (high.hour * 3600000) + ((high.minute or 0) * 60000) + ((high.second or 0) * 1000) + (high.millisecond or 0)
+            (high.hour * 3600000)
+            + ((getattr(high, "minute", 0) or 0) * 60000)
+            + ((getattr(high, "second", 0) or 0) * 1000)
+            + (getattr(high, "millisecond", 0) or 0)
         )
 
         # Determine step in milliseconds
@@ -3672,7 +3686,7 @@ class CQLEvaluatorVisitor(cqlVisitor):
         else:
             return []
 
-        result = []
+        result: list[CQLInterval[Any]] = []
         current_ms = low_ms if interval.low_closed else low_ms + step_ms
 
         while current_ms <= high_ms:
