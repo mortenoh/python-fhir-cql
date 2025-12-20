@@ -15,3 +15,6 @@ site/
 
 # Debug files
 debug_*.py
+
+# Test outputs
+compliance-report.txt

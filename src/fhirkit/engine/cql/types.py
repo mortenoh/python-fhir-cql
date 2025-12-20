@@ -316,15 +316,20 @@ class CQLInterval(BaseModel, Generic[T]):
         return True
 
     def union(self, other: "CQLInterval[Any]") -> "CQLInterval[Any] | None":
-        """Return the union of two intervals if they overlap or meet."""
+        """Return the union of two intervals if they overlap or meet.
+
+        Returns None if either interval has null bounds (meaning unknown).
+        """
+        # In CQL, null bounds mean "unknown", so result is null
+        if self.low is None or self.high is None or other.low is None or other.high is None:
+            return None
+
         if not self.overlaps(other) and not self.meets(other) and not other.meets(self):
             return None
 
-        # Determine low bound
-        if self.low is None or other.low is None:
-            new_low = None
-            new_low_closed = True
-        elif self.low < other.low:
+        # Determine low bound (take the lower/earlier one)
+        # At this point we know both lows are not None
+        if self.low < other.low:
             new_low = self.low
             new_low_closed = self.low_closed
         elif self.low > other.low:
@@ -334,11 +339,9 @@ class CQLInterval(BaseModel, Generic[T]):
             new_low = self.low
             new_low_closed = self.low_closed or other.low_closed
 
-        # Determine high bound
-        if self.high is None or other.high is None:
-            new_high = None
-            new_high_closed = True
-        elif self.high > other.high:
+        # Determine high bound (take the higher/later one)
+        # At this point we know both highs are not None
+        if self.high > other.high:
             new_high = self.high
             new_high_closed = self.high_closed
         elif self.high < other.high:
@@ -349,6 +352,109 @@ class CQLInterval(BaseModel, Generic[T]):
             new_high_closed = self.high_closed or other.high_closed
 
         return CQLInterval(low=new_low, high=new_high, low_closed=new_low_closed, high_closed=new_high_closed)
+
+    def intersect(self, other: "CQLInterval[Any]") -> "CQLInterval[Any] | None":
+        """Return the intersection of two intervals, or None if they don't overlap.
+
+        Returns None if either interval has null bounds (meaning unknown).
+        """
+        # In CQL, null bounds mean "unknown", so result is null
+        if self.low is None or self.high is None or other.low is None or other.high is None:
+            return None
+
+        if not self.overlaps(other):
+            return None
+
+        # Determine low bound (take the higher/later one)
+        # At this point we know both lows are not None
+        if self.low > other.low:
+            new_low = self.low
+            new_low_closed = self.low_closed
+        elif self.low < other.low:
+            new_low = other.low
+            new_low_closed = other.low_closed
+        else:  # Equal
+            new_low = self.low
+            new_low_closed = self.low_closed and other.low_closed
+
+        # Determine high bound (take the lower/earlier one)
+        # At this point we know both highs are not None
+        if self.high < other.high:
+            new_high = self.high
+            new_high_closed = self.high_closed
+        elif self.high > other.high:
+            new_high = other.high
+            new_high_closed = other.high_closed
+        else:  # Equal
+            new_high = self.high
+            new_high_closed = self.high_closed and other.high_closed
+
+        return CQLInterval(low=new_low, high=new_high, low_closed=new_low_closed, high_closed=new_high_closed)
+
+    def except_(self, other: "CQLInterval[Any]") -> "CQLInterval[Any] | None":
+        """Return the portion of self that does not overlap with other.
+
+        Returns:
+        - self if no overlap
+        - None if other completely contains self
+        - A single interval if partial overlap at one end
+        - None if other is strictly within self (would result in two intervals)
+        - None if either interval has null bounds (meaning unknown)
+        """
+        # In CQL, null bounds mean "unknown", so result is null
+        if self.low is None or self.high is None or other.low is None or other.high is None:
+            return None
+
+        if not self.overlaps(other):
+            return CQLInterval(low=self.low, high=self.high, low_closed=self.low_closed, high_closed=self.high_closed)
+
+        # Check if other completely contains self
+        if other.includes(self):
+            return None
+
+        # Check if self completely contains other (would split into two intervals)
+        # other is strictly within self if self.low < other.low and other.high < self.high
+        self_contains_other = False
+        if self.low is not None and other.low is not None and self.high is not None and other.high is not None:
+            if self.low < other.low and other.high < self.high:
+                self_contains_other = True
+            elif self.low == other.low and not self.low_closed and other.low_closed:
+                if other.high < self.high:
+                    self_contains_other = True
+            elif other.high == self.high and not self.high_closed and other.high_closed:
+                if self.low < other.low:
+                    self_contains_other = True
+
+        if self_contains_other:
+            # Result would be two disjoint intervals, return None
+            return None
+
+        # Partial overlap - determine which end to keep
+        # If other starts before or at self.low, keep the right portion
+        other_covers_left = False
+        if other.low is None:
+            other_covers_left = True
+        elif self.low is None:
+            other_covers_left = False
+        elif other.low < self.low:
+            other_covers_left = True
+        elif other.low == self.low:
+            other_covers_left = other.low_closed or not self.low_closed
+
+        if other_covers_left:
+            # Keep the portion after other ends
+            if other.high is None:
+                return None  # Other extends to infinity, nothing left
+            new_low = other.high
+            new_low_closed = not other.high_closed
+            return CQLInterval(low=new_low, high=self.high, low_closed=new_low_closed, high_closed=self.high_closed)
+        else:
+            # Keep the portion before other starts
+            if other.low is None:
+                return None  # Other starts at negative infinity, nothing left
+            new_high = other.low
+            new_high_closed = not other.low_closed
+            return CQLInterval(low=self.low, high=new_high, low_closed=self.low_closed, high_closed=new_high_closed)
 
     @property
     def is_empty(self) -> bool:

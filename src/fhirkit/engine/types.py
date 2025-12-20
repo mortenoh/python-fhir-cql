@@ -417,6 +417,75 @@ class FHIRTime(BaseModel):
             return NotImplemented
         return self._to_tuple() >= other._to_tuple()
 
+    def __add__(self, other: Any) -> "FHIRTime":
+        """Add a duration (Quantity) to this time."""
+        if hasattr(other, "value") and hasattr(other, "unit"):
+            # Get duration in milliseconds
+            unit = other.unit.rstrip("s")  # Handle 'hours', 'hour', etc.
+            value = int(other.value)
+
+            if unit in ("hour", "h"):
+                delta_ms = value * 3600000
+            elif unit in ("minute", "min"):
+                delta_ms = value * 60000
+            elif unit in ("second", "s"):
+                delta_ms = value * 1000
+            elif unit in ("millisecond", "ms"):
+                delta_ms = value
+            else:
+                raise ValueError(f"Unsupported time unit: {other.unit}")
+
+            # Convert current time to milliseconds
+            current_ms = (
+                (self.hour * 3600000)
+                + (self.minute or 0) * 60000
+                + (self.second or 0) * 1000
+                + (self.millisecond or 0)
+            )
+
+            # Add and wrap around 24 hours
+            new_ms = (current_ms + delta_ms) % 86400000
+
+            # Convert back to time components
+            hours = new_ms // 3600000
+            new_ms %= 3600000
+            minutes = new_ms // 60000
+            new_ms %= 60000
+            seconds = new_ms // 1000
+            milliseconds = new_ms % 1000
+
+            return FHIRTime(
+                hour=hours,
+                minute=minutes if self.minute is not None else None,
+                second=seconds if self.second is not None else None,
+                millisecond=milliseconds if self.millisecond is not None else None,
+            )
+        return NotImplemented
+
+    def __sub__(self, other: Any) -> "FHIRTime | int":
+        """Subtract a duration (Quantity) or another time from this time."""
+        if isinstance(other, FHIRTime):
+            # Return difference in milliseconds
+            self_ms = (
+                (self.hour * 3600000)
+                + (self.minute or 0) * 60000
+                + (self.second or 0) * 1000
+                + (self.millisecond or 0)
+            )
+            other_ms = (
+                (other.hour * 3600000)
+                + (other.minute or 0) * 60000
+                + (other.second or 0) * 1000
+                + (other.millisecond or 0)
+            )
+            return self_ms - other_ms
+
+        if hasattr(other, "value") and hasattr(other, "unit"):
+            # Negate the duration and add
+            negated = type(other)(value=-other.value, unit=other.unit)
+            return self.__add__(negated)
+        return NotImplemented
+
 
 def get_fhirpath_type(value: Any) -> FHIRPathType:
     """Determine the FHIRPath type of a Python value."""

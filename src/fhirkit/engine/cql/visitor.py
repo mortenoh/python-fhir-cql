@@ -401,7 +401,7 @@ class CQLEvaluatorVisitor(cqlVisitor):
         """Visit interval selector term."""
         return self.visit(ctx.intervalSelector())
 
-    def visitIntervalSelector(self, ctx: cqlParser.IntervalSelectorContext) -> CQLInterval[Any]:
+    def visitIntervalSelector(self, ctx: cqlParser.IntervalSelectorContext) -> CQLInterval[Any] | None:
         """Visit interval selector (Interval[low, high])."""
         # Determine if bounds are open or closed
         text = ctx.getText()
@@ -412,6 +412,10 @@ class CQLEvaluatorVisitor(cqlVisitor):
         expressions = ctx.expression()
         low = self.visit(expressions[0]) if len(expressions) > 0 else None
         high = self.visit(expressions[1]) if len(expressions) > 1 else None
+
+        # In CQL, Interval[null, null] evaluates to null
+        if low is None and high is None:
+            return None
 
         return CQLInterval(low=low, high=high, low_closed=low_closed, high_closed=high_closed)
 
@@ -1519,16 +1523,47 @@ class CQLEvaluatorVisitor(cqlVisitor):
     # Set Operations
     # =========================================================================
 
-    def visitInFixSetExpression(self, ctx: cqlParser.InFixSetExpressionContext) -> list[Any]:
+    def visitInFixSetExpression(self, ctx: cqlParser.InFixSetExpressionContext) -> Any:
         """Visit infix set expression (union, intersect, except)."""
         left = self.visit(ctx.expression(0))
         right = self.visit(ctx.expression(1))
         op = ctx.getChild(1).getText().lower()
 
+        # Handle interval set operations
+        if isinstance(left, CQLInterval) and isinstance(right, CQLInterval):
+            if op == "union":
+                return left.union(right)
+            elif op == "intersect":
+                return left.intersect(right)
+            elif op == "except":
+                return left.except_(right)
+            return left
+
+        # Handle interval operations with null (e.g., Interval[null, null] union Interval[1, 10])
+        # If one operand is an interval and the other is null, return null
+        if isinstance(left, CQLInterval) or isinstance(right, CQLInterval):
+            if left is None or right is None:
+                return None
+
+        # Handle null operands for lists
+        if left is None and right is None:
+            return None
+        if left is None:
+            if op == "union":
+                return right if isinstance(right, list) else [right]
+            return None  # intersect/except with null left returns null
+        if right is None:
+            if op == "union":
+                return left if isinstance(left, list) else [left]
+            elif op == "except":
+                return left if isinstance(left, list) else [left]
+            return None  # intersect with null right returns null
+
+        # Convert to lists for list operations
         if not isinstance(left, list):
-            left = [left] if left is not None else []
+            left = [left]
         if not isinstance(right, list):
-            right = [right] if right is not None else []
+            right = [right]
 
         if op == "union":
             # Union removes duplicates
@@ -1549,7 +1584,7 @@ class CQLEvaluatorVisitor(cqlVisitor):
     # =========================================================================
 
     def visitTimingExpression(self, ctx: cqlParser.TimingExpressionContext) -> bool | None:
-        """Visit timing expression (before, after, during, etc.)."""
+        """Visit timing expression (before, after, during, same X as, etc.)."""
         left = self.visit(ctx.expression(0))
         right = self.visit(ctx.expression(1))
 
@@ -1563,6 +1598,10 @@ class CQLEvaluatorVisitor(cqlVisitor):
 
         if left is None or right is None:
             return None
+
+        # Handle "same X as" expressions (concurrentWithIntervalOperatorPhrase)
+        if "same" in op_text and "as" in op_text:
+            return self._same_as(left, right, op_text)
 
         # Handle interval timing
         if isinstance(left, CQLInterval) and isinstance(right, CQLInterval):
@@ -1578,6 +1617,106 @@ class CQLEvaluatorVisitor(cqlVisitor):
         elif "after" in op_text:
             return left > right
 
+        return None
+
+    def _same_as(self, left: Any, right: Any, op_text: str) -> bool | None:
+        """Handle 'same X as' precision-aware comparison."""
+        # Parse precision from op_text (e.g., "sameyearas" or "same year as" -> "year")
+        # The op_text might not have spaces, so extract precision by pattern matching
+        import re
+
+        op_lower = op_text.lower().replace(" ", "")
+        precision = None
+
+        # Known precisions
+        precisions = ["millisecond", "second", "minute", "hour", "day", "month", "year"]
+        for p in precisions:
+            if f"same{p}as" in op_lower:
+                precision = p
+                break
+
+        # Default precision if not specified (e.g., "sameas" without precision)
+        if precision is None:
+            # Compare at the lowest common precision
+            precision = "millisecond"
+
+        # Map precision to component indices
+        # For DateTime: [year, month, day, hour, minute, second, millisecond]
+        # For Time: [None, None, None, hour, minute, second, millisecond]
+        precision_map = {
+            "year": 0,
+            "month": 1,
+            "day": 2,
+            "hour": 3,
+            "minute": 4,
+            "second": 5,
+            "millisecond": 6,
+        }
+        precision_index = precision_map.get(precision)
+        if precision_index is None:
+            return None
+
+        # Get components from datetime/time values
+        left_components = self._datetime_components(left)
+        right_components = self._datetime_components(right)
+
+        if left_components is None or right_components is None:
+            return None
+
+        # Determine start index based on whether we're comparing Time or DateTime
+        # Time values have None for year/month/day, so start from hour (index 3)
+        is_time_comparison = (
+            left_components[0] is None
+            and left_components[1] is None
+            and left_components[2] is None
+            and right_components[0] is None
+            and right_components[1] is None
+            and right_components[2] is None
+        )
+
+        if is_time_comparison:
+            start_index = 3  # Start from hour for Time comparisons
+            if precision_index < 3:
+                return None  # Can't compare year/month/day on Time values
+        else:
+            start_index = 0
+
+        # Compare components from start_index to the specified precision
+        for i in range(start_index, precision_index + 1):
+            left_val = left_components[i] if i < len(left_components) else None
+            right_val = right_components[i] if i < len(right_components) else None
+
+            # If either value is None at this precision, result is uncertain
+            if left_val is None or right_val is None:
+                return None
+
+            if left_val != right_val:
+                return False
+
+        return True
+
+    def _datetime_components(self, value: Any) -> list[int | None] | None:
+        """Get datetime/time components as a list [year, month, day, hour, minute, second, ms]."""
+        if hasattr(value, "year"):  # FHIRDateTime or FHIRDate
+            return [
+                getattr(value, "year", None),
+                getattr(value, "month", None),
+                getattr(value, "day", None),
+                getattr(value, "hour", None),
+                getattr(value, "minute", None),
+                getattr(value, "second", None),
+                getattr(value, "millisecond", None),
+            ]
+        elif hasattr(value, "hour") and not hasattr(value, "year"):  # FHIRTime
+            return [
+                None,  # year
+                None,  # month
+                None,  # day
+                value.hour,
+                value.minute,
+                value.second,
+                value.millisecond,
+            ]
         return None
 
     # =========================================================================
@@ -1727,10 +1866,29 @@ class CQLEvaluatorVisitor(cqlVisitor):
         elif op == "expand":
             if expressions:
                 value = self.visit(expressions[0])
+
+                # Get the per value if present
+                per = None
+                if len(expressions) > 1:
+                    per = self.visit(expressions[1])
+                else:
+                    # Check for dateTimePrecision (e.g., "per day" without a number)
+                    precision_ctx = ctx.dateTimePrecision()
+                    if precision_ctx:
+                        # Create a Quantity with value 1 and the precision as unit
+                        precision = precision_ctx.getText().lower()
+                        per = Quantity(value=Decimal("1"), unit=precision)
+
+                # Handle list of intervals
+                if isinstance(value, list):
+                    result = []
+                    for item in value:
+                        if isinstance(item, CQLInterval):
+                            result.extend(self._expand_interval(item, per))
+                    return result
+
+                # Handle single interval
                 if isinstance(value, CQLInterval):
-                    per = None
-                    if len(expressions) > 1:
-                        per = self.visit(expressions[1])
                     return self._expand_interval(value, per)
             return []
 
@@ -3174,24 +3332,47 @@ class CQLEvaluatorVisitor(cqlVisitor):
         return None
 
     def _expand_interval(self, interval: CQLInterval[Any], per: Any = None) -> list[Any]:
-        """Expand an interval into a list of points."""
+        """Expand an interval into a list of points or unit intervals."""
         if interval.low is None or interval.high is None:
             return []
 
-        # For integer intervals, expand to individual values
+        # For integer intervals without per, expand to individual values
         if isinstance(interval.low, int) and isinstance(interval.high, int):
             start = interval.low if interval.low_closed else interval.low + 1
             end = interval.high if interval.high_closed else interval.high - 1
-            return list(range(start, end + 1))
+            if per is None:
+                return list(range(start, end + 1))
+            else:
+                # With per, expand with step
+                step = per.value if isinstance(per, Quantity) else Decimal(str(per))
+                if step >= 1:
+                    return list(range(start, end + 1, int(step)))
+                else:
+                    # Decimal step - convert to decimal interval and use decimal expansion
+                    decimal_interval = CQLInterval(
+                        low=Decimal(str(interval.low)),
+                        high=Decimal(str(interval.high)),
+                        low_closed=interval.low_closed,
+                        high_closed=interval.high_closed,
+                    )
+                    return self._expand_decimal_interval(decimal_interval, per)
+
+        # For decimal intervals with per
+        if isinstance(interval.low, Decimal) and per is not None:
+            return self._expand_decimal_interval(interval, per)
 
         # For date intervals with a per quantity
-        if isinstance(interval.low, (date, FHIRDate)) and per is not None:
+        if isinstance(interval.low, (date, FHIRDate, FHIRDateTime)) and per is not None:
             return self._expand_date_interval(interval, per)
+
+        # For time intervals with a per quantity
+        if isinstance(interval.low, FHIRTime) and per is not None:
+            return self._expand_time_interval(interval, per)
 
         return []
 
-    def _expand_date_interval(self, interval: CQLInterval[Any], per: Any) -> list[Any]:
-        """Expand a date interval by a given period."""
+    def _expand_date_interval(self, interval: CQLInterval[Any], per: Any) -> list[CQLInterval[Any]]:
+        """Expand a date interval by a given period, returning unit intervals."""
         low = self._to_date(interval.low)
         high = self._to_date(interval.high)
         if low is None or high is None:
@@ -3199,24 +3380,115 @@ class CQLEvaluatorVisitor(cqlVisitor):
 
         # Determine the unit from per (could be Quantity or string)
         if isinstance(per, Quantity):
-            unit = per.unit
+            unit = per.unit.rstrip("s")
             step = int(per.value)
         elif isinstance(per, str):
-            unit = per
+            unit = per.rstrip("s")
             step = 1
         else:
             return []
 
         result = []
-        current = low if interval.low_closed else self._add_to_date(low, 1, unit.rstrip("s"))
+        current = low if interval.low_closed else self._add_to_date(low, 1, unit)
 
         while current and current <= high:
             if current < high or interval.high_closed:
-                result.append(FHIRDate(year=current.year, month=current.month, day=current.day))
-            next_date = self._add_to_date(current, step, unit.rstrip("s"))
+                # Create a unit interval [current, end_of_period]
+                end_of_period = self._add_to_date(current, step, unit)
+                if end_of_period:
+                    end_of_period = self._add_to_date(end_of_period, -1, "day")  # Subtract 1 day
+                if end_of_period is None:
+                    end_of_period = current
+                # Don't go past the high bound
+                if end_of_period > high:
+                    end_of_period = high
+
+                current_fhir = FHIRDate(year=current.year, month=current.month, day=current.day)
+                end_fhir = FHIRDate(year=end_of_period.year, month=end_of_period.month, day=end_of_period.day)
+                result.append(CQLInterval(low=current_fhir, high=end_fhir, low_closed=True, high_closed=True))
+
+            next_date = self._add_to_date(current, step, unit)
             if next_date is None or next_date <= current:
                 break
             current = next_date
+
+        return result
+
+    def _expand_decimal_interval(self, interval: CQLInterval[Any], per: Any) -> list[CQLInterval[Any]]:
+        """Expand a decimal interval by a given step, returning unit intervals."""
+        low = Decimal(str(interval.low))
+        high = Decimal(str(interval.high))
+
+        step = Decimal(str(per.value)) if isinstance(per, Quantity) else Decimal(str(per))
+        if step <= 0:
+            return []
+
+        # For integer values with decimal step, expand within the integer range
+        # e.g., Interval[10, 10] per 0.1 -> 10.0, 10.1, ..., 10.9 (up to but not including 11)
+        if step < 1 and low == high and low == low.to_integral_value():
+            # Integer point - expand to all decimal values within that integer
+            high = low + 1 - step
+
+        result = []
+        current = low if interval.low_closed else low + step
+
+        while current <= high:
+            if current < high or interval.high_closed:
+                # For decimal, create point intervals [current, current]
+                result.append(CQLInterval(low=current, high=current, low_closed=True, high_closed=True))
+            current += step
+
+        return result
+
+    def _expand_time_interval(self, interval: CQLInterval[Any], per: Any) -> list[CQLInterval[Any]]:
+        """Expand a time interval by a given period, returning unit intervals."""
+        low = interval.low
+        high = interval.high
+
+        if isinstance(per, Quantity):
+            unit = per.unit.rstrip("s")
+            step = int(per.value)
+        elif isinstance(per, str):
+            unit = per.rstrip("s")
+            step = 1
+        else:
+            return []
+
+        # Check if the interval has sufficient precision for the given step
+        # If expanding by minute but the interval doesn't have minute precision, return empty
+        if unit == "minute" and (low.minute is None or high.minute is None):
+            return []
+        if unit == "second" and (low.second is None or high.second is None):
+            return []
+        if unit == "millisecond" and (low.millisecond is None or high.millisecond is None):
+            return []
+
+        # Convert to milliseconds for easy arithmetic
+        low_ms = (low.hour * 3600000) + ((low.minute or 0) * 60000) + ((low.second or 0) * 1000) + (low.millisecond or 0)
+        high_ms = (high.hour * 3600000) + ((high.minute or 0) * 60000) + ((high.second or 0) * 1000) + (high.millisecond or 0)
+
+        # Determine step in milliseconds
+        if unit == "hour":
+            step_ms = step * 3600000
+        elif unit == "minute":
+            step_ms = step * 60000
+        elif unit == "second":
+            step_ms = step * 1000
+        elif unit == "millisecond":
+            step_ms = step
+        else:
+            return []
+
+        result = []
+        current_ms = low_ms if interval.low_closed else low_ms + step_ms
+
+        while current_ms <= high_ms:
+            if current_ms < high_ms or interval.high_closed:
+                # Create unit interval at hour precision
+                hour = current_ms // 3600000
+                current_time = FHIRTime(hour=hour, minute=None, second=None, millisecond=None)
+                result.append(CQLInterval(low=current_time, high=current_time, low_closed=True, high_closed=True))
+            current_ms += step_ms
 
         return result
 

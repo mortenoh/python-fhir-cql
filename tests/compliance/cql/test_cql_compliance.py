@@ -7,12 +7,14 @@ Tests are parametrized from the XML test files.
 
 from __future__ import annotations
 
+import re
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
 import pytest
 
+from fhirkit.engine.types import FHIRDate, FHIRDateTime, FHIRTime, Quantity
 from tests.compliance.test_runner import (
     TestCase,
     get_test_statistics,
@@ -58,6 +60,120 @@ define TestResult: {expression}
         return result
     except Exception:
         raise
+
+
+def get_successor(value: Any) -> Any:
+    """Get the successor of a value for interval normalization."""
+    if isinstance(value, int):
+        return value + 1
+    if isinstance(value, Decimal):
+        # CQL uses 8 decimal places for decimal precision
+        increment = Decimal("0.00000001")
+        return value + increment
+    if isinstance(value, FHIRDateTime):
+        # Successor at day precision if no time components, else millisecond
+        if value.hour is None:
+            # Day precision - add 1 day
+            day = value.day + 1 if value.day else 2
+            return FHIRDateTime(year=value.year, month=value.month, day=day)
+        else:
+            # Millisecond precision - add 1 millisecond
+            ms = (value.millisecond or 0) + 1
+            sec = value.second or 0
+            minute = value.minute or 0
+            hour = value.hour or 0
+            if ms >= 1000:
+                ms = 0
+                sec += 1
+            if sec >= 60:
+                sec = 0
+                minute += 1
+            if minute >= 60:
+                minute = 0
+                hour += 1
+            return FHIRDateTime(
+                year=value.year, month=value.month, day=value.day, hour=hour, minute=minute, second=sec, millisecond=ms
+            )
+    if isinstance(value, FHIRDate):
+        # Day precision - add 1 day
+        day = value.day + 1 if value.day else 2
+        return FHIRDate(year=value.year, month=value.month, day=day)
+    if isinstance(value, FHIRTime):
+        # Millisecond precision - add 1 millisecond
+        ms = (value.millisecond or 0) + 1
+        sec = value.second or 0
+        minute = value.minute or 0
+        hour = value.hour or 0
+        if ms >= 1000:
+            ms = 0
+            sec += 1
+        if sec >= 60:
+            sec = 0
+            minute += 1
+        if minute >= 60:
+            minute = 0
+            hour += 1
+        return FHIRTime(hour=hour, minute=minute, second=sec, millisecond=ms)
+    if isinstance(value, Quantity):
+        return Quantity(value=get_successor(value.value), unit=value.unit)
+    return value
+
+
+def get_predecessor(value: Any) -> Any:
+    """Get the predecessor of a value for interval normalization."""
+    if isinstance(value, int):
+        return value - 1
+    if isinstance(value, Decimal):
+        # CQL uses 8 decimal places for decimal precision
+        decrement = Decimal("0.00000001")
+        return value - decrement
+    if isinstance(value, FHIRDateTime):
+        # Predecessor at day precision if no time components, else millisecond
+        if value.hour is None:
+            # Day precision - subtract 1 day
+            day = value.day - 1 if value.day and value.day > 1 else 1
+            return FHIRDateTime(year=value.year, month=value.month, day=day)
+        else:
+            # Millisecond precision - subtract 1 millisecond
+            ms = (value.millisecond or 0) - 1
+            sec = value.second or 0
+            minute = value.minute or 0
+            hour = value.hour or 0
+            if ms < 0:
+                ms = 999
+                sec -= 1
+            if sec < 0:
+                sec = 59
+                minute -= 1
+            if minute < 0:
+                minute = 59
+                hour -= 1
+            return FHIRDateTime(
+                year=value.year, month=value.month, day=value.day, hour=hour, minute=minute, second=sec, millisecond=ms
+            )
+    if isinstance(value, FHIRDate):
+        # Day precision - subtract 1 day
+        day = value.day - 1 if value.day and value.day > 1 else 1
+        return FHIRDate(year=value.year, month=value.month, day=day)
+    if isinstance(value, FHIRTime):
+        # Millisecond precision - subtract 1 millisecond
+        ms = (value.millisecond or 0) - 1
+        sec = value.second or 0
+        minute = value.minute or 0
+        hour = value.hour or 0
+        if ms < 0:
+            ms = 999
+            sec -= 1
+        if sec < 0:
+            sec = 59
+            minute -= 1
+        if minute < 0:
+            minute = 59
+            hour -= 1
+        return FHIRTime(hour=hour, minute=minute, second=sec, millisecond=ms)
+    if isinstance(value, Quantity):
+        return Quantity(value=get_predecessor(value.value), unit=value.unit)
+    return value
 
 
 def normalize_result(result: Any) -> Any:
@@ -109,21 +225,35 @@ def normalize_result(result: Any) -> Any:
             parts.append(f":{result.minute:02d}")
             if result.second is not None:
                 parts.append(f":{result.second:02d}")
-                if result.millisecond is not None and result.millisecond != 0:
-                    parts.append(f".{result.millisecond:03d}")
+                # Always include milliseconds for full precision
+                ms = result.millisecond if result.millisecond is not None else 0
+                parts.append(f".{ms:03d}")
         return "@T" + "".join(parts)
 
-    # Handle CQLInterval - convert to string format
-    if hasattr(result, "low") and hasattr(result, "high") and hasattr(result, "low_closed"):
-        low = normalize_result(result.low)
-        high = normalize_result(result.high)
-        low_bracket = "[" if result.low_closed else "("
-        high_bracket = "]" if result.high_closed else ")"
-        return f"Interval {low_bracket} {low}, {high} {high_bracket}"
-
-    # Handle Quantity-like objects
+    # Handle Quantity-like objects - format as string for comparison
     if hasattr(result, "value") and hasattr(result, "unit"):
-        return {"value": Decimal(str(result.value)), "unit": result.unit}
+        return f"{result.value} '{result.unit}'"
+
+    # Handle CQLInterval - convert to string format and normalize to closed form
+    if hasattr(result, "low") and hasattr(result, "high") and hasattr(result, "low_closed"):
+        low = result.low
+        high = result.high
+        low_closed = result.low_closed
+        high_closed = result.high_closed
+
+        # Normalize open bounds to closed using successor/predecessor
+        if not low_closed and low is not None:
+            low = get_successor(low)
+            low_closed = True
+        if not high_closed and high is not None:
+            high = get_predecessor(high)
+            high_closed = True
+
+        low_str = normalize_result(low) if low is not None else ""
+        high_str = normalize_result(high) if high is not None else ""
+        low_bracket = "[" if low_closed else "("
+        high_bracket = "]" if high_closed else ")"
+        return f"Interval {low_bracket} {low_str}, {high_str} {high_bracket}"
 
     # Handle dicts (tuples, quantities, etc.)
     if isinstance(result, dict):
@@ -177,6 +307,18 @@ def compare_interval_bounds(actual: str, expected: str) -> bool:
     if actual.startswith("@") and expected.startswith("@"):
         return compare_datetime_strings(actual, expected)
 
+    # Handle quantity bounds (format: "5.0 'g'")
+    quantity_pattern = r"^([\d.]+)\s*'([^']+)'$"
+    actual_qty = re.match(quantity_pattern, actual)
+    expected_qty = re.match(quantity_pattern, expected)
+    if actual_qty and expected_qty:
+        try:
+            actual_val = Decimal(actual_qty.group(1))
+            expected_val = Decimal(expected_qty.group(1))
+            return actual_val == expected_val and actual_qty.group(2) == expected_qty.group(2)
+        except Exception:
+            pass
+
     # Handle decimal bounds
     try:
         actual_num = Decimal(actual)
@@ -193,14 +335,53 @@ def compare_interval_list(actual: Any, expected: str) -> bool:
     """Compare a list of intervals against expected string format.
 
     Expected format: {Interval [ 1, 10 ], Interval [ 12, 19 ]}
+    Supports ellipsis (...) for pattern matching: {Interval[10, 10], ..., Interval[10.9, 10.9]}
     """
-    import re
-
     # Parse expected intervals from string
     # Remove outer braces and split by 'Interval'
     inner = expected.strip()[1:-1].strip()  # Remove { }
     if not inner:
         return not actual or actual == []
+
+    # Check for ellipsis pattern (e.g., "Interval[10.0, 10.0], Interval[10.1, 10.1], ..., Interval[10.9, 10.9]")
+    if "..." in inner:
+        # Split on "..." and extract first and last intervals
+        parts = inner.split("...")
+        first_part = parts[0].strip().rstrip(",").strip()
+        last_part = parts[-1].strip().lstrip(",").strip()
+
+        # Find intervals in first and last parts
+        interval_pattern = r"Interval\s*[\[\(][^\]\)]+[\]\)]"
+        first_intervals = re.findall(interval_pattern, first_part)
+        last_intervals = re.findall(interval_pattern, last_part)
+
+        # Handle actual - should be a list
+        if not isinstance(actual, list):
+            actual = [actual] if actual else []
+
+        # Must have at least enough elements for first and last
+        if len(actual) < len(first_intervals) + len(last_intervals):
+            return False
+
+        # Compare first intervals
+        for i, (act, exp) in enumerate(zip(actual[:len(first_intervals)], first_intervals)):
+            actual_str = normalize_result(act) if not isinstance(act, str) else act
+            if isinstance(actual_str, str) and actual_str.startswith("Interval"):
+                if not compare_interval_strings(actual_str, exp):
+                    return False
+            else:
+                return False
+
+        # Compare last intervals
+        for i, (act, exp) in enumerate(zip(actual[-len(last_intervals):], last_intervals)):
+            actual_str = normalize_result(act) if not isinstance(act, str) else act
+            if isinstance(actual_str, str) and actual_str.startswith("Interval"):
+                if not compare_interval_strings(actual_str, exp):
+                    return False
+            else:
+                return False
+
+        return True
 
     # Find all Interval[...] patterns
     interval_pattern = r"Interval\s*[\[\(][^\]\)]+[\]\)]"
