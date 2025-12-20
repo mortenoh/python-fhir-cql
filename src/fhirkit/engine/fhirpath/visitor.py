@@ -628,6 +628,9 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
     # Functions that need full collection arguments (not just first element)
     _COLLECTION_ARG_FUNCTIONS = frozenset(["union", "intersect", "exclude", "combine", "subsetOf", "supersetOf"])
 
+    # Functions that take a type name as their first argument (not to be evaluated)
+    _TYPE_ARG_FUNCTIONS = frozenset(["is", "as", "ofType"])
+
     def _evaluate_function(
         self, input_collection: list[Any], function_ctx: fhirpathParser.FunctionContext
     ) -> list[Any]:
@@ -644,6 +647,12 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
         # Handle special functions that need AST evaluation
         if func_name in ("where", "select", "repeat", "all", "exists"):
             return self._evaluate_special_function(func_name, input_collection, args)
+
+        # Handle type-checking functions where argument is a type name
+        if func_name in self._TYPE_ARG_FUNCTIONS and args:
+            # Extract the type name as a string instead of evaluating it
+            type_name = args[0].getText()
+            return FunctionRegistry.call(func_name, self.ctx, input_collection, type_name)
 
         # Check if function needs full collection arguments
         needs_collection = func_name in self._COLLECTION_ARG_FUNCTIONS
