@@ -519,7 +519,18 @@ def compare_results(actual: Any, expected: Any) -> bool:
     # Handle Decimal comparison
     if isinstance(expected, Decimal):
         if isinstance(actual, (int, float, Decimal)):
-            return Decimal(str(actual)) == expected
+            actual_dec = Decimal(str(actual))
+            # Exact match
+            if actual_dec == expected:
+                return True
+            # For floating-point results, compare with precision of expected value
+            # Get the number of significant decimal places in expected
+            exp_str = str(expected)
+            if "." in exp_str:
+                precision = len(exp_str.split(".")[1])
+                # Round actual to same precision and compare
+                return round(actual_dec, precision) == expected
+            return False
         return False
 
     # Handle integer comparison

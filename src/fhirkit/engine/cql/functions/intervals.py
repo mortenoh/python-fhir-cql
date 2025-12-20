@@ -84,7 +84,10 @@ def get_successor(value: Any) -> Any:
         return FHIRTime(hour=hour, minute=minute, second=sec, millisecond=ms)
     if hasattr(value, "value") and hasattr(value, "unit"):
         # Quantity - add smallest step
-        return type(value)(value=value.value + Decimal("0.00000001"), unit=value.unit)
+        from ..types import Quantity
+
+        if isinstance(value, Quantity):
+            return Quantity(value=value.value + Decimal("0.00000001"), unit=value.unit)
     return value
 
 
