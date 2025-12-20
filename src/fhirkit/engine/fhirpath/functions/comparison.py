@@ -18,14 +18,19 @@ def _normalize_for_comparison(value: Any) -> Any:
         if "T" in value or len(value) > 10:
             # Might be a datetime
             try:
-                return FHIRDateTime.parse(value)
+                result = FHIRDateTime.parse(value)
+                if result is not None:
+                    return result
             except (ValueError, AttributeError):
                 pass
-        # Try as date
-        try:
-            return FHIRDate.parse(value)
-        except (ValueError, AttributeError):
-            pass
+        # Try as date (only if looks like a date pattern: YYYY or YYYY-MM or YYYY-MM-DD)
+        if len(value) >= 4 and value[:4].isdigit():
+            try:
+                result = FHIRDate.parse(value)
+                if result is not None:
+                    return result
+            except (ValueError, AttributeError):
+                pass
     return value
 
 
