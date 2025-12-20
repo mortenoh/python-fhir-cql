@@ -1648,11 +1648,26 @@ class CQLEvaluatorVisitor(cqlVisitor):
         elif isinstance(right, CQLInterval):
             return point_interval_timing(left, right, op_text)
 
-        # Handle point comparisons
-        if "before" in op_text:
-            return left < right
-        elif "after" in op_text:
-            return left > right
+        # Handle point comparisons with optional precision
+        # e.g., "after year of", "before month of"
+        precision = self._extract_precision(op_text)
+
+        if precision:
+            # Compare at specified precision
+            left_trunc = self._truncate_to_precision(left, precision)
+            right_trunc = self._truncate_to_precision(right, precision)
+            if left_trunc is None or right_trunc is None:
+                return None
+            if "before" in op_text:
+                return left_trunc < right_trunc
+            elif "after" in op_text:
+                return left_trunc > right_trunc
+        else:
+            # No precision - full comparison
+            if "before" in op_text:
+                return left < right
+            elif "after" in op_text:
+                return left > right
 
         return None
 
@@ -1736,6 +1751,54 @@ class CQLEvaluatorVisitor(cqlVisitor):
             # For proper contains, list must have more than just this element
             return found and len(container) > 1
         return found
+
+    def _extract_precision(self, op_text: str) -> str | None:
+        """Extract precision from timing operator text.
+
+        Examples:
+            "after year of" -> "year"
+            "before month of" -> "month"
+            "after" -> None (no precision)
+        """
+        op_lower = op_text.lower()
+        precisions = ["millisecond", "second", "minute", "hour", "day", "month", "year"]
+        for p in precisions:
+            if p in op_lower:
+                return p
+        return None
+
+    def _truncate_to_precision(self, value: Any, precision: str) -> Any:
+        """Truncate a datetime/time value to the specified precision for comparison.
+
+        Returns a tuple of components up to the precision level.
+        """
+        components = self._datetime_components(value)
+        if components is None:
+            return None
+
+        precision_map = {
+            "year": 1,
+            "month": 2,
+            "day": 3,
+            "hour": 4,
+            "minute": 5,
+            "second": 6,
+            "millisecond": 7,
+        }
+        num_components = precision_map.get(precision, 7)
+
+        # Truncate to the specified precision
+        truncated = tuple(components[:num_components])
+
+        # If any component is None within the truncated range, return None
+        for i, comp in enumerate(truncated):
+            if comp is None:
+                # For Time values (first 3 are None), skip those
+                if i < 3 and components[0] is None:
+                    continue
+                return None
+
+        return truncated
 
     def _same_as(self, left: Any, right: Any, op_text: str) -> bool | None:
         """Handle 'same X as' precision-aware comparison."""
@@ -2931,7 +2994,9 @@ class CQLEvaluatorVisitor(cqlVisitor):
         if isinstance(value, FHIRTime):
             # Use epoch date (1970-01-01) for time-only values
             return datetime(
-                1970, 1, 1,
+                1970,
+                1,
+                1,
                 value.hour or 0,
                 value.minute or 0,
                 value.second or 0,
@@ -3122,6 +3187,9 @@ class CQLEvaluatorVisitor(cqlVisitor):
             if isinstance(value, list):
                 seen: list[Any] = []
                 for item in value:
+                    # Skip null values per CQL spec
+                    if item is None:
+                        continue
                     if item not in seen:
                         seen.append(item)
                 return seen

@@ -119,23 +119,28 @@ def _sort(args: list[Any]) -> list[Any]:
         return values
 
 
-def _index_of(args: list[Any]) -> int:
+def _index_of(args: list[Any]) -> int | None:
     """Find index of an element in a list or substring in a string.
 
-    Returns the index of the element/substring, or -1 if not found.
+    CQL signature: IndexOf(source List<T>, element T) returns Integer
+    Returns the index of the element, or -1 if not found.
+    Per CQL spec: If source is null, result is null.
     """
     if len(args) >= 2:
-        first = args[0]
-        second = args[1]
-        if isinstance(first, list):
-            # List IndexOf - find element in list
-            try:
-                return first.index(second)
-            except ValueError:
-                return -1
-        if isinstance(first, str) and isinstance(second, str):
+        source = args[0]  # list/string to search in
+        element = args[1]  # element to find
+        # If source is null, result is null
+        if source is None:
+            return None
+        if isinstance(source, list):
+            # List IndexOf - find element in list (including null)
+            for i, item in enumerate(source):
+                if item is element or item == element:
+                    return i
+            return -1
+        if isinstance(source, str) and isinstance(element, str):
             # String IndexOf - find substring in string
-            return first.find(second)
+            return source.find(element)
     return -1
 
 

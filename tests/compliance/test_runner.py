@@ -88,6 +88,14 @@ class TestOutput:
         if re.match(r"^-?\d+$", value):
             return int(value)
 
+        # CQL list literal (e.g., "{}", "{1, 2, 3}", "{ 'a', 'b' }")
+        if value.startswith("{") and value.endswith("}"):
+            inner = value[1:-1].strip()
+            if not inner:
+                return []  # Empty list
+            # Parse as CQL list expression
+            return self._evaluate_cql_expression(value)
+
         # CQL arithmetic expression (e.g., "42.0-42.0", "42-41", "Power(2.0,30.0)")
         # Detect expressions with operators or function calls
         if self._is_cql_expression(value):

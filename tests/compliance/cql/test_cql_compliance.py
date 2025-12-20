@@ -507,6 +507,13 @@ def compare_results(actual: Any, expected: Any) -> bool:
                 Decimal(str(actual.get("value", 0))) == expected["value"]
                 and actual.get("unit", "1") == expected["unit"]
             )
+        # Handle normalized Quantity string format: "1.0 'cm'"
+        if isinstance(actual, str):
+            quantity_match = re.match(r"^(-?\d+(?:\.\d+)?)\s*'([^']+)'$", actual)
+            if quantity_match:
+                actual_value = Decimal(quantity_match.group(1))
+                actual_unit = quantity_match.group(2)
+                return actual_value == expected["value"] and actual_unit == expected["unit"]
         return False
 
     # Handle Decimal comparison
