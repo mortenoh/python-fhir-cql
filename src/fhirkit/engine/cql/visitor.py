@@ -1601,11 +1601,37 @@ class CQLEvaluatorVisitor(cqlVisitor):
         elif unit in ("millisecond", "milliseconds"):
             # Handle millisecond extraction
             if isinstance(value, FHIRDateTime):
-                return value.millisecond if hasattr(value, "millisecond") else 0
+                return value.millisecond
+            if isinstance(value, FHIRTime):
+                return value.millisecond
             if isinstance(value, datetime):
+                return value.microsecond // 1000
+            if isinstance(value, time):
                 return value.microsecond // 1000
         elif unit in ("timezone", "timezoneoffset"):
             return self._call_builtin_function("timezone", [value])
+        elif unit == "date":
+            # Extract date component from DateTime
+            if isinstance(value, FHIRDateTime):
+                return FHIRDate(year=value.year, month=value.month, day=value.day)
+            if isinstance(value, datetime):
+                return FHIRDate(year=value.year, month=value.month, day=value.day)
+        elif unit == "time":
+            # Extract time component from DateTime
+            if isinstance(value, FHIRDateTime):
+                return FHIRTime(
+                    hour=value.hour or 0,
+                    minute=value.minute,
+                    second=value.second,
+                    millisecond=value.millisecond
+                )
+            if isinstance(value, datetime):
+                return FHIRTime(
+                    hour=value.hour,
+                    minute=value.minute,
+                    second=value.second,
+                    millisecond=value.microsecond // 1000
+                )
 
         return None
 
@@ -2391,22 +2417,97 @@ class CQLEvaluatorVisitor(cqlVisitor):
 
     def _date_diff(self, start: Any, end: Any, unit: str) -> int | None:
         """Calculate difference between two dates in the given unit."""
+        unit_lower = unit.lower()
+
+        # For year/month differences, we can work with partial precision dates
+        if unit_lower in ("year", "years"):
+            start_year = self._get_year(start)
+            end_year = self._get_year(end)
+            if start_year is None or end_year is None:
+                return None
+            return end_year - start_year
+
+        if unit_lower in ("month", "months"):
+            start_year, start_month = self._get_year_month(start)
+            end_year, end_month = self._get_year_month(end)
+            if start_year is None or end_year is None:
+                return None
+            if start_month is None or end_month is None:
+                return None
+            return (end_year - start_year) * 12 + (end_month - start_month)
+
+        if unit_lower in ("hour", "hours"):
+            start_dt = self._to_datetime_with_defaults(start)
+            end_dt = self._to_datetime_with_defaults(end)
+            if start_dt is None or end_dt is None:
+                return None
+            delta = end_dt - start_dt
+            return int(delta.total_seconds() // 3600)
+
+        if unit_lower in ("minute", "minutes"):
+            start_dt = self._to_datetime_with_defaults(start)
+            end_dt = self._to_datetime_with_defaults(end)
+            if start_dt is None or end_dt is None:
+                return None
+            delta = end_dt - start_dt
+            return int(delta.total_seconds() // 60)
+
+        if unit_lower in ("second", "seconds"):
+            start_dt = self._to_datetime_with_defaults(start)
+            end_dt = self._to_datetime_with_defaults(end)
+            if start_dt is None or end_dt is None:
+                return None
+            delta = end_dt - start_dt
+            return int(delta.total_seconds())
+
+        # For week/day, need full precision
         start_date = self._to_date(start)
         end_date = self._to_date(end)
         if start_date is None or end_date is None:
             return None
 
-        unit_lower = unit.lower()
-        if unit_lower in ("year", "years"):
-            return self._calculate_age_in_years(start_date, end_date)
-        elif unit_lower in ("month", "months"):
-            return self._calculate_age_in_months(start_date, end_date)
-        elif unit_lower in ("week", "weeks"):
+        if unit_lower in ("week", "weeks"):
             delta = end_date - start_date
             return delta.days // 7
         elif unit_lower in ("day", "days"):
             delta = end_date - start_date
             return delta.days
+        return None
+
+    def _get_year(self, value: Any) -> int | None:
+        """Extract year from a date/datetime value."""
+        if isinstance(value, (FHIRDate, FHIRDateTime)):
+            return value.year
+        if isinstance(value, (date, datetime)):
+            return value.year
+        return None
+
+    def _get_year_month(self, value: Any) -> tuple[int | None, int | None]:
+        """Extract year and month from a date/datetime value."""
+        if isinstance(value, (FHIRDate, FHIRDateTime)):
+            return value.year, value.month
+        if isinstance(value, (date, datetime)):
+            return value.year, value.month
+        return None, None
+
+    def _to_datetime_with_defaults(self, value: Any) -> datetime | None:
+        """Convert to datetime using defaults for missing precision."""
+        if isinstance(value, datetime):
+            return value
+        if isinstance(value, date):
+            return datetime.combine(value, time())
+        if isinstance(value, FHIRDateTime):
+            return datetime(
+                value.year,
+                value.month or 1,
+                value.day or 1,
+                value.hour or 0,
+                value.minute or 0,
+                value.second or 0,
+                (value.millisecond or 0) * 1000
+            )
+        if isinstance(value, FHIRDate):
+            return datetime(value.year, value.month or 1, value.day or 1)
         return None
 
     def _add_duration(self, dt: Any, value: int, unit: str) -> Any:
