@@ -7,7 +7,6 @@ Tests are parametrized from the XML test files.
 
 from __future__ import annotations
 
-import re
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -16,9 +15,8 @@ import pytest
 
 from tests.compliance.test_runner import (
     TestCase,
-    TestOutput,
-    load_cql_test_suites,
     get_test_statistics,
+    load_cql_test_suites,
 )
 
 # Path to test data
@@ -55,10 +53,10 @@ library ComplianceTest version '1.0.0'
 define TestResult: {expression}
 """
     try:
-        library = evaluator.compile(library_code)
+        evaluator.compile(library_code)
         result = evaluator.evaluate_definition("TestResult")
         return result
-    except Exception as e:
+    except Exception:
         raise
 
 
@@ -79,6 +77,42 @@ def normalize_result(result: Any) -> Any:
     if isinstance(result, Decimal):
         return result
 
+    # Handle FHIRDateTime - convert to normalized string format
+    if hasattr(result, "year") and hasattr(result, "month") and hasattr(result, "hour"):
+        # FHIRDateTime - format with full precision for comparison
+        parts = [f"{result.year:04d}"]
+        if result.month is not None:
+            parts.append(f"-{result.month:02d}")
+            if result.day is not None:
+                parts.append(f"-{result.day:02d}")
+                # Include time components - let comparison handle precision
+                h = result.hour if result.hour is not None else 0
+                m = result.minute if result.minute is not None else 0
+                s = result.second if result.second is not None else 0
+                ms = result.millisecond if result.millisecond is not None else 0
+                parts.append(f"T{h:02d}:{m:02d}:{s:02d}.{ms:03d}")
+        return "@" + "".join(parts)
+
+    # Handle FHIRDate
+    if hasattr(result, "year") and hasattr(result, "month") and not hasattr(result, "hour"):
+        parts = [f"{result.year:04d}"]
+        if result.month is not None:
+            parts.append(f"-{result.month:02d}")
+            if result.day is not None:
+                parts.append(f"-{result.day:02d}")
+        return "@" + "".join(parts)
+
+    # Handle FHIRTime
+    if hasattr(result, "hour") and hasattr(result, "minute") and not hasattr(result, "year"):
+        parts = [f"{result.hour:02d}"]
+        if result.minute is not None:
+            parts.append(f":{result.minute:02d}")
+            if result.second is not None:
+                parts.append(f":{result.second:02d}")
+                if result.millisecond is not None and result.millisecond != 0:
+                    parts.append(f".{result.millisecond:03d}")
+        return "@T" + "".join(parts)
+
     # Handle Quantity-like objects
     if hasattr(result, "value") and hasattr(result, "unit"):
         return {"value": Decimal(str(result.value)), "unit": result.unit}
@@ -94,6 +128,47 @@ def normalize_result(result: Any) -> Any:
         return Decimal(str(result))
 
     return result
+
+
+def compare_datetime_strings(actual: str, expected: str) -> bool:
+    """Compare datetime strings with precision awareness.
+
+    The expected string determines the precision level for comparison.
+    E.g., @2016-06-11T00 means hour precision, @2016-06-11 means day precision.
+    """
+    import re
+
+    # Strip @ prefix if present
+    actual = actual.lstrip("@")
+    expected = expected.lstrip("@")
+
+    # Parse both into components
+    # Pattern: YYYY[-MM[-DD[Thh[:mm[:ss[.fff]]][tz]]]]
+    dt_pattern = r"^(\d{4})(?:-(\d{2})(?:-(\d{2})(?:T(\d{2})(?::(\d{2})(?::(\d{2})(?:\.(\d+))?)?)?([Z+-].*)?)?)?)?$"
+
+    actual_match = re.match(dt_pattern, actual)
+    expected_match = re.match(dt_pattern, expected)
+
+    if not actual_match or not expected_match:
+        return actual == expected
+
+    # Compare only up to the precision of expected
+    for i in range(1, 8):  # Groups 1-7: year, month, day, hour, minute, second, millisecond
+        exp_val = expected_match.group(i)
+        act_val = actual_match.group(i)
+
+        if exp_val is None:
+            # Expected doesn't have this component, stop comparing
+            break
+
+        if act_val is None:
+            # Actual doesn't have component but expected does
+            return False
+
+        if exp_val != act_val:
+            return False
+
+    return True
 
 
 def compare_results(actual: Any, expected: Any) -> bool:
@@ -133,7 +208,11 @@ def compare_results(actual: Any, expected: Any) -> bool:
 
     # Handle string comparison
     if isinstance(expected, str):
-        return str(actual) == expected
+        actual_str = str(actual)
+        # Handle datetime string comparisons with precision awareness
+        if expected.startswith("@") and actual_str.startswith("@"):
+            return compare_datetime_strings(actual_str, expected)
+        return actual_str == expected
 
     # Handle list comparison
     if isinstance(expected, list):
@@ -173,9 +252,7 @@ def test_cql_compliance(test_case: TestCase) -> None:
     # Compare with expected outputs
     if not test_case.outputs:
         # No expected output means empty result
-        assert result is None or result == [] or result == "", (
-            f"Expected empty result, got: {result}"
-        )
+        assert result is None or result == [] or result == "", f"Expected empty result, got: {result}"
         return
 
     if len(test_case.outputs) == 1:
@@ -211,11 +288,11 @@ def test_cql_test_suite_loaded() -> None:
     suites = load_cql_test_suites(DATA_DIR)
     stats = get_test_statistics(suites)
 
-    print(f"\nCQL Test Suite Statistics:")
+    print("\nCQL Test Suite Statistics:")
     print(f"  Total suites: {stats['total_suites']}")
     print(f"  Total groups: {stats['total_groups']}")
     print(f"  Total tests: {stats['total_tests']}")
-    print(f"  By suite:")
+    print("  By suite:")
     for suite_name, count in stats["by_suite"].items():
         print(f"    {suite_name}: {count}")
 

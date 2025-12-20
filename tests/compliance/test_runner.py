@@ -10,7 +10,6 @@ import json
 import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
-from datetime import date, datetime, time
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -201,7 +200,7 @@ def _fix_xml_content(content: str) -> str:
             # Skip duplicate declarations
         elif "<?xml" in line:
             # XML declaration in wrong place, skip it
-            line = re.sub(r'<\?xml[^?]*\?>', '', line)
+            line = re.sub(r"<\?xml[^?]*\?>", "", line)
             if line.strip():
                 fixed_lines.append(line)
         else:
@@ -215,22 +214,18 @@ def _fix_xml_content(content: str) -> str:
         expr = match.group(1)
         # Don't escape already escaped sequences
         # Escape < that's not part of &lt;
-        expr = re.sub(r'(?<!&)(?<!<)<(?!/)(?![a-zA-Z])', '&lt;', expr)
+        expr = re.sub(r"(?<!&)(?<!<)<(?!/)(?![a-zA-Z])", "&lt;", expr)
         # Escape > that's not part of &gt;
-        expr = re.sub(r'(?<!&)>(?!/)', '&gt;', expr)
+        expr = re.sub(r"(?<!&)>(?!/)", "&gt;", expr)
         return f"<expression{match.group(0).split('<expression')[1].split('>')[0]}>{expr}</expression>"
 
     # This is tricky - let's just handle the specific patterns we see
     # Fix patterns like: @2018-03 < @2018-03-01
     content = re.sub(
-        r'<expression([^>]*)>([^<]*[^&]) < ([^<]*)</expression>',
-        r'<expression\1>\2 &lt; \3</expression>',
-        content
+        r"<expression([^>]*)>([^<]*[^&]) < ([^<]*)</expression>", r"<expression\1>\2 &lt; \3</expression>", content
     )
     content = re.sub(
-        r'<expression([^>]*)>([^<]*[^&])<= ([^<]*)</expression>',
-        r'<expression\1>\2&lt;= \3</expression>',
-        content
+        r"<expression([^>]*)>([^<]*[^&])<= ([^<]*)</expression>", r"<expression\1>\2&lt;= \3</expression>", content
     )
 
     # Fix duplicate attribute names by removing duplicates
@@ -238,13 +233,13 @@ def _fix_xml_content(content: str) -> str:
 
     # Fix double closing tags (extra </group> tags)
     # Count opening and closing group tags
-    open_count = len(re.findall(r'<group\b', content))
-    close_count = len(re.findall(r'</group>', content))
+    open_count = len(re.findall(r"<group\b", content))
+    close_count = len(re.findall(r"</group>", content))
 
     # Remove excess closing tags
     while close_count > open_count:
         # Remove the first occurrence of </group> that's followed by </group>
-        content = re.sub(r'(</group>)\s*(</group>)', r'\2', content, count=1)
+        content = re.sub(r"(</group>)\s*(</group>)", r"\2", content, count=1)
         close_count -= 1
 
     return content
@@ -258,7 +253,7 @@ def parse_test_file(file_path: Path) -> TestSuite:
 
     try:
         root = ET.fromstring(content)
-    except ET.ParseError as e:
+    except ET.ParseError:
         # Try one more fix - add missing XML declaration
         if not content.strip().startswith("<?xml"):
             content = '<?xml version="1.0" encoding="utf-8"?>\n' + content

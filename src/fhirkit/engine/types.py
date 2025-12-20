@@ -227,6 +227,53 @@ class FHIRDateTime(BaseModel):
             (self.year, self.month, self.day, self.hour, self.minute, self.second, self.millisecond, self.tz_offset)
         )
 
+    def _to_tuple(self) -> tuple[int, int, int, int, int, int, int]:
+        """Convert to tuple for comparison (with defaults for missing precision)."""
+        return (
+            self.year,
+            self.month or 1,
+            self.day or 1,
+            self.hour or 0,
+            self.minute or 0,
+            self.second or 0,
+            self.millisecond or 0,
+        )
+
+    def _has_comparable_precision(self, other: "FHIRDateTime") -> bool:
+        """Check if both datetimes have comparable precision levels."""
+        # Both must have same precision level for reliable comparison
+        self_precision = sum(
+            1
+            for x in [self.month, self.day, self.hour, self.minute, self.second, self.millisecond]
+            if x is not None
+        )
+        other_precision = sum(
+            1
+            for x in [other.month, other.day, other.hour, other.minute, other.second, other.millisecond]
+            if x is not None
+        )
+        return self_precision == other_precision
+
+    def __lt__(self, other: "FHIRDateTime") -> bool:
+        if not isinstance(other, FHIRDateTime):
+            return NotImplemented
+        return self._to_tuple() < other._to_tuple()
+
+    def __le__(self, other: "FHIRDateTime") -> bool:
+        if not isinstance(other, FHIRDateTime):
+            return NotImplemented
+        return self._to_tuple() <= other._to_tuple()
+
+    def __gt__(self, other: "FHIRDateTime") -> bool:
+        if not isinstance(other, FHIRDateTime):
+            return NotImplemented
+        return self._to_tuple() > other._to_tuple()
+
+    def __ge__(self, other: "FHIRDateTime") -> bool:
+        if not isinstance(other, FHIRDateTime):
+            return NotImplemented
+        return self._to_tuple() >= other._to_tuple()
+
 
 class FHIRTime(BaseModel):
     """FHIRPath Time type."""
@@ -292,6 +339,35 @@ class FHIRTime(BaseModel):
 
     def __hash__(self) -> int:
         return hash((self.hour, self.minute, self.second, self.millisecond))
+
+    def _to_tuple(self) -> tuple[int, int, int, int]:
+        """Convert to tuple for comparison (with defaults for missing precision)."""
+        return (
+            self.hour,
+            self.minute or 0,
+            self.second or 0,
+            self.millisecond or 0,
+        )
+
+    def __lt__(self, other: "FHIRTime") -> bool:
+        if not isinstance(other, FHIRTime):
+            return NotImplemented
+        return self._to_tuple() < other._to_tuple()
+
+    def __le__(self, other: "FHIRTime") -> bool:
+        if not isinstance(other, FHIRTime):
+            return NotImplemented
+        return self._to_tuple() <= other._to_tuple()
+
+    def __gt__(self, other: "FHIRTime") -> bool:
+        if not isinstance(other, FHIRTime):
+            return NotImplemented
+        return self._to_tuple() > other._to_tuple()
+
+    def __ge__(self, other: "FHIRTime") -> bool:
+        if not isinstance(other, FHIRTime):
+            return NotImplemented
+        return self._to_tuple() >= other._to_tuple()
 
 
 def get_fhirpath_type(value: Any) -> FHIRPathType:

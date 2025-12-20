@@ -350,10 +350,7 @@ class FHIRStore(InMemoryDataSource):
             for path in param_paths:
                 resource_value = self._get_nested_value(resource, path)
                 # Match if ANY of the search values match (OR semantics)
-                if any(
-                    self._matches_search_value(resource_value, sv, param)
-                    for sv in search_values
-                ):
+                if any(self._matches_search_value(resource_value, sv, param) for sv in search_values):
                     result.append(resource)
                     break
 

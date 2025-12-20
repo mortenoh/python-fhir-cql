@@ -1,0 +1,23 @@
+{
+  "resourceType": "SearchParameter",
+  "id": "sp-001",
+  "meta": {
+    "versionId": "1",
+    "lastUpdated": "2024-01-15T10:30:00Z"
+  },
+  "url": "http://example.org/fhir/SearchParameter/patient-mrn",
+  "version": "1.0.0",
+  "name": "patient-mrn",
+  "status": "active",
+  "experimental": false,
+  "date": "2024-01-15",
+  "publisher": "Example Healthcare Organization",
+  "description": "Search Patient resources by Medical Record Number (MRN) identifier",
+  "code": "mrn",
+  "base": ["Patient"],
+  "type": "token",
+  "expression": "Patient.identifier.where(type.coding.code = 'MR')",
+  "multipleOr": true,
+  "multipleAnd": true,
+  "modifier": ["text", "not", "missing"]
+}

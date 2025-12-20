@@ -7,7 +7,6 @@ Tests are parametrized from the XML test files.
 
 from __future__ import annotations
 
-import json
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -16,9 +15,9 @@ import pytest
 
 from tests.compliance.test_runner import (
     TestCase,
-    load_fhirpath_test_suites,
-    load_fhir_input_file,
     get_test_statistics,
+    load_fhir_input_file,
+    load_fhirpath_test_suites,
 )
 
 # Path to test data
@@ -194,8 +193,7 @@ def test_fhirpath_compliance(test_case: TestCase) -> None:
     if not test_case.outputs:
         # No expected output means empty result
         assert result == [] or result is None, (
-            f"Expected empty result, got: {result}\n"
-            f"Expression: {test_case.expression}"
+            f"Expected empty result, got: {result}\nExpression: {test_case.expression}"
         )
         return
 
@@ -219,10 +217,7 @@ def test_fhirpath_compliance(test_case: TestCase) -> None:
 
     # Normal comparison
     assert compare_results(result, expected_values), (
-        f"Result mismatch:\n"
-        f"  Expression: {test_case.expression}\n"
-        f"  Expected: {expected_values}\n"
-        f"  Actual: {result}"
+        f"Result mismatch:\n  Expression: {test_case.expression}\n  Expected: {expected_values}\n  Actual: {result}"
     )
 
 
@@ -231,11 +226,11 @@ def test_fhirpath_test_suite_loaded() -> None:
     suites = load_fhirpath_test_suites(DATA_DIR)
     stats = get_test_statistics(suites)
 
-    print(f"\nFHIRPath Test Suite Statistics:")
+    print("\nFHIRPath Test Suite Statistics:")
     print(f"  Total suites: {stats['total_suites']}")
     print(f"  Total groups: {stats['total_groups']}")
     print(f"  Total tests: {stats['total_tests']}")
-    print(f"  By suite:")
+    print("  By suite:")
     for suite_name, count in stats["by_suite"].items():
         print(f"    {suite_name}: {count}")
 

@@ -1,0 +1,27 @@
+{
+  "resourceType": "Subscription",
+  "id": "sub-001",
+  "meta": {
+    "versionId": "1",
+    "lastUpdated": "2024-01-15T10:30:00Z"
+  },
+  "status": "active",
+  "contact": [
+    {
+      "system": "email",
+      "value": "alerts@hospital.org",
+      "use": "work"
+    }
+  ],
+  "end": "2024-12-31T23:59:59Z",
+  "reason": "Monitor critical blood pressure readings for hypertension alerts",
+  "criteria": "Observation?code=http://loinc.org|85354-9&value-quantity=gt140",
+  "channel": {
+    "type": "rest-hook",
+    "endpoint": "https://alerts.hospital.org/fhir/notifications",
+    "payload": "application/fhir+json",
+    "header": [
+      "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+    ]
+  }
+}

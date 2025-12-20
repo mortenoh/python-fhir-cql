@@ -1,0 +1,29 @@
+{
+  "resourceType": "Parameters",
+  "id": "validate-input",
+  "parameter": [
+    {
+      "name": "resource",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "example",
+        "name": [
+          {
+            "family": "Smith",
+            "given": ["John", "Jacob"]
+          }
+        ],
+        "gender": "male",
+        "birthDate": "1980-05-15"
+      }
+    },
+    {
+      "name": "mode",
+      "valueCode": "create"
+    },
+    {
+      "name": "profile",
+      "valueUri": "http://hl7.org/fhir/StructureDefinition/Patient"
+    }
+  ]
+}

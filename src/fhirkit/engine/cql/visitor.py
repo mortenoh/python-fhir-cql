@@ -2414,6 +2414,31 @@ class CQLEvaluatorVisitor(cqlVisitor):
         unit_lower = unit.lower().rstrip("s")  # Remove trailing 's' for plural
 
         if isinstance(dt, FHIRDate):
+            # Handle partial precision dates directly
+            if unit_lower == "year":
+                new_year = dt.year + value
+                day = dt.day
+                # Handle leap year: Feb 29 -> Feb 28 if target year is not a leap year
+                if dt.month == 2 and dt.day == 29:
+                    import calendar
+                    if not calendar.isleap(new_year):
+                        day = 28
+                return FHIRDate(year=new_year, month=dt.month, day=day)
+            elif unit_lower == "month":
+                if dt.month is not None:
+                    month = dt.month + value
+                    year = dt.year + (month - 1) // 12
+                    month = ((month - 1) % 12) + 1
+                    # Handle day overflow
+                    day = dt.day
+                    if day is not None:
+                        import calendar
+                        max_day = calendar.monthrange(year, month)[1]
+                        day = min(day, max_day)
+                    return FHIRDate(year=year, month=month, day=day)
+                else:
+                    return None  # Can't add months to year-only date
+            # For week/day, need full precision
             d = dt.to_date()
             if d is None:
                 return None
@@ -2423,19 +2448,65 @@ class CQLEvaluatorVisitor(cqlVisitor):
             return None
 
         if isinstance(dt, FHIRDateTime):
-            d = dt.to_datetime()
-            if d is None:
-                return None
-            result = self._add_to_datetime(d, value, unit_lower)
+            # Handle partial precision datetimes
+            # Preserve the original precision level
+            has_month = dt.month is not None
+            has_day = dt.day is not None
+            has_hour = dt.hour is not None
+            has_minute = dt.minute is not None
+            has_second = dt.second is not None
+            has_ms = dt.millisecond is not None
+
+            if unit_lower == "year":
+                new_year = dt.year + value
+                day = dt.day
+                # Handle leap year: Feb 29 -> Feb 28 if target year is not a leap year
+                if dt.month == 2 and dt.day == 29:
+                    import calendar
+                    if not calendar.isleap(new_year):
+                        day = 28
+                return FHIRDateTime(
+                    year=new_year, month=dt.month, day=day,
+                    hour=dt.hour, minute=dt.minute, second=dt.second,
+                    millisecond=dt.millisecond, tz_offset=dt.tz_offset
+                )
+            elif unit_lower == "month":
+                # Use month=1 as default for year-only dates
+                month = (dt.month or 1) + value
+                year = dt.year + (month - 1) // 12
+                month = ((month - 1) % 12) + 1
+                day = dt.day
+                if day is not None:
+                    import calendar
+                    max_day = calendar.monthrange(year, month)[1]
+                    day = min(day, max_day)
+                return FHIRDateTime(
+                    year=year, month=month if has_month else None, day=day,
+                    hour=dt.hour, minute=dt.minute, second=dt.second,
+                    millisecond=dt.millisecond, tz_offset=dt.tz_offset
+                )
+            # For week/day/hour/minute/second, use defaults for missing precision
+            # and preserve the original precision level in the result
+            temp_dt = datetime(
+                dt.year,
+                dt.month or 1,
+                dt.day or 1,
+                dt.hour or 0,
+                dt.minute or 0,
+                dt.second or 0,
+                (dt.millisecond or 0) * 1000
+            )
+            result = self._add_to_datetime(temp_dt, value, unit_lower)
             if result:
                 return FHIRDateTime(
                     year=result.year,
-                    month=result.month,
-                    day=result.day,
-                    hour=result.hour,
-                    minute=result.minute,
-                    second=result.second,
-                    millisecond=result.microsecond // 1000,
+                    month=result.month if has_month else None,
+                    day=result.day if has_day else None,
+                    hour=result.hour if has_hour else None,
+                    minute=result.minute if has_minute else None,
+                    second=result.second if has_second else None,
+                    millisecond=(result.microsecond // 1000) if has_ms else None,
+                    tz_offset=dt.tz_offset
                 )
             return None
 
