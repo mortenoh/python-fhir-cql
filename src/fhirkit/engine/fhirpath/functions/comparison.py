@@ -26,9 +26,9 @@ def _normalize_for_comparison(value: Any) -> Any:
         # Try as date (only if looks like a date pattern: YYYY or YYYY-MM or YYYY-MM-DD)
         if len(value) >= 4 and value[:4].isdigit():
             try:
-                result = FHIRDate.parse(value)
-                if result is not None:
-                    return result
+                date_result = FHIRDate.parse(value)
+                if date_result is not None:
+                    return date_result
             except (ValueError, AttributeError):
                 pass
     return value
