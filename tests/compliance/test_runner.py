@@ -113,15 +113,25 @@ class TestOutput:
         # Skip if it's a quoted string
         if value.startswith("'") or value.startswith('"'):
             return False
-        # Skip if it starts with @ (datetime literal)
-        if value.startswith("@"):
-            return False
         # Skip if it's a simple list
         if value.startswith("{") and "Interval" not in value:
             return False
 
         # Check for function calls (e.g., Power(...))
         if re.search(r"[A-Za-z]+\s*\(", value):
+            return True
+
+        # Check for equivalence operator (~)
+        if "~" in value:
+            return True
+
+        # Check for comparison operators (< > <= >=) in non-date contexts
+        # e.g., "@2000 < @2000-01" is an expression, not a simple datetime
+        if re.search(r"\s*[<>]=?\s*", value) and value.count("@") <= 1:
+            # Could be a comparison - but skip simple negative unary
+            pass
+        if re.search(r"@\d{4}.*[<>]=?\s*@\d{4}", value):
+            # DateTime comparison like "@2000 < @2000-01"
             return True
 
         # Check for arithmetic operators in numeric context
