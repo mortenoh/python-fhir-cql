@@ -190,6 +190,17 @@ class FHIRDateTime(BaseModel):
         if value.startswith("@"):
             value = value[1:]
 
+        # Handle partial DateTime with T suffix but no time (e.g., "2015T", "2015-01T")
+        # This indicates DateTime type (vs Date) even without time components
+        partial_match = re.match(r"^(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?T$", value)
+        if partial_match:
+            groups = partial_match.groups()
+            return cls(
+                year=int(groups[0]),
+                month=int(groups[1]) if groups[1] else None,
+                day=int(groups[2]) if groups[2] else None,
+            )
+
         # Pattern: YYYY[-MM[-DD[Thh[:mm[:ss[.fff]]][tz]]]]
         pattern = (
             r"^(\d{4})(?:-(\d{2})(?:-(\d{2})"

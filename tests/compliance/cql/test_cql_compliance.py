@@ -493,6 +493,7 @@ def compare_datetime_strings(actual: str, expected: str) -> bool:
 def compare_results(actual: Any, expected: Any) -> bool:
     """Compare actual and expected results with type coercion."""
     actual = normalize_result(actual)
+    expected = normalize_result(expected)
 
     if actual is None and expected is None:
         return True

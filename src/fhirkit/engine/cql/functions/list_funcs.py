@@ -24,28 +24,47 @@ def _last(args: list[Any]) -> Any:
     return None
 
 
-def _tail(args: list[Any]) -> list[Any]:
-    """Get all elements except the first."""
-    if args and isinstance(args[0], list) and len(args[0]) > 1:
-        return args[0][1:]
+def _tail(args: list[Any]) -> list[Any] | None:
+    """Get all elements except the first.
+
+    Per CQL spec: If list is null, result is null.
+    """
+    if args:
+        lst = args[0]
+        if lst is None:
+            return None
+        if isinstance(lst, list) and len(lst) > 1:
+            return lst[1:]
     return []
 
 
-def _take(args: list[Any]) -> list[Any]:
-    """Take first n elements from a list."""
-    if len(args) >= 2 and isinstance(args[0], list):
+def _take(args: list[Any]) -> list[Any] | None:
+    """Take first n elements from a list.
+
+    Per CQL spec: If list is null, result is null.
+    """
+    if len(args) >= 2:
+        lst = args[0]
         n = args[1]
-        if isinstance(n, int):
-            return args[0][:n]
+        if lst is None:
+            return None
+        if isinstance(lst, list) and isinstance(n, int):
+            return lst[:n]
     return []
 
 
-def _skip(args: list[Any]) -> list[Any]:
-    """Skip first n elements of a list."""
-    if len(args) >= 2 and isinstance(args[0], list):
+def _skip(args: list[Any]) -> list[Any] | None:
+    """Skip first n elements of a list.
+
+    Per CQL spec: If list is null, result is null.
+    """
+    if len(args) >= 2:
+        lst = args[0]
         n = args[1]
-        if isinstance(n, int):
-            return args[0][n:]
+        if lst is None:
+            return None
+        if isinstance(lst, list) and isinstance(n, int):
+            return lst[n:]
     return []
 
 
