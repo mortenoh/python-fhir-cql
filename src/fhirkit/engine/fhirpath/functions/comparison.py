@@ -5,7 +5,7 @@ from typing import Any
 
 from ...context import EvaluationContext
 from ...functions import FunctionRegistry
-from ...types import FHIRDate, FHIRDateTime, FHIRTime
+from ...types import FHIRDate, FHIRDateTime
 
 
 def _normalize_for_comparison(value: Any) -> Any:

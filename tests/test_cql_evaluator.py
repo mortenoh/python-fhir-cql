@@ -2324,9 +2324,15 @@ class TestIntervalOperations:
         assert evaluate("Interval[1, 3] overlaps Interval[5, 7]") is False
 
     def test_interval_meets(self) -> None:
-        assert evaluate("Interval[1, 3] meets Interval[3, 5]") is True
+        # [1, 3] meets [4, 6] because successor(3) = 4 (they are adjacent)
+        assert evaluate("Interval[1, 3] meets Interval[4, 6]") is True
 
-    def test_interval_not_meets(self) -> None:
+    def test_interval_not_meets_overlap(self) -> None:
+        # [1, 3] does NOT meet [3, 5] - they share endpoint 3, so they overlap
+        assert evaluate("Interval[1, 3] meets Interval[3, 5]") is False
+
+    def test_interval_not_meets_gap(self) -> None:
+        # [1, 3] does NOT meet [5, 7] - there's a gap (4 is not covered)
         assert evaluate("Interval[1, 3] meets Interval[5, 7]") is False
 
     def test_interval_before(self) -> None:
@@ -2989,14 +2995,14 @@ class TestSuccessorPredecessorExpression:
         assert evaluate("predecessor of 0") == -1
 
     def test_successor_of_decimal(self) -> None:
-        """Test successor of decimal."""
+        """Test successor of decimal - CQL uses 8 decimal places precision."""
         result = evaluate("successor of 5.0")
-        assert result == Decimal("5.1")
+        assert result == Decimal("5.00000001")
 
     def test_predecessor_of_decimal(self) -> None:
-        """Test predecessor of decimal."""
+        """Test predecessor of decimal - CQL uses 8 decimal places precision."""
         result = evaluate("predecessor of 5.0")
-        assert result == Decimal("4.9")
+        assert result == Decimal("4.99999999")
 
     def test_successor_of_null(self) -> None:
         """Test successor of null returns null."""

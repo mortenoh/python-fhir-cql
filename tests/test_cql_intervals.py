@@ -92,17 +92,27 @@ class TestIntervalBefore:
 
 
 class TestIntervalMeets:
-    """Test interval meets operator."""
+    """Test interval meets operator.
 
-    def test_meets_before(self, evaluator):
-        # With closed bounds, [1,5] meets [5,10] at point 5
-        assert evaluator.evaluate_expression("Interval[1, 5] meets Interval[5, 10]") is True
+    In CQL, two intervals "meet" if they are adjacent, meaning:
+    - successor(left.high) == right.low (for meets before)
+    - left.low == successor(right.high) (for meets after)
 
-    def test_meets_after(self, evaluator):
-        assert evaluator.evaluate_expression("Interval[5, 10] meets Interval[1, 5]") is True
+    This means [1,5] meets [6,10] (successor(5)=6) but [1,5] does NOT meet [5,10]
+    (they share endpoint 5, so they overlap, not meet).
+    """
 
-    def test_meets_gap(self, evaluator):
-        assert evaluator.evaluate_expression("Interval[1, 5] meets Interval[6, 10]") is False
+    def test_meets_adjacent(self, evaluator):
+        # [1,5] and [6,10] are adjacent: successor(5) = 6
+        assert evaluator.evaluate_expression("Interval[1, 5] meets Interval[6, 10]") is True
+
+    def test_meets_adjacent_reverse(self, evaluator):
+        # [6,10] and [1,5] are adjacent: 6 = successor(5)
+        assert evaluator.evaluate_expression("Interval[6, 10] meets Interval[1, 5]") is True
+
+    def test_meets_sharing_endpoint(self, evaluator):
+        # [1,5] and [5,10] share endpoint 5, so they overlap, not meet
+        assert evaluator.evaluate_expression("Interval[1, 5] meets Interval[5, 10]") is False
 
 
 class TestIntervalOverlaps:
@@ -339,30 +349,36 @@ class TestIntervalPointFrom:
 
 
 class TestIntervalMeetsBefore:
-    """Test interval meets before operator."""
+    """Test interval meets before operator.
+
+    In CQL, interval A meets before interval B if successor(A.high) == B.low.
+    """
 
     def test_meets_before_true(self, evaluator):
-        # [1,5] meets before [5,10] at point 5 (half-open/half-closed)
-        result = evaluator.evaluate_expression("Interval[1, 5) meets before Interval[5, 10]")
+        # [1,10] meets before [11,20]: successor(10) = 11
+        result = evaluator.evaluate_expression("Interval[1, 10] meets before Interval[11, 20]")
         assert result is True
 
     def test_meets_before_false(self, evaluator):
-        # [5,10] does not meet before [1,5]
+        # [5,10] does not meet before [1,5] - wrong order
         result = evaluator.evaluate_expression("Interval[5, 10] meets before Interval[1, 5]")
         assert result is False
 
 
 class TestIntervalMeetsAfter:
-    """Test interval meets after operator."""
+    """Test interval meets after operator.
+
+    In CQL, interval A meets after interval B if A.low == successor(B.high).
+    """
 
     def test_meets_after_true(self, evaluator):
-        # [5,10] meets after [1,5)
-        result = evaluator.evaluate_expression("Interval[5, 10] meets after Interval[1, 5)")
+        # [11,20] meets after [1,10]: 11 = successor(10)
+        result = evaluator.evaluate_expression("Interval[11, 20] meets after Interval[1, 10]")
         assert result is True
 
     def test_meets_after_false(self, evaluator):
-        # [1,5) does not meet after [5,10]
-        result = evaluator.evaluate_expression("Interval[1, 5) meets after Interval[5, 10]")
+        # [1,5] does not meet after [5,10] - wrong order
+        result = evaluator.evaluate_expression("Interval[1, 5] meets after Interval[5, 10]")
         assert result is False
 
 
