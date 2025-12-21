@@ -52,13 +52,18 @@ def _is_type(item: Any, type_name: str) -> bool:
     - FHIR types: lowercase (boolean, integer, string, etc.)
     - System types: PascalCase (Boolean, Integer, String, etc.)
 
-    These are NOT equivalent:
-    - Patient.active.is(boolean) = true (FHIR boolean)
-    - Patient.active.is(Boolean) = false (System Boolean)
+    Literals are System types, FHIR resource values are FHIR types.
+    We use _PrimitiveWithExtension wrapper to identify FHIR values.
     """
     from decimal import Decimal as PyDecimal
 
     from ...types import FHIRDate, FHIRDateTime, FHIRTime, Quantity
+    from ..visitor import _PrimitiveWithExtension
+
+    # Check if this is a FHIR value (wrapped primitive or from resource)
+    is_fhir_value = isinstance(item, _PrimitiveWithExtension)
+    if is_fhir_value:
+        item = item.value  # Unwrap for type checking
 
     # Parse namespace prefix
     namespace = None
@@ -69,10 +74,7 @@ def _is_type(item: Any, type_name: str) -> bool:
         namespace = "FHIR"
         type_name = type_name[5:]
 
-    # Get the actual type info of the item
-    item_namespace, item_type = _get_type_info(item)
-
-    # Handle FHIRPath System types (PascalCase)
+    # Handle FHIRPath System types (PascalCase) - these match literals
     if type_name == "DateTime":
         return isinstance(item, FHIRDateTime)
     elif type_name == "Date":
@@ -80,35 +82,35 @@ def _is_type(item: Any, type_name: str) -> bool:
     elif type_name == "Time":
         return isinstance(item, FHIRTime)
     elif type_name == "Boolean":
-        # System.Boolean - only match if explicitly System namespace or no FHIR values
         if namespace == "FHIR":
             return False  # FHIR.Boolean is not a valid type
-        if namespace == "System":
+        # System.Boolean or just Boolean - matches bools that are NOT from FHIR
+        # Without tracking source, we can only check wrapped values
+        if is_fhir_value:
             return False  # FHIR boolean is not System.Boolean
-        # No namespace - check if it's a System type (should not match FHIR boolean)
-        return False  # Don't match FHIR booleans with System.Boolean
+        return isinstance(item, bool)
     elif type_name == "Integer":
         if namespace == "FHIR":
             return False
-        if namespace == "System":
-            return False
-        return False
+        if is_fhir_value:
+            return False  # FHIR integer is not System.Integer
+        return isinstance(item, int) and not isinstance(item, bool)
     elif type_name == "Decimal":
         if namespace == "FHIR":
             return False
-        if namespace == "System":
+        if is_fhir_value:
             return False
-        return False
+        return isinstance(item, (float, PyDecimal)) and not isinstance(item, bool)
     elif type_name == "String":
         if namespace == "FHIR":
             return False
-        if namespace == "System":
+        if is_fhir_value:
             return False
-        return False
+        return isinstance(item, str)
     elif type_name == "Quantity":
         return isinstance(item, (Quantity, dict)) and (not isinstance(item, dict) or "value" in item)
 
-    # Handle FHIR primitive types (lowercase)
+    # Handle FHIR primitive types (lowercase) - these match FHIR resource values
     if type_name == "boolean":
         if namespace == "System":
             return False  # System.boolean is not valid

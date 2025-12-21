@@ -20,6 +20,13 @@ from ..functions import FunctionRegistry  # noqa: E402
 from ..types import FHIRDate, FHIRDateTime, FHIRTime, Quantity  # noqa: E402
 
 
+def _is_primitive(value: Any) -> bool:
+    """Check if a value is a FHIR primitive type (not a complex type/dict)."""
+    from decimal import Decimal as PyDecimal
+
+    return isinstance(value, (bool, int, float, str, PyDecimal)) and not isinstance(value, dict)
+
+
 class _PrimitiveWithExtension:
     """Wrapper for FHIR primitive values that have extensions.
 
@@ -683,20 +690,25 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
                     extension_data = item.get(underscore_key)
 
                     if isinstance(value, list):
-                        # Handle list of primitives with extensions
+                        # Handle list of values
                         if extension_data and isinstance(extension_data, list):
                             for i, v in enumerate(value):
-                                if i < len(extension_data) and extension_data[i]:
-                                    # Wrap primitive with extension data
-                                    result.append(_PrimitiveWithExtension(v, extension_data[i]))
+                                ext = extension_data[i] if i < len(extension_data) else None
+                                if _is_primitive(v):
+                                    # Wrap ALL FHIR primitives to mark them as FHIR values
+                                    result.append(_PrimitiveWithExtension(v, ext or {}))
                                 else:
                                     result.append(v)
                         else:
-                            result.extend(value)
+                            for v in value:
+                                if _is_primitive(v):
+                                    result.append(_PrimitiveWithExtension(v, {}))
+                                else:
+                                    result.append(v)
                     else:
-                        if extension_data and isinstance(extension_data, dict):
-                            # Wrap single primitive with extension data
-                            result.append(_PrimitiveWithExtension(value, extension_data))
+                        if _is_primitive(value):
+                            # Wrap ALL FHIR primitives to mark them as FHIR values
+                            result.append(_PrimitiveWithExtension(value, extension_data or {}))
                         else:
                             result.append(value)
                 else:

@@ -12,7 +12,15 @@ def _normalize_for_comparison(value: Any) -> Any:
     """Normalize a value for comparison.
 
     Converts date strings to FHIRDate/FHIRDateTime for proper comparison.
+    Also unwraps _PrimitiveWithExtension wrappers.
     """
+    # Import here to avoid circular imports
+    from ..visitor import _PrimitiveWithExtension
+
+    # Unwrap primitive wrappers
+    if isinstance(value, _PrimitiveWithExtension):
+        value = value.value
+
     if isinstance(value, str):
         # Try to parse as date or datetime
         if "T" in value or len(value) > 10:
