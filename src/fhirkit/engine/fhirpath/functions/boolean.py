@@ -132,11 +132,9 @@ def fn_to_integer(ctx: EvaluationContext, collection: list[Any]) -> list[int]:
 
     if isinstance(value, str):
         try:
-            # Must be whole number representation
+            # String must NOT contain a decimal point to convert to integer
+            # Even '1.0' does not convert to integer per FHIRPath spec
             if "." in value:
-                f = float(value)
-                if f == int(f):
-                    return [int(f)]
                 return []
             return [int(value)]
         except ValueError:
@@ -261,7 +259,8 @@ def fn_to_datetime(ctx: EvaluationContext, collection: list[Any]) -> list[str]:
         import re
 
         # Full datetime or date-only (which implicitly becomes datetime)
-        if re.match(r"^\d{4}(-\d{2}(-\d{2}(T\d{2}(:\d{2}(:\d{2}(\.\d+)?)?)?([Z+-]\d{2}:\d{2})?)?)?)?$", value):
+        # Timezone can be Z, or +/-HH:MM
+        if re.match(r"^\d{4}(-\d{2}(-\d{2}(T\d{2}(:\d{2}(:\d{2}(\.\d+)?)?)?(Z|[+-]\d{2}:\d{2})?)?)?)?$", value):
             return [value]
     return []
 
@@ -330,8 +329,45 @@ def fn_to_quantity(ctx: EvaluationContext, collection: list[Any], unit: str | No
         match = re.match(r"^([+-]?\d+(?:\.\d+)?)\s*(.*)$", value.strip())
         if match:
             num_str, unit_str = match.groups()
+            unit_str = unit_str.strip()
+
+            # Valid units are:
+            # - Calendar duration keywords (year, month, week, day, hour, minute, second, millisecond and plurals)
+            # - UCUM units in single quotes (e.g., 'kg', 'wk')
+            # - Empty (defaults to '1')
+            calendar_units = {
+                "year",
+                "years",
+                "month",
+                "months",
+                "week",
+                "weeks",
+                "day",
+                "days",
+                "hour",
+                "hours",
+                "minute",
+                "minutes",
+                "second",
+                "seconds",
+                "millisecond",
+                "milliseconds",
+            }
+            is_valid_unit = (
+                not unit_str  # Empty is OK
+                or unit_str in calendar_units  # Calendar duration
+                or (unit_str.startswith("'") and unit_str.endswith("'"))  # UCUM in quotes
+            )
+
+            if not is_valid_unit:
+                return []
+
+            # Remove quotes from UCUM units
+            if unit_str.startswith("'") and unit_str.endswith("'"):
+                unit_str = unit_str[1:-1]
+
             try:
-                return [Quantity(value=Decimal(num_str), unit=unit_str.strip() or unit or "1")]
+                return [Quantity(value=Decimal(num_str), unit=unit_str or unit or "1")]
             except (ValueError, ArithmeticError):
                 pass
     return []
