@@ -623,6 +623,28 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
             unit = ctx.unit().getText()
             if unit.startswith("'") and unit.endswith("'"):
                 unit = unit[1:-1]
+            else:
+                # Convert calendar duration units to UCUM equivalents
+                calendar_to_ucum = {
+                    "year": "a",
+                    "years": "a",
+                    "month": "mo",
+                    "months": "mo",
+                    "week": "wk",
+                    "weeks": "wk",
+                    "day": "d",
+                    "days": "d",
+                    "hour": "h",
+                    "hours": "h",
+                    "minute": "min",
+                    "minutes": "min",
+                    "second": "s",
+                    "seconds": "s",
+                    "millisecond": "ms",
+                    "milliseconds": "ms",
+                }
+                if unit in calendar_to_ucum:
+                    unit = calendar_to_ucum[unit]
 
         return [Quantity(value=Decimal(str(value)), unit=unit)]
 

@@ -13,6 +13,7 @@ def _normalize_for_comparison(value: Any) -> Any:
 
     Converts date strings to FHIRDate/FHIRDateTime for proper comparison.
     Also unwraps _PrimitiveWithExtension wrappers.
+    Converts FHIR Quantity dicts to Quantity objects.
     """
     # Import here to avoid circular imports
     from ..visitor import _PrimitiveWithExtension
@@ -20,6 +21,14 @@ def _normalize_for_comparison(value: Any) -> Any:
     # Unwrap primitive wrappers
     if isinstance(value, _PrimitiveWithExtension):
         value = value.value
+
+    # Convert FHIR Quantity dict to Quantity object
+    if isinstance(value, dict) and "value" in value and ("unit" in value or "code" in value):
+        qty_value = value.get("value")
+        # Prefer 'code' (UCUM code) over 'unit' (human-readable)
+        qty_unit = value.get("code") or value.get("unit") or "1"
+        if qty_value is not None:
+            return Quantity(value=Decimal(str(qty_value)), unit=qty_unit)
 
     if isinstance(value, str):
         # Try to parse as date or datetime
@@ -224,6 +233,21 @@ def compare(left: Any, right: Any) -> int | None:
                     return 1
             return 0
 
+    # Handle FHIRDateTime precision differences
+    if isinstance(left, FHIRDateTime) and isinstance(right, FHIRDateTime):
+        # Check if precisions differ
+        left_precision = _get_datetime_precision(left)
+        right_precision = _get_datetime_precision(right)
+
+        if left_precision != right_precision:
+            # Compare up to the less precise level
+            min_precision = min(left_precision, right_precision)
+            cmp_result = _compare_datetime_to_precision(left, right, min_precision)
+            if cmp_result == 0:
+                # Equal up to less precise level - incomparable
+                return None
+            return cmp_result
+
     # After handling cross-type comparisons, remaining comparisons should be same-type
     try:
         if left < right:  # type: ignore[operator]
@@ -234,6 +258,103 @@ def compare(left: Any, right: Any) -> int | None:
             return 0
     except TypeError:
         return None
+
+
+def _get_datetime_precision(dt: FHIRDateTime) -> int:
+    """Get the precision level of a FHIRDateTime.
+
+    Returns:
+        1: year only
+        2: year-month
+        3: year-month-day
+        4: year-month-day hour
+        5: year-month-day hour:minute
+        6: year-month-day hour:minute:second
+        7: year-month-day hour:minute:second.millisecond
+    """
+    if dt.millisecond is not None:
+        return 7
+    if dt.second is not None:
+        return 6
+    if dt.minute is not None:
+        return 5
+    if dt.hour is not None:
+        return 4
+    if dt.day is not None:
+        return 3
+    if dt.month is not None:
+        return 2
+    return 1
+
+
+def _compare_datetime_to_precision(left: FHIRDateTime, right: FHIRDateTime, precision: int) -> int:
+    """Compare two FHIRDateTimes up to the specified precision level."""
+    # Year
+    if left.year < right.year:
+        return -1
+    if left.year > right.year:
+        return 1
+    if precision == 1:
+        return 0
+
+    # Month
+    l_month = left.month or 1
+    r_month = right.month or 1
+    if l_month < r_month:
+        return -1
+    if l_month > r_month:
+        return 1
+    if precision == 2:
+        return 0
+
+    # Day
+    l_day = left.day or 1
+    r_day = right.day or 1
+    if l_day < r_day:
+        return -1
+    if l_day > r_day:
+        return 1
+    if precision == 3:
+        return 0
+
+    # Hour
+    l_hour = left.hour or 0
+    r_hour = right.hour or 0
+    if l_hour < r_hour:
+        return -1
+    if l_hour > r_hour:
+        return 1
+    if precision == 4:
+        return 0
+
+    # Minute
+    l_min = left.minute or 0
+    r_min = right.minute or 0
+    if l_min < r_min:
+        return -1
+    if l_min > r_min:
+        return 1
+    if precision == 5:
+        return 0
+
+    # Second
+    l_sec = left.second or 0
+    r_sec = right.second or 0
+    if l_sec < r_sec:
+        return -1
+    if l_sec > r_sec:
+        return 1
+    if precision == 6:
+        return 0
+
+    # Millisecond
+    l_ms = left.millisecond or 0
+    r_ms = right.millisecond or 0
+    if l_ms < r_ms:
+        return -1
+    if l_ms > r_ms:
+        return 1
+    return 0
 
 
 @FunctionRegistry.register("=")

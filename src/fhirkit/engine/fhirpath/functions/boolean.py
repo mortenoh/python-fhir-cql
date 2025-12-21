@@ -335,35 +335,38 @@ def fn_to_quantity(ctx: EvaluationContext, collection: list[Any], unit: str | No
             # - Calendar duration keywords (year, month, week, day, hour, minute, second, millisecond and plurals)
             # - UCUM units in single quotes (e.g., 'kg', 'wk')
             # - Empty (defaults to '1')
-            calendar_units = {
-                "year",
-                "years",
-                "month",
-                "months",
-                "week",
-                "weeks",
-                "day",
-                "days",
-                "hour",
-                "hours",
-                "minute",
-                "minutes",
-                "second",
-                "seconds",
-                "millisecond",
-                "milliseconds",
+            # Calendar units map to UCUM equivalents
+            calendar_to_ucum = {
+                "year": "a",
+                "years": "a",
+                "month": "mo",
+                "months": "mo",
+                "week": "wk",
+                "weeks": "wk",
+                "day": "d",
+                "days": "d",
+                "hour": "h",
+                "hours": "h",
+                "minute": "min",
+                "minutes": "min",
+                "second": "s",
+                "seconds": "s",
+                "millisecond": "ms",
+                "milliseconds": "ms",
             }
             is_valid_unit = (
                 not unit_str  # Empty is OK
-                or unit_str in calendar_units  # Calendar duration
+                or unit_str in calendar_to_ucum  # Calendar duration
                 or (unit_str.startswith("'") and unit_str.endswith("'"))  # UCUM in quotes
             )
 
             if not is_valid_unit:
                 return []
 
-            # Remove quotes from UCUM units
-            if unit_str.startswith("'") and unit_str.endswith("'"):
+            # Convert calendar units to UCUM, or remove quotes from UCUM units
+            if unit_str in calendar_to_ucum:
+                unit_str = calendar_to_ucum[unit_str]
+            elif unit_str.startswith("'") and unit_str.endswith("'"):
                 unit_str = unit_str[1:-1]
 
             try:

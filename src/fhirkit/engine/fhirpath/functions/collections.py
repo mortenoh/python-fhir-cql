@@ -142,8 +142,21 @@ def fn_sort(ctx: EvaluationContext, collection: list[Any], *args: Any) -> list[A
     return collection
 
 
+def _unwrap_value(value: Any) -> Any:
+    """Unwrap a potentially wrapped FHIR primitive value."""
+    from ..visitor import _PrimitiveWithExtension
+
+    if isinstance(value, _PrimitiveWithExtension):
+        return value.value
+    return value
+
+
 def _deep_equals(a: Any, b: Any) -> bool:
     """Deep equality check for FHIRPath values."""
+    # Unwrap primitive wrappers
+    a = _unwrap_value(a)
+    b = _unwrap_value(b)
+
     if type(a) is not type(b):
         # Special case for int/float comparison
         if isinstance(a, (int, float)) and isinstance(b, (int, float)):

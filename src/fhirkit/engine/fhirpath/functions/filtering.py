@@ -179,12 +179,20 @@ def _get_type_info(item: Any) -> tuple[str, str]:
     """Get the FHIRPath type info (namespace, name) for an item.
 
     Returns a tuple of (namespace, type_name).
-    For FHIR elements, returns FHIR namespace with lowercase type names.
-    For FHIRPath system types, returns System namespace with PascalCase names.
+    For FHIR elements (wrapped primitives from resources), returns FHIR namespace
+    with lowercase type names (e.g., FHIR.boolean, FHIR.string).
+    For FHIRPath system types (literals), returns System namespace with
+    PascalCase names (e.g., System.Boolean, System.Integer).
     """
     from decimal import Decimal as PyDecimal
 
     from ...types import FHIRDate, FHIRDateTime, FHIRTime, Quantity
+    from ..visitor import _PrimitiveWithExtension
+
+    # Check if this is a wrapped FHIR primitive (from a resource)
+    is_fhir_element = isinstance(item, _PrimitiveWithExtension)
+    if is_fhir_element:
+        item = item.value
 
     if isinstance(item, FHIRDateTime):
         return ("System", "DateTime")
@@ -193,17 +201,21 @@ def _get_type_info(item: Any) -> tuple[str, str]:
     elif isinstance(item, FHIRTime):
         return ("System", "Time")
     elif isinstance(item, bool):
-        # FHIR boolean elements - use FHIR namespace
-        return ("FHIR", "boolean")
+        if is_fhir_element:
+            return ("FHIR", "boolean")
+        return ("System", "Boolean")
     elif isinstance(item, int):
-        # FHIR integer elements - use FHIR namespace
-        return ("FHIR", "integer")
+        if is_fhir_element:
+            return ("FHIR", "integer")
+        return ("System", "Integer")
     elif isinstance(item, (float, PyDecimal)):
-        # FHIR decimal elements - use FHIR namespace
-        return ("FHIR", "decimal")
+        if is_fhir_element:
+            return ("FHIR", "decimal")
+        return ("System", "Decimal")
     elif isinstance(item, str):
-        # FHIR string elements - use FHIR namespace
-        return ("FHIR", "string")
+        if is_fhir_element:
+            return ("FHIR", "string")
+        return ("System", "String")
     elif isinstance(item, Quantity):
         return ("System", "Quantity")
     elif isinstance(item, dict):
