@@ -300,6 +300,30 @@ class FHIRDateTime(BaseModel):
             self.millisecond or 0,
         )
 
+    def _to_utc_tuple(self) -> tuple[int, int, int, int, int, int, int]:
+        """Convert to UTC-normalized tuple for timezone-aware comparison."""
+        if not self.tz_offset or self.hour is None:
+            return self._to_tuple()
+
+        # Parse timezone offset and convert to UTC
+        py_dt = self.to_datetime()
+        if py_dt is None:
+            return self._to_tuple()
+
+        # Convert to UTC
+        from datetime import timezone as tz
+
+        utc_dt = py_dt.astimezone(tz.utc)
+        return (
+            utc_dt.year,
+            utc_dt.month,
+            utc_dt.day,
+            utc_dt.hour,
+            utc_dt.minute,
+            utc_dt.second,
+            utc_dt.microsecond // 1000,
+        )
+
     def _has_comparable_precision(self, other: "FHIRDateTime") -> bool:
         """Check if both datetimes have comparable precision levels."""
         # Both must have same precision level for reliable comparison
@@ -316,22 +340,23 @@ class FHIRDateTime(BaseModel):
     def __lt__(self, other: "FHIRDateTime") -> bool:
         if not isinstance(other, FHIRDateTime):
             return NotImplemented
-        return self._to_tuple() < other._to_tuple()
+        # Use UTC-normalized comparison for timezone-aware datetimes
+        return self._to_utc_tuple() < other._to_utc_tuple()
 
     def __le__(self, other: "FHIRDateTime") -> bool:
         if not isinstance(other, FHIRDateTime):
             return NotImplemented
-        return self._to_tuple() <= other._to_tuple()
+        return self._to_utc_tuple() <= other._to_utc_tuple()
 
     def __gt__(self, other: "FHIRDateTime") -> bool:
         if not isinstance(other, FHIRDateTime):
             return NotImplemented
-        return self._to_tuple() > other._to_tuple()
+        return self._to_utc_tuple() > other._to_utc_tuple()
 
     def __ge__(self, other: "FHIRDateTime") -> bool:
         if not isinstance(other, FHIRDateTime):
             return NotImplemented
-        return self._to_tuple() >= other._to_tuple()
+        return self._to_utc_tuple() >= other._to_utc_tuple()
 
 
 class FHIRTime(BaseModel):

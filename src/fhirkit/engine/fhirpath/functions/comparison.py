@@ -117,6 +117,12 @@ def _equals_single(left: Any, right: Any) -> bool | None:
             return float(left) == float(right)
         return False
 
+    # Special handling for FHIRDateTime with timezone - compare in UTC
+    if isinstance(left, FHIRDateTime) and isinstance(right, FHIRDateTime):
+        # If both have timezones, compare normalized UTC tuples
+        if left.tz_offset is not None and right.tz_offset is not None:
+            return left._to_utc_tuple() == right._to_utc_tuple()
+
     return left == right
 
 
