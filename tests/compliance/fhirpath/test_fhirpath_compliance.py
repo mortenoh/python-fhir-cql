@@ -13,6 +13,7 @@ from typing import Any
 
 import pytest
 
+from fhirkit.engine.types import FHIRDate, FHIRDateTime, FHIRTime, Quantity
 from tests.compliance.test_runner import (
     TestCase,
     get_test_statistics,
@@ -138,8 +139,27 @@ def compare_single_result(actual: Any, expected: Any) -> bool:
     if isinstance(expected, bool):
         return actual == expected
 
-    # Handle string comparison
+    # Handle string comparison with date/time types
     if isinstance(expected, str):
+        # Handle FHIRPath date literal format (@YYYY-MM-DD)
+        if expected.startswith("@"):
+            expected_str = expected[1:]  # Remove @ prefix
+            if isinstance(actual, FHIRDate):
+                return str(actual) == expected_str
+            if isinstance(actual, FHIRDateTime):
+                return str(actual) == expected_str
+            if isinstance(actual, FHIRTime):
+                # Time literals start with @T
+                if expected_str.startswith("T"):
+                    return str(actual) == expected_str[1:]  # Remove T prefix
+                return str(actual) == expected_str
+            return str(actual) == expected_str
+
+        # Handle Quantity comparison (format: "value 'unit'")
+        if isinstance(actual, Quantity):
+            # Expected might be "10 'kg'" or similar
+            return str(actual) == expected
+
         return str(actual) == expected
 
     # Handle dict comparison

@@ -1,5 +1,8 @@
 """String functions."""
 
+import base64
+import html
+import json
 import re
 from typing import Any
 
@@ -41,15 +44,37 @@ def fn_contains(ctx: EvaluationContext, collection: list[Any], substring: str) -
 
 
 @FunctionRegistry.register("matches")
-def fn_matches(ctx: EvaluationContext, collection: list[Any], pattern: str) -> list[bool]:
-    """Returns true if string matches the regex pattern."""
+def fn_matches(ctx: EvaluationContext, collection: list[Any], pattern: str | None = None) -> list[bool]:
+    """Returns true if string matches the regex pattern (partial match)."""
     if not collection:
         return []
     value = collection[0]
     if not isinstance(value, str):
         return []
+    # Empty pattern returns empty
+    if pattern is None or pattern == "":
+        return []
     try:
-        return [bool(re.search(pattern, value))]
+        # Use DOTALL so . matches newlines (FHIRPath single-line mode)
+        return [bool(re.search(pattern, value, re.DOTALL))]
+    except re.error:
+        return [False]
+
+
+@FunctionRegistry.register("matchesFull")
+def fn_matches_full(ctx: EvaluationContext, collection: list[Any], pattern: str | None = None) -> list[bool]:
+    """Returns true if string fully matches the regex pattern (entire string must match)."""
+    if not collection:
+        return []
+    value = collection[0]
+    if not isinstance(value, str):
+        return []
+    # Empty pattern returns empty
+    if pattern is None or pattern == "":
+        return []
+    try:
+        # Use DOTALL so . matches newlines
+        return [bool(re.fullmatch(pattern, value, re.DOTALL))]
     except re.error:
         return [False]
 
@@ -66,13 +91,21 @@ def fn_replace(ctx: EvaluationContext, collection: list[Any], pattern: str, subs
 
 
 @FunctionRegistry.register("replaceMatches")
-def fn_replace_matches(ctx: EvaluationContext, collection: list[Any], regex: str, substitution: str) -> list[str]:
+def fn_replace_matches(
+    ctx: EvaluationContext, collection: list[Any], regex: str | None = None, substitution: str | None = None
+) -> list[str]:
     """Replaces all matches of regex pattern with substitution."""
     if not collection:
         return []
     value = collection[0]
     if not isinstance(value, str):
         return []
+    # Empty/null pattern or substitution returns empty
+    if regex is None or substitution is None:
+        return []
+    # Empty regex pattern returns original unchanged
+    if regex == "":
+        return [value]
     try:
         return [re.sub(regex, substitution, value)]
     except re.error:
@@ -178,3 +211,110 @@ def fn_to_chars(ctx: EvaluationContext, collection: list[Any]) -> list[str]:
     if not isinstance(value, str):
         return []
     return list(value)
+
+
+@FunctionRegistry.register("encode")
+def fn_encode(ctx: EvaluationContext, collection: list[Any], encoding: str) -> list[str]:
+    """
+    Encodes the string using the specified encoding.
+
+    Supported encodings: 'base64', 'urlbase64', 'hex'
+    """
+    if not collection:
+        return []
+    value = collection[0]
+    if not isinstance(value, str):
+        return []
+
+    encoding = encoding.lower()
+    data = value.encode("utf-8")
+
+    if encoding == "base64":
+        return [base64.b64encode(data).decode("ascii")]
+    elif encoding == "urlbase64":
+        return [base64.urlsafe_b64encode(data).decode("ascii")]
+    elif encoding == "hex":
+        return [data.hex()]
+    else:
+        return []
+
+
+@FunctionRegistry.register("decode")
+def fn_decode(ctx: EvaluationContext, collection: list[Any], encoding: str) -> list[str]:
+    """
+    Decodes the string using the specified encoding.
+
+    Supported encodings: 'base64', 'urlbase64', 'hex'
+    """
+    if not collection:
+        return []
+    value = collection[0]
+    if not isinstance(value, str):
+        return []
+
+    encoding = encoding.lower()
+
+    try:
+        if encoding == "base64":
+            return [base64.b64decode(value).decode("utf-8")]
+        elif encoding == "urlbase64":
+            return [base64.urlsafe_b64decode(value).decode("utf-8")]
+        elif encoding == "hex":
+            return [bytes.fromhex(value).decode("utf-8")]
+        else:
+            return []
+    except Exception:
+        return []
+
+
+@FunctionRegistry.register("escape")
+def fn_escape(ctx: EvaluationContext, collection: list[Any], mode: str) -> list[str]:
+    """
+    Escapes the string using the specified mode.
+
+    Supported modes: 'html', 'json'
+    """
+    if not collection:
+        return []
+    value = collection[0]
+    if not isinstance(value, str):
+        return []
+
+    mode = mode.lower()
+
+    if mode == "html":
+        return [html.escape(value)]
+    elif mode == "json":
+        # JSON escape: escape quotes and backslashes
+        escaped = json.dumps(value)
+        # Remove the surrounding quotes from json.dumps output
+        return [escaped[1:-1]]
+    else:
+        return []
+
+
+@FunctionRegistry.register("unescape")
+def fn_unescape(ctx: EvaluationContext, collection: list[Any], mode: str) -> list[str]:
+    """
+    Unescapes the string using the specified mode.
+
+    Supported modes: 'html', 'json'
+    """
+    if not collection:
+        return []
+    value = collection[0]
+    if not isinstance(value, str):
+        return []
+
+    mode = mode.lower()
+
+    try:
+        if mode == "html":
+            return [html.unescape(value)]
+        elif mode == "json":
+            # JSON unescape: parse as JSON string
+            return [json.loads(f'"{value}"')]
+        else:
+            return []
+    except Exception:
+        return []

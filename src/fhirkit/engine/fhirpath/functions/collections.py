@@ -116,6 +116,32 @@ def fn_superset_of(ctx: EvaluationContext, left: list[Any], right: Any) -> list[
     return fn_subset_of(ctx, right_list, left)
 
 
+@FunctionRegistry.register("sort")
+def fn_sort(ctx: EvaluationContext, collection: list[Any], *args: Any) -> list[Any]:
+    """
+    Sorts the collection.
+
+    If no criteria is provided, sorts by natural ordering.
+    If criteria is provided, it's evaluated for each item to get the sort key.
+    A negative polarity on the criteria means descending order.
+    """
+    if not collection:
+        return []
+
+    if not args:
+        # Sort by natural ordering
+        try:
+            return sorted(collection, key=lambda x: (x is None, x))
+        except TypeError:
+            # Can't compare mixed types, return as-is
+            return collection
+
+    # With criteria, we need to evaluate it for each item
+    # This is handled specially in the visitor for lazy evaluation
+    # For now, just return the collection (will be handled by visitor)
+    return collection
+
+
 def _deep_equals(a: Any, b: Any) -> bool:
     """Deep equality check for FHIRPath values."""
     if type(a) is not type(b):

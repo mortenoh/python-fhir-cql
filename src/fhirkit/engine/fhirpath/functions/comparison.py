@@ -5,7 +5,7 @@ from typing import Any
 
 from ...context import EvaluationContext
 from ...functions import FunctionRegistry
-from ...types import FHIRDate, FHIRDateTime
+from ...types import FHIRDate, FHIRDateTime, Quantity
 
 
 def _normalize_for_comparison(value: Any) -> Any:
@@ -39,20 +39,42 @@ def equals(left: Any, right: Any) -> bool | None:
     FHIRPath equality comparison.
 
     Returns None if either operand is empty/null.
+    Collections must be singletons for comparison - different sizes = False.
     """
     if left is None or right is None:
         return None
 
-    # Handle lists (should be singletons for comparison)
+    # Handle lists
     if isinstance(left, list):
         if not left:
             return None
+        if len(left) > 1:
+            # Multi-element collection on left side
+            if isinstance(right, list):
+                if not right:
+                    return None
+                if len(right) != len(left):
+                    return False
+                # Compare element by element
+                for l_item, r_item in zip(left, right):
+                    if not _equals_single(l_item, r_item):
+                        return False
+                return True
+            return False  # Can't compare multi-element with singleton
         left = left[0]
+
     if isinstance(right, list):
         if not right:
             return None
+        if len(right) > 1:
+            return False  # Can't compare singleton with multi-element
         right = right[0]
 
+    return _equals_single(left, right)
+
+
+def _equals_single(left: Any, right: Any) -> bool:
+    """Compare two single values for equality."""
     # Normalize date strings to FHIRDate/FHIRDateTime
     left = _normalize_for_comparison(left)
     right = _normalize_for_comparison(right)
@@ -196,3 +218,32 @@ def fn_greater_or_equal(ctx: EvaluationContext, left: list[Any], right: list[Any
     if result is None:
         return []
     return [result >= 0]
+
+
+@FunctionRegistry.register("comparable")
+def fn_comparable(ctx: EvaluationContext, collection: list[Any], other: Any) -> list[bool]:
+    """
+    Returns true if the quantities are comparable (have compatible units).
+
+    This function checks if two Quantity values can be compared by determining
+    if their units can be converted to a common unit.
+    """
+    if not collection:
+        return []
+
+    left = collection[0]
+    if not isinstance(left, Quantity):
+        return []
+
+    # Handle list argument
+    if isinstance(other, list):
+        if not other:
+            return []
+        other = other[0]
+
+    if not isinstance(other, Quantity):
+        return []
+
+    # Check if the quantities can be converted for comparison
+    result = left._convert_for_comparison(other)
+    return [result is not None]

@@ -629,6 +629,20 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
                         result.extend(value)
                     else:
                         result.append(value)
+                else:
+                    # Handle polymorphic/choice types (e.g., value -> valueQuantity, valueString, etc.)
+                    # In FHIR, a choice type like value[x] can be valueQuantity, valueString, etc.
+                    for key in item:
+                        if key.startswith(member_name) and len(key) > len(member_name):
+                            # Check if remaining part starts with uppercase (type name)
+                            suffix = key[len(member_name) :]
+                            if suffix[0].isupper():
+                                poly_value = item[key]
+                                if isinstance(poly_value, list):
+                                    result.extend(poly_value)
+                                else:
+                                    result.append(poly_value)
+                                break  # Only one choice type can be present
         return result
 
     # Functions that need full collection arguments (not just first element)
@@ -651,7 +665,7 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
                 args.append(expr)  # Pass AST node, not evaluated result
 
         # Handle special functions that need AST evaluation
-        if func_name in ("where", "select", "repeat", "all", "exists"):
+        if func_name in ("where", "select", "repeat", "all", "exists", "sort", "iif", "aggregate"):
             return self._evaluate_special_function(func_name, input_collection, args)
 
         # Handle type-checking functions where argument is a type name
@@ -708,6 +722,18 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
             if not args:
                 return [len(collection) > 0]
             return self._evaluate_exists(collection, args[0])
+        elif func_name == "sort":
+            if not args:
+                # Sort by natural ordering
+                try:
+                    return sorted(collection, key=lambda x: (x is None, x))
+                except TypeError:
+                    return collection
+            return self._evaluate_sort(collection, args)
+        elif func_name == "iif":
+            return self._evaluate_iif(collection, args)
+        elif func_name == "aggregate":
+            return self._evaluate_aggregate(collection, args)
         return []
 
     def _evaluate_where(self, collection: list[Any], criteria_ctx: ParserRuleContext) -> list[Any]:
@@ -801,6 +827,171 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
                 self.ctx.pop_this()
                 self.ctx.pop_index()
         return [False]
+
+    def _evaluate_sort(self, collection: list[Any], criteria_args: list) -> list[Any]:
+        """Evaluate sort() with criteria expressions."""
+        if not collection:
+            return []
+
+        # Build list of (item, sort_keys) tuples
+        items_with_keys: list[tuple[Any, list[tuple[Any, bool]]]] = []
+
+        for i, item in enumerate(collection):
+            self.ctx.push_this(item)
+            self.ctx.push_index(i)
+            try:
+                keys: list[tuple[Any, bool]] = []
+                for criteria_ctx in criteria_args:
+                    # Check if this is a negated expression (descending sort)
+                    descending = False
+                    expr_to_eval = criteria_ctx
+
+                    # Check if it's a polarity expression
+                    text = criteria_ctx.getText()
+                    if text.startswith("-"):
+                        descending = True
+                        # Visit the inner expression (skip the unary minus)
+                        if hasattr(criteria_ctx, "expression"):
+                            children = list(criteria_ctx.getChildren())
+                            if len(children) > 1:
+                                expr_to_eval = children[1]
+
+                    sub_visitor = FHIRPathEvaluatorVisitor(self.ctx, [item])
+                    key_result = sub_visitor.visit(expr_to_eval)
+
+                    # Get the single value for the key
+                    key_value = key_result[0] if key_result else None
+                    keys.append((key_value, descending))
+
+                items_with_keys.append((item, keys))
+            finally:
+                self.ctx.pop_this()
+                self.ctx.pop_index()
+
+        # Sort using the keys
+        def sort_key(entry: tuple[Any, list[tuple[Any, bool]]]) -> tuple[Any, ...]:
+            _, keys = entry
+            result: list[Any] = []
+            for val, desc in keys:
+                # Handle None values (sort them last)
+                is_none = val is None
+                if desc:
+                    # For descending, we need to negate numeric values
+                    if isinstance(val, (int, float)):
+                        result.append((is_none, -val))
+                    elif isinstance(val, str):
+                        # For strings, we can't easily negate, so we reverse later
+                        result.append((is_none, val, True))  # True = descending
+                    else:
+                        result.append((is_none, val))
+                else:
+                    result.append((is_none, val))
+            return tuple(result)
+
+        # Sort with custom key handling for descending strings
+        try:
+            sorted_items = sorted(items_with_keys, key=sort_key)
+        except TypeError:
+            # Mixed types that can't be compared
+            return collection
+
+        # Handle string descending by reversing after stable sort
+        # This is a simplification - complex multi-key sorts may need more work
+        has_desc_string = any(any(isinstance(k[0], str) and k[1] for k in keys) for _, keys in items_with_keys)
+        if has_desc_string and len(criteria_args) == 1:
+            # Simple case: single string key with descending
+            if items_with_keys and items_with_keys[0][1] and items_with_keys[0][1][0][1]:
+                sorted_items = sorted_items[::-1]
+
+        return [item for item, _ in sorted_items]
+
+    def _evaluate_iif(self, collection: list[Any], args: list) -> list[Any]:
+        """
+        Evaluate iif(criterion, true-result [, otherwise-result]).
+
+        The criterion is evaluated with $this bound to each item in collection.
+        Only the appropriate branch is evaluated (lazy evaluation).
+        """
+        if not args:
+            return []
+
+        criterion_ctx = args[0]
+        true_ctx = args[1] if len(args) > 1 else None
+        otherwise_ctx = args[2] if len(args) > 2 else None
+
+        # For empty collection, evaluate criterion without $this
+        if not collection:
+            sub_visitor = FHIRPathEvaluatorVisitor(self.ctx, [])
+            criterion_result = sub_visitor.visit(criterion_ctx)
+            condition = self._to_boolean(criterion_result)
+
+            if condition is True and true_ctx:
+                return sub_visitor.visit(true_ctx) or []
+            elif condition is False and otherwise_ctx:
+                return sub_visitor.visit(otherwise_ctx) or []
+            return []
+
+        # For single item, evaluate criterion with $this bound
+        if len(collection) == 1:
+            item = collection[0]
+            self.ctx.push_this(item)
+            try:
+                sub_visitor = FHIRPathEvaluatorVisitor(self.ctx, [item])
+                criterion_result = sub_visitor.visit(criterion_ctx)
+                condition = self._to_boolean(criterion_result)
+
+                if condition is True and true_ctx:
+                    result = sub_visitor.visit(true_ctx)
+                    return result if isinstance(result, list) else [result] if result is not None else []
+                elif condition is False and otherwise_ctx:
+                    result = sub_visitor.visit(otherwise_ctx)
+                    return result if isinstance(result, list) else [result] if result is not None else []
+                return []
+            finally:
+                self.ctx.pop_this()
+
+        # Multiple items in collection - this is an error per spec
+        # For now, return empty
+        return []
+
+    def _evaluate_aggregate(self, collection: list[Any], args: list) -> list[Any]:
+        """
+        Evaluate aggregate(aggregator [, init]).
+
+        Aggregates collection using aggregator expression with $this for current item
+        and $total for accumulated value.
+        """
+        if not args:
+            return []
+
+        aggregator_ctx = args[0]
+        init_ctx = args[1] if len(args) > 1 else None
+
+        # Get initial value
+        if init_ctx:
+            init_visitor = FHIRPathEvaluatorVisitor(self.ctx, [])
+            init_result = init_visitor.visit(init_ctx)
+            total = init_result[0] if init_result else None
+        else:
+            total = None
+
+        # Aggregate over collection
+        for i, item in enumerate(collection):
+            self.ctx.push_this(item)
+            self.ctx.push_total(total)
+            self.ctx.push_index(i)
+            try:
+                sub_visitor = FHIRPathEvaluatorVisitor(self.ctx, [item])
+                result = sub_visitor.visit(aggregator_ctx)
+                total = result[0] if result else None
+            finally:
+                self.ctx.pop_this()
+                self.ctx.pop_total()
+                self.ctx.pop_index()
+
+        if total is None:
+            return []
+        return [total]
 
     def _to_boolean(self, collection: list[Any] | None) -> bool | None:
         """Convert a collection to a boolean using FHIRPath rules."""

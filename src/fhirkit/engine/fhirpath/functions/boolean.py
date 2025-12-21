@@ -308,17 +308,19 @@ def fn_to_quantity(ctx: EvaluationContext, collection: list[Any], unit: str | No
     if isinstance(value, Quantity):
         return [value]
 
-    if isinstance(value, (int, float)):
-        return [Quantity(value=Decimal(str(value)), unit=unit or "1")]
-
+    # Handle boolean first (before int check since bool is subclass of int)
     if isinstance(value, bool):
         return [Quantity(value=Decimal(1 if value else 0), unit=unit or "1")]
+
+    if isinstance(value, (int, float, Decimal)):
+        return [Quantity(value=Decimal(str(value)), unit=unit or "1")]
 
     if isinstance(value, str):
         import re
 
         # Parse "number unit" format
-        match = re.match(r"^([+-]?\d+\.?\d*)\s*(.*)$", value.strip())
+        # Number must be: integer OR decimal with digits after the point
+        match = re.match(r"^([+-]?\d+(?:\.\d+)?)\s*(.*)$", value.strip())
         if match:
             num_str, unit_str = match.groups()
             try:

@@ -64,19 +64,62 @@ def _is_type(item: Any, type_name: str) -> bool:
         return isinstance(item, FHIRDate)
     elif type_name == "Time":
         return isinstance(item, FHIRTime)
-    elif type_name == "String":
+    elif type_name in ("String", "string"):
+        # String covers all string-based types in FHIR (code, id, uri, etc.)
         return isinstance(item, str)
     elif type_name == "Boolean":
         return isinstance(item, bool)
     elif type_name == "Integer":
+        # Integer covers all integer types (positiveInt, unsignedInt, integer64)
         return isinstance(item, int) and not isinstance(item, bool)
     elif type_name == "Decimal":
         return isinstance(item, (float, PyDecimal)) and not isinstance(item, bool)
     elif type_name == "Quantity":
         return isinstance(item, (Quantity, dict)) and (not isinstance(item, dict) or "value" in item)
-    elif isinstance(item, dict):
+
+    # Handle FHIR string-based element types (subtypes of String)
+    # These are all represented as strings in JSON but have FHIR-specific type names
+    if type_name in ("code", "id", "uri", "url", "canonical", "oid", "uuid", "markdown", "xhtml", "base64Binary"):
+        return isinstance(item, str)
+
+    # Handle FHIR numeric element types (subtypes of Integer)
+    if type_name == "positiveInt":
+        return isinstance(item, int) and not isinstance(item, bool) and item > 0
+    if type_name == "unsignedInt":
+        return isinstance(item, int) and not isinstance(item, bool) and item >= 0
+    if type_name == "integer64":
+        return isinstance(item, int) and not isinstance(item, bool)
+
+    # Handle "Element" - base type for all FHIR elements
+    if type_name == "Element":
+        # Everything in FHIR is an Element
+        return True
+
+    # Handle "Resource" - base type for all resources
+    if type_name == "Resource":
+        return isinstance(item, dict) and "resourceType" in item
+
+    if isinstance(item, dict):
         # Check resourceType for FHIR resources
-        return item.get("resourceType") == type_name
+        if item.get("resourceType") == type_name:
+            return True
+        # Check for complex types by their characteristic fields
+        if type_name == "Coding" and "code" in item:
+            return True
+        if type_name == "CodeableConcept" and ("coding" in item or "text" in item):
+            return True
+        if type_name == "Reference" and ("reference" in item or "type" in item):
+            return True
+        if type_name == "Identifier" and ("value" in item or "system" in item):
+            return True
+        if type_name == "Period" and ("start" in item or "end" in item):
+            return True
+        if type_name == "HumanName" and ("family" in item or "given" in item or "text" in item):
+            return True
+        if type_name == "Address" and ("line" in item or "city" in item or "postalCode" in item):
+            return True
+        if type_name == "ContactPoint" and ("system" in item or "value" in item):
+            return True
     return False
 
 
