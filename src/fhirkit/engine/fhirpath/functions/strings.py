@@ -10,15 +10,24 @@ from ...context import EvaluationContext
 from ...functions import FunctionRegistry
 
 
+def _unwrap_value(value: Any) -> Any:
+    """Unwrap a potentially wrapped FHIR primitive value."""
+    from ..visitor import _PrimitiveWithExtension
+
+    if isinstance(value, _PrimitiveWithExtension):
+        return value.value
+    return value
+
+
 @FunctionRegistry.register("startsWith")
 def fn_starts_with(ctx: EvaluationContext, collection: list[Any], prefix: str) -> list[bool]:
     """Returns true if string starts with the given prefix."""
     if not collection:
         return []
-    value = collection[0]
+    value = _unwrap_value(collection[0])
     if not isinstance(value, str):
         return []
-    return [value.startswith(prefix)]
+    return [value.startswith(_unwrap_value(prefix) if isinstance(prefix, str) else prefix)]
 
 
 @FunctionRegistry.register("endsWith")
@@ -26,7 +35,7 @@ def fn_ends_with(ctx: EvaluationContext, collection: list[Any], suffix: str) -> 
     """Returns true if string ends with the given suffix."""
     if not collection:
         return []
-    value = collection[0]
+    value = _unwrap_value(collection[0])
     if not isinstance(value, str):
         return []
     return [value.endswith(suffix)]
@@ -37,7 +46,7 @@ def fn_contains(ctx: EvaluationContext, collection: list[Any], substring: str) -
     """Returns true if string contains the given substring."""
     if not collection:
         return []
-    value = collection[0]
+    value = _unwrap_value(collection[0])
     if not isinstance(value, str):
         return []
     return [substring in value]
@@ -48,7 +57,7 @@ def fn_matches(ctx: EvaluationContext, collection: list[Any], pattern: str | Non
     """Returns true if string matches the regex pattern (partial match)."""
     if not collection:
         return []
-    value = collection[0]
+    value = _unwrap_value(collection[0])
     if not isinstance(value, str):
         return []
     # Empty pattern returns empty
@@ -66,7 +75,7 @@ def fn_matches_full(ctx: EvaluationContext, collection: list[Any], pattern: str 
     """Returns true if string fully matches the regex pattern (entire string must match)."""
     if not collection:
         return []
-    value = collection[0]
+    value = _unwrap_value(collection[0])
     if not isinstance(value, str):
         return []
     # Empty pattern returns empty
@@ -84,7 +93,7 @@ def fn_replace(ctx: EvaluationContext, collection: list[Any], pattern: str, subs
     """Replaces all occurrences of pattern with substitution (simple string replacement)."""
     if not collection:
         return []
-    value = collection[0]
+    value = _unwrap_value(collection[0])
     if not isinstance(value, str):
         return []
     return [value.replace(pattern, substitution)]
@@ -97,7 +106,7 @@ def fn_replace_matches(
     """Replaces all matches of regex pattern with substitution."""
     if not collection:
         return []
-    value = collection[0]
+    value = _unwrap_value(collection[0])
     if not isinstance(value, str):
         return []
     # Empty/null pattern or substitution returns empty
@@ -117,7 +126,7 @@ def fn_length(ctx: EvaluationContext, collection: list[Any]) -> list[int]:
     """Returns the length of the string."""
     if not collection:
         return []
-    value = collection[0]
+    value = _unwrap_value(collection[0])
     if not isinstance(value, str):
         return []
     return [len(value)]
@@ -128,7 +137,7 @@ def fn_substring(ctx: EvaluationContext, collection: list[Any], start: int, leng
     """Returns a substring starting at start index."""
     if not collection:
         return []
-    value = collection[0]
+    value = _unwrap_value(collection[0])
     if not isinstance(value, str):
         return []
     start = int(start)
@@ -143,7 +152,7 @@ def fn_upper(ctx: EvaluationContext, collection: list[Any]) -> list[str]:
     """Returns the string in uppercase."""
     if not collection:
         return []
-    value = collection[0]
+    value = _unwrap_value(collection[0])
     if not isinstance(value, str):
         return []
     return [value.upper()]
@@ -154,7 +163,7 @@ def fn_lower(ctx: EvaluationContext, collection: list[Any]) -> list[str]:
     """Returns the string in lowercase."""
     if not collection:
         return []
-    value = collection[0]
+    value = _unwrap_value(collection[0])
     if not isinstance(value, str):
         return []
     return [value.lower()]
@@ -165,7 +174,7 @@ def fn_trim(ctx: EvaluationContext, collection: list[Any]) -> list[str]:
     """Returns the string with whitespace trimmed."""
     if not collection:
         return []
-    value = collection[0]
+    value = _unwrap_value(collection[0])
     if not isinstance(value, str):
         return []
     return [value.strip()]
@@ -176,7 +185,7 @@ def fn_split(ctx: EvaluationContext, collection: list[Any], separator: str) -> l
     """Splits the string by separator."""
     if not collection:
         return []
-    value = collection[0]
+    value = _unwrap_value(collection[0])
     if not isinstance(value, str):
         return []
     return value.split(separator)
@@ -187,7 +196,7 @@ def fn_join(ctx: EvaluationContext, collection: list[Any], separator: str = "") 
     """Joins collection elements with separator."""
     if not collection:
         return []
-    strings = [str(item) for item in collection if item is not None]
+    strings = [str(_unwrap_value(item)) for item in collection if item is not None]
     return [separator.join(strings)]
 
 
@@ -196,7 +205,7 @@ def fn_index_of(ctx: EvaluationContext, collection: list[Any], substring: str) -
     """Returns the index of substring, or -1 if not found."""
     if not collection:
         return []
-    value = collection[0]
+    value = _unwrap_value(collection[0])
     if not isinstance(value, str):
         return []
     return [value.find(substring)]
@@ -207,7 +216,7 @@ def fn_to_chars(ctx: EvaluationContext, collection: list[Any]) -> list[str]:
     """Converts string to list of characters."""
     if not collection:
         return []
-    value = collection[0]
+    value = _unwrap_value(collection[0])
     if not isinstance(value, str):
         return []
     return list(value)
@@ -222,7 +231,7 @@ def fn_encode(ctx: EvaluationContext, collection: list[Any], encoding: str) -> l
     """
     if not collection:
         return []
-    value = collection[0]
+    value = _unwrap_value(collection[0])
     if not isinstance(value, str):
         return []
 
@@ -248,7 +257,7 @@ def fn_decode(ctx: EvaluationContext, collection: list[Any], encoding: str) -> l
     """
     if not collection:
         return []
-    value = collection[0]
+    value = _unwrap_value(collection[0])
     if not isinstance(value, str):
         return []
 
@@ -276,7 +285,7 @@ def fn_escape(ctx: EvaluationContext, collection: list[Any], mode: str) -> list[
     """
     if not collection:
         return []
-    value = collection[0]
+    value = _unwrap_value(collection[0])
     if not isinstance(value, str):
         return []
 
@@ -302,7 +311,7 @@ def fn_unescape(ctx: EvaluationContext, collection: list[Any], mode: str) -> lis
     """
     if not collection:
         return []
-    value = collection[0]
+    value = _unwrap_value(collection[0])
     if not isinstance(value, str):
         return []
 

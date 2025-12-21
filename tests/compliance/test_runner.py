@@ -218,6 +218,11 @@ class TestCase:
         return self.invalid == "semantic"
 
     @property
+    def expects_execution_error(self) -> bool:
+        """Whether this test expects an execution/runtime error."""
+        return self.invalid == "execution"
+
+    @property
     def expects_runtime_error(self) -> bool:
         """Whether this test expects a runtime error."""
         return self.invalid == "true"

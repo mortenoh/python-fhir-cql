@@ -27,21 +27,43 @@ def _is_primitive(value: Any) -> bool:
     return isinstance(value, (bool, int, float, str, PyDecimal)) and not isinstance(value, dict)
 
 
+def _get_identifier_text(identifier_ctx: ParserRuleContext) -> str:
+    """Extract identifier text, stripping backticks from delimited identifiers.
+
+    FHIRPath allows escaped identifiers using backticks: `given`, `class`, etc.
+    This handles both regular identifiers and delimited ones.
+    """
+    text = identifier_ctx.getText()
+    # Delimited identifiers are wrapped in backticks
+    if text.startswith("`") and text.endswith("`"):
+        return text[1:-1]
+    return text
+
+
 class _PrimitiveWithExtension:
-    """Wrapper for FHIR primitive values that have extensions.
+    """Wrapper for FHIR primitive values from resources.
 
     In FHIR JSON, primitive values with extensions are represented as:
         {"birthDate": "1974-12-25", "_birthDate": {"extension": [...]}}
 
     This wrapper keeps the primitive value and extension data together
     so that the extension() function can access the extensions.
+    It also tracks the element name to support type checking.
     """
 
-    __slots__ = ("value", "extension_data")
+    __slots__ = ("value", "extension_data", "element_name", "resource_type")
 
-    def __init__(self, value: Any, extension_data: dict[str, Any]):
+    def __init__(
+        self,
+        value: Any,
+        extension_data: dict[str, Any] | None = None,
+        element_name: str | None = None,
+        resource_type: str | None = None,
+    ):
         self.value = value
-        self.extension_data = extension_data
+        self.extension_data = extension_data or {}
+        self.element_name = element_name
+        self.resource_type = resource_type
 
     def __eq__(self, other: Any) -> bool:
         """For comparison, use the underlying value."""
@@ -146,7 +168,8 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
 
         value = result[0]
         if ctx.getChild(0).getText() == "-":
-            if isinstance(value, (int, float, Decimal)):
+            # Exclude bool since it's a subclass of int in Python but shouldn't be negated
+            if isinstance(value, (int, float, Decimal)) and not isinstance(value, bool):
                 return [-value]
         return result
 
@@ -515,7 +538,7 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
 
         if op == "is":
             if not left:
-                return [False]
+                return []  # Empty collection returns empty per FHIRPath spec
             return [self._is_type(left[0], type_spec)]
         elif op == "as":
             if not left:
@@ -606,7 +629,7 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
     def visitExternalConstant(self, ctx: fhirpathParser.ExternalConstantContext) -> list[Any]:
         """Visit external constant (%name)."""
         if ctx.identifier():
-            name = ctx.identifier().getText()
+            name = _get_identifier_text(ctx.identifier())
         else:
             name = ctx.STRING().getText()[1:-1]
 
@@ -655,7 +678,7 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
     def _evaluate_invocation(self, input_collection: list[Any], invocation_ctx: ParserRuleContext) -> list[Any]:
         """Evaluate an invocation on a collection."""
         if isinstance(invocation_ctx, fhirpathParser.MemberInvocationContext):
-            return self._evaluate_member(input_collection, invocation_ctx.identifier().getText())
+            return self._evaluate_member(input_collection, _get_identifier_text(invocation_ctx.identifier()))
         elif isinstance(invocation_ctx, fhirpathParser.FunctionInvocationContext):
             return self._evaluate_function(input_collection, invocation_ctx.function())
         elif isinstance(invocation_ctx, fhirpathParser.ThisInvocationContext):
@@ -737,7 +760,7 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
         self, input_collection: list[Any], function_ctx: fhirpathParser.FunctionContext
     ) -> list[Any]:
         """Evaluate a function call."""
-        func_name = function_ctx.identifier().getText()
+        func_name = _get_identifier_text(function_ctx.identifier())
 
         # Get arguments
         param_list = function_ctx.paramList()

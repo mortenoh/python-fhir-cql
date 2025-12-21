@@ -65,7 +65,10 @@ def equals(left: Any, right: Any) -> bool | None:
                     return False
                 # Compare element by element
                 for l_item, r_item in zip(left, right):
-                    if not _equals_single(l_item, r_item):
+                    result = _equals_single(l_item, r_item)
+                    if result is None:
+                        return None  # Incomparable items
+                    if not result:
                         return False
                 return True
             return False  # Can't compare multi-element with singleton
@@ -81,11 +84,30 @@ def equals(left: Any, right: Any) -> bool | None:
     return _equals_single(left, right)
 
 
-def _equals_single(left: Any, right: Any) -> bool:
-    """Compare two single values for equality."""
+def _equals_single(left: Any, right: Any) -> bool | None:
+    """Compare two single values for equality.
+
+    Returns:
+        True if equal, False if not equal, None if incomparable (different precision).
+    """
     # Normalize date strings to FHIRDate/FHIRDateTime
     left = _normalize_for_comparison(left)
     right = _normalize_for_comparison(right)
+
+    # Handle date/datetime cross-comparison with precision check
+    if isinstance(left, FHIRDate) and isinstance(right, FHIRDateTime):
+        # Date has precision only to day, datetime may have time components
+        # If datetime has time components, they have different precision → None
+        if right.hour is not None:
+            return None  # Incomparable precision
+        # Compare date parts only
+        return left.year == right.year and left.month == right.month and left.day == right.day
+
+    if isinstance(left, FHIRDateTime) and isinstance(right, FHIRDate):
+        # Same as above, reversed
+        if left.hour is not None:
+            return None  # Incomparable precision
+        return left.year == right.year and left.month == right.month and left.day == right.day
 
     # Type-specific comparison
     if type(left) is not type(right):
@@ -151,10 +173,56 @@ def compare(left: Any, right: Any) -> int | None:
     left = _normalize_for_comparison(left)
     right = _normalize_for_comparison(right)
 
+    # Handle date/datetime cross-comparison with precision check
+    if isinstance(left, FHIRDate) and isinstance(right, FHIRDateTime):
+        # If datetime has time components AND dates are equal, precision matters
+        if right.hour is not None:
+            # Only return None if date parts are equal (time would determine result)
+            if left.year == right.year and left.month == right.month and left.day == right.day:
+                return None  # Incomparable precision (same date, different time precision)
+            # Otherwise, compare date parts only
+            if left.year < right.year:
+                return -1
+            if left.year > right.year:
+                return 1
+            if left.month is not None and right.month is not None:
+                if left.month < right.month:
+                    return -1
+                if left.month > right.month:
+                    return 1
+            if left.day is not None and right.day is not None:
+                if left.day < right.day:
+                    return -1
+                if left.day > right.day:
+                    return 1
+            return 0
+    elif isinstance(left, FHIRDateTime) and isinstance(right, FHIRDate):
+        if left.hour is not None:
+            # Only return None if date parts are equal
+            if left.year == right.year and left.month == right.month and left.day == right.day:
+                return None  # Incomparable precision
+            # Otherwise, compare date parts only
+            if left.year < right.year:
+                return -1
+            if left.year > right.year:
+                return 1
+            if left.month is not None and right.month is not None:
+                if left.month < right.month:
+                    return -1
+                if left.month > right.month:
+                    return 1
+            if left.day is not None and right.day is not None:
+                if left.day < right.day:
+                    return -1
+                if left.day > right.day:
+                    return 1
+            return 0
+
+    # After handling cross-type comparisons, remaining comparisons should be same-type
     try:
-        if left < right:
+        if left < right:  # type: ignore[operator]
             return -1
-        elif left > right:
+        elif left > right:  # type: ignore[operator]
             return 1
         else:
             return 0
