@@ -5,7 +5,7 @@ from typing import Any
 
 from ...context import EvaluationContext
 from ...functions import FunctionRegistry
-from ...types import FHIRDate, FHIRDateTime, Quantity
+from ...types import FHIRDate, FHIRDateTime, FHIRTime, Quantity
 
 
 def _normalize_for_comparison(value: Any) -> Any:
@@ -241,10 +241,24 @@ def compare(left: Any, right: Any) -> int | None:
 
         if left_precision != right_precision:
             # Compare up to the less precise level
+            # The more precise value is truncated to match the less precise one
             min_precision = min(left_precision, right_precision)
             cmp_result = _compare_datetime_to_precision(left, right, min_precision)
             if cmp_result == 0:
-                # Equal up to less precise level - incomparable
+                # Equal up to less precise level - incomparable for ordering
+                return None
+            return cmp_result
+
+    # Handle FHIRTime precision differences
+    if isinstance(left, FHIRTime) and isinstance(right, FHIRTime):
+        left_precision = _get_time_precision(left)
+        right_precision = _get_time_precision(right)
+
+        if left_precision != right_precision:
+            min_precision = min(left_precision, right_precision)
+            cmp_result = _compare_time_to_precision(left, right, min_precision)
+            if cmp_result == 0:
+                # Equal up to less precise level - incomparable for ordering
                 return None
             return cmp_result
 
@@ -345,6 +359,64 @@ def _compare_datetime_to_precision(left: FHIRDateTime, right: FHIRDateTime, prec
     if l_sec > r_sec:
         return 1
     if precision == 6:
+        return 0
+
+    # Millisecond
+    l_ms = left.millisecond or 0
+    r_ms = right.millisecond or 0
+    if l_ms < r_ms:
+        return -1
+    if l_ms > r_ms:
+        return 1
+    return 0
+
+
+def _get_time_precision(t: FHIRTime) -> int:
+    """Get the precision level of a FHIRTime.
+
+    Returns:
+        1: hour only
+        2: hour:minute
+        3: hour:minute:second
+        4: hour:minute:second.millisecond
+    """
+    if t.millisecond is not None:
+        return 4
+    if t.second is not None:
+        return 3
+    if t.minute is not None:
+        return 2
+    return 1
+
+
+def _compare_time_to_precision(left: FHIRTime, right: FHIRTime, precision: int) -> int:
+    """Compare two FHIRTimes up to the specified precision level."""
+    # Hour
+    if left.hour < right.hour:
+        return -1
+    if left.hour > right.hour:
+        return 1
+    if precision == 1:
+        return 0
+
+    # Minute
+    l_min = left.minute or 0
+    r_min = right.minute or 0
+    if l_min < r_min:
+        return -1
+    if l_min > r_min:
+        return 1
+    if precision == 2:
+        return 0
+
+    # Second
+    l_sec = left.second or 0
+    r_sec = right.second or 0
+    if l_sec < r_sec:
+        return -1
+    if l_sec > r_sec:
+        return 1
+    if precision == 3:
         return 0
 
     # Millisecond

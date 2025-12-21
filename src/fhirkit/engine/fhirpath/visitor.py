@@ -119,6 +119,10 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
         """
         self.ctx = ctx
         self.input_collection = input_collection
+        # Initialize $this with the input collection (first element if singleton)
+        if input_collection:
+            initial_this = input_collection[0] if len(input_collection) == 1 else input_collection
+            self.ctx.push_this(initial_this)
 
     def evaluate(self, tree: ParserRuleContext) -> list[Any]:
         """Evaluate the parse tree and return the result collection."""
