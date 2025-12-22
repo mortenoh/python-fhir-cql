@@ -118,3 +118,46 @@ def _register_all_functions(registry: FunctionRegistry) -> None:
     string_funcs.register(registry)
     datetime_funcs.register(registry)
     conversion.register(registry)  # type: ignore[attr-defined]
+
+    # Register messaging functions
+    _register_messaging_functions(registry)
+
+
+def _message(args: list[Any]) -> Any:
+    """CQL Message function.
+
+    Message(source, condition, code, severity, message)
+
+    Per CQL spec: Returns the source value and emits a message if condition is true.
+    Severity can be: 'Message', 'Warning', 'Error', 'Trace'
+
+    For 'Error' severity with condition=true, raises an exception.
+    """
+    if not args:
+        return None
+    source = args[0]
+    condition = args[1] if len(args) > 1 else True
+    code = args[2] if len(args) > 2 else None
+    severity = args[3] if len(args) > 3 else "Message"
+    message = args[4] if len(args) > 4 else None
+
+    # If condition is true and severity is 'Error', raise an exception
+    if condition is True and severity == "Error":
+        error_msg = f"CQL Error [{code}]: {message}" if code and message else str(message or "CQL Error")
+        raise RuntimeError(error_msg)
+
+    # For other severities (Message, Warning, Trace), just return the source
+    # In a full implementation, we would emit the message to a message handler
+    return source
+
+
+def _register_messaging_functions(registry: FunctionRegistry) -> None:
+    """Register messaging functions."""
+    registry.register(
+        "Message",
+        _message,
+        category="messaging",
+        min_args=5,
+        max_args=5,
+        description="Emits a message and returns source value",
+    )

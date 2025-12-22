@@ -233,7 +233,8 @@ class TestIntegerDivision:
         assert evaluate("10 div 0") is None
 
     def test_div_negative(self) -> None:
-        assert evaluate("(-10) div 3") == -4
+        # CQL spec: truncated division toward zero, not floor
+        assert evaluate("(-10) div 3") == -3
 
 
 class TestModulo:
@@ -2487,7 +2488,8 @@ class TestStringConcat:
         assert evaluate("Concat('a', 'b', 'c')") == "abc"
 
     def test_concat_with_null(self) -> None:
-        assert evaluate("Concat('Hello', null)") == "Hello"
+        # CQL spec: Concat returns null if any argument is null
+        assert evaluate("Concat('Hello', null)") is None
 
     def test_concat_empty(self) -> None:
         assert evaluate("Concat('', 'test')") == "test"
@@ -2583,16 +2585,25 @@ class TestStringStartsEndsWith:
 
 
 class TestStringMatches:
-    """Test regex matching functions."""
+    """Test regex matching functions.
+
+    CQL spec: Matches checks if the ENTIRE string matches the pattern (fullmatch).
+    """
 
     def test_matches_simple(self) -> None:
-        assert evaluate("Matches('test123', '[0-9]+')") is True
+        # Must match entire string - '123' matches [0-9]+
+        assert evaluate("Matches('123', '[0-9]+')") is True
+
+    def test_matches_partial_fails(self) -> None:
+        # 'test123' does NOT fully match [0-9]+
+        assert evaluate("Matches('test123', '[0-9]+')") is False
 
     def test_matches_no_match(self) -> None:
         assert evaluate("Matches('test', '[0-9]+')") is False
 
-    def test_matches_email_pattern(self) -> None:
-        assert evaluate("Matches('user@example.com', '@.*\\\\.')") is True
+    def test_matches_full_pattern(self) -> None:
+        # Pattern that matches the entire string
+        assert evaluate("Matches('user@example.com', '.*@.*\\\\..*')") is True
 
 
 class TestStringReplace:
@@ -3380,8 +3391,8 @@ class TestStringFunctionsAdvanced:
     def test_string_position_of(self) -> None:
         """Test PositionOf for substring search."""
         assert evaluate("PositionOf('world', 'hello world')") == 6
-        # Returns null when not found (CQL semantics)
-        assert evaluate("PositionOf('xyz', 'hello world')") is None
+        # Returns -1 when not found (CQL semantics)
+        assert evaluate("PositionOf('xyz', 'hello world')") == -1
 
 
 class TestBooleanLogicAdvanced:

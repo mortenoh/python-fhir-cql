@@ -391,10 +391,10 @@ class TestIntervalUnion:
         assert isinstance(result, list)
         assert len(result) == 2
 
-    def test_union_removes_duplicates(self, evaluator):
-        # Union of same interval returns single item
+    def test_union_preserves_duplicates(self, evaluator):
+        # CQL spec: union concatenates lists, preserving duplicates
         result = evaluator.evaluate_expression("{ Interval[1, 5] } union { Interval[1, 5] }")
-        assert len(result) == 1
+        assert len(result) == 2
 
 
 class TestIntervalIntersect:

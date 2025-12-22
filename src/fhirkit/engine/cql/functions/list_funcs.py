@@ -229,14 +229,11 @@ def _combine(args: list[Any]) -> Any:
 
 
 def _union(args: list[Any]) -> list[Any]:
-    """Union of two lists (distinct elements from both)."""
+    """Union of two lists (concatenates all elements, preserves duplicates)."""
     if len(args) >= 2:
-        result = list(args[0]) if isinstance(args[0], list) else [args[0]]
-        right = args[1] if isinstance(args[1], list) else [args[1]]
-        for item in right:
-            if item not in result:
-                result.append(item)
-        return result
+        left = list(args[0]) if isinstance(args[0], list) else [args[0]]
+        right = list(args[1]) if isinstance(args[1], list) else [args[1]]
+        return left + right
     return []
 
 

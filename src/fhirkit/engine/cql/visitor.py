@@ -706,6 +706,11 @@ class CQLEvaluatorVisitor(cqlVisitor):
         if left is None or right is None:
             return None
 
+        # Check for datetime uncertainty - if different precision, result is null
+        uncertainty = self._check_datetime_uncertainty(left, right)
+        if uncertainty is True:
+            return None
+
         if op == "<":
             return left < right
         elif op == "<=":
@@ -1565,12 +1570,8 @@ class CQLEvaluatorVisitor(cqlVisitor):
             right = [right]
 
         if op == "union":
-            # Union removes duplicates
-            result = list(left)
-            for item in right:
-                if item not in result:
-                    result.append(item)
-            return result
+            # Union concatenates lists, preserving duplicates
+            return list(left) + list(right)
         elif op == "intersect":
             return [item for item in left if item in right]
         elif op == "except":
@@ -2640,20 +2641,153 @@ class CQLEvaluatorVisitor(cqlVisitor):
     def _truncated_divide(self, left: Any, right: Any) -> int | None:
         """Truncated division (div).
 
-        Per CQL spec: Performs integer division with floor behavior.
+        Per CQL spec: Performs integer division truncated toward zero.
         """
         if right == 0:
             return None
-        import math
-
-        # Use math.floor for integer division
-        return math.floor(float(left) / float(right))
+        # Use int() which truncates toward zero (not floor which rounds toward -inf)
+        # -10 div 3 = -3 (truncate), not -4 (floor)
+        return int(float(left) / float(right))
 
     def _modulo(self, left: Any, right: Any) -> Any:
         """Modulo operation."""
         if right == 0:
             return None
         return left % right
+
+    # DateTime uncertainty helpers
+    def _check_datetime_uncertainty(self, left: Any, right: Any) -> bool:
+        """Check if datetime comparison involves uncertainty due to different precision.
+
+        Returns True if the comparison result would be uncertain (should return null).
+        Only returns True when the ranges could actually overlap.
+        """
+        from ..types import FHIRDate, FHIRDateTime, FHIRTime
+
+        # Check FHIRDateTime precision
+        if isinstance(left, FHIRDateTime) and isinstance(right, FHIRDateTime):
+            left_prec = self._datetime_precision_level(left)
+            right_prec = self._datetime_precision_level(right)
+            if left_prec != right_prec:
+                # Only uncertain if ranges overlap at the common precision level
+                return self._datetime_ranges_overlap(left, right, min(left_prec, right_prec))
+            return False
+
+        # Check FHIRDate precision
+        if isinstance(left, FHIRDate) and isinstance(right, FHIRDate):
+            left_prec = self._date_precision_level(left)
+            right_prec = self._date_precision_level(right)
+            if left_prec != right_prec:
+                return self._date_ranges_overlap(left, right, min(left_prec, right_prec))
+            return False
+
+        # Check FHIRTime precision
+        if isinstance(left, FHIRTime) and isinstance(right, FHIRTime):
+            left_prec = self._time_precision_level(left)
+            right_prec = self._time_precision_level(right)
+            if left_prec != right_prec:
+                return self._time_ranges_overlap(left, right, min(left_prec, right_prec))
+            return False
+
+        return False
+
+    def _datetime_ranges_overlap(self, left: Any, right: Any, common_prec: int) -> bool:
+        """Check if two datetime ranges overlap at the common precision level."""
+        # Compare at the common precision level
+        # If they differ at that level, ranges don't overlap
+        if common_prec >= 1:  # year
+            if left.year != right.year:
+                return False
+        if common_prec >= 2:  # month
+            left_month = left.month if left.month is not None else 1
+            right_month = right.month if right.month is not None else 1
+            if left_month != right_month:
+                return False
+        if common_prec >= 3:  # day
+            left_day = left.day if left.day is not None else 1
+            right_day = right.day if right.day is not None else 1
+            if left_day != right_day:
+                return False
+        if common_prec >= 4:  # hour
+            left_hour = left.hour if left.hour is not None else 0
+            right_hour = right.hour if right.hour is not None else 0
+            if left_hour != right_hour:
+                return False
+        if common_prec >= 5:  # minute
+            left_min = left.minute if left.minute is not None else 0
+            right_min = right.minute if right.minute is not None else 0
+            if left_min != right_min:
+                return False
+        if common_prec >= 6:  # second
+            left_sec = left.second if left.second is not None else 0
+            right_sec = right.second if right.second is not None else 0
+            if left_sec != right_sec:
+                return False
+        # If we got here, ranges overlap at the common precision
+        return True
+
+    def _date_ranges_overlap(self, left: Any, right: Any, common_prec: int) -> bool:
+        """Check if two date ranges overlap at the common precision level."""
+        if common_prec >= 1:  # year
+            if left.year != right.year:
+                return False
+        if common_prec >= 2:  # month
+            left_month = left.month if left.month is not None else 1
+            right_month = right.month if right.month is not None else 1
+            if left_month != right_month:
+                return False
+        return True
+
+    def _time_ranges_overlap(self, left: Any, right: Any, common_prec: int) -> bool:
+        """Check if two time ranges overlap at the common precision level."""
+        if common_prec >= 1:  # hour
+            if left.hour != right.hour:
+                return False
+        if common_prec >= 2:  # minute
+            left_min = left.minute if left.minute is not None else 0
+            right_min = right.minute if right.minute is not None else 0
+            if left_min != right_min:
+                return False
+        if common_prec >= 3:  # second
+            left_sec = left.second if left.second is not None else 0
+            right_sec = right.second if right.second is not None else 0
+            if left_sec != right_sec:
+                return False
+        return True
+
+    def _datetime_precision_level(self, dt: Any) -> int:
+        """Get precision level of a FHIRDateTime (1=year, 2=month, ..., 7=millisecond)."""
+        if dt.millisecond is not None:
+            return 7
+        if dt.second is not None:
+            return 6
+        if dt.minute is not None:
+            return 5
+        if dt.hour is not None:
+            return 4
+        if dt.day is not None:
+            return 3
+        if dt.month is not None:
+            return 2
+        return 1
+
+    def _date_precision_level(self, d: Any) -> int:
+        """Get precision level of a FHIRDate (1=year, 2=month, 3=day)."""
+        if d.day is not None:
+            return 3
+        if d.month is not None:
+            return 2
+        return 1
+
+    def _time_precision_level(self, t: Any) -> int:
+        """Get precision level of a FHIRTime (1=hour, 2=minute, 3=second, 4=millisecond)."""
+        if t.millisecond is not None:
+            return 4
+        if t.second is not None:
+            return 3
+        if t.minute is not None:
+            return 2
+        return 1
 
     # Three-valued logic helpers
     def _three_valued_and(self, left: Any, right: Any) -> bool | None:
@@ -2679,13 +2813,20 @@ class CQLEvaluatorVisitor(cqlVisitor):
         return bool(left) != bool(right)
 
     def _three_valued_implies(self, left: Any, right: Any) -> bool | None:
-        """Three-valued IMPLIES logic (left implies right)."""
+        """Three-valued IMPLIES logic (left implies right).
+
+        Per CQL spec: A implies B is equivalent to (not A) or B.
+        """
+        # false implies anything = true
         if left is False:
             return True
-        if left is True and right is True:
+        # anything implies true = true
+        if right is True:
             return True
+        # true implies false = false
         if left is True and right is False:
             return False
+        # All other cases (involving null) = null
         return None
 
     # Equality helpers

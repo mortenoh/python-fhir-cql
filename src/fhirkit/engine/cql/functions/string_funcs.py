@@ -11,25 +11,34 @@ if TYPE_CHECKING:
     from .registry import FunctionRegistry
 
 
-def _concatenate(args: list[Any]) -> str:
+def _concatenate(args: list[Any]) -> str | None:
     """Concatenate strings.
 
-    Per CQL spec: Null arguments are treated as empty strings.
+    Per CQL spec: If any argument is null, the result is null.
+    Note: This differs from the & operator which treats null as empty string.
     """
-    result = ""
+    # If any argument is null, return null
     for arg in args:
-        if arg is not None:
-            result += str(arg)
-    return result
+        if arg is None:
+            return None
+    # All arguments are non-null, concatenate them
+    return "".join(str(arg) for arg in args)
 
 
 def _split(args: list[Any]) -> list[str] | None:
-    """Split a string by separator."""
+    """Split a string by separator.
+
+    Per CQL spec: If separator is null, returns a list with the original string.
+    """
     if len(args) >= 2:
         s = args[0]
         sep = args[1]
-        if s is not None and sep is not None:
-            return str(s).split(str(sep))
+        if s is None:
+            return None
+        if sep is None:
+            # Null separator returns list with original string
+            return [str(s)]
+        return str(s).split(str(sep))
     return None
 
 
@@ -90,39 +99,37 @@ def _substring(args: list[Any]) -> str | None:
 def _position_of(args: list[Any]) -> int | None:
     """Find position of pattern in string.
 
-    Per CQL spec: Returns null if pattern is not found.
+    Per CQL spec: Returns -1 if pattern is not found, null if either arg is null.
     """
     if len(args) >= 2 and args[0] is not None and args[1] is not None:
         pattern = str(args[0])
         s = str(args[1])
-        pos = s.find(pattern)
-        return pos if pos >= 0 else None
+        return s.find(pattern)  # Returns -1 if not found
     return None
 
 
 def _last_position_of(args: list[Any]) -> int | None:
     """Find last position of pattern in string.
 
-    Per CQL spec: Returns null if pattern is not found.
+    Per CQL spec: Returns -1 if pattern is not found, null if either arg is null.
     """
     if len(args) >= 2 and args[0] is not None and args[1] is not None:
         pattern = str(args[0])
         s = str(args[1])
-        pos = s.rfind(pattern)
-        return pos if pos >= 0 else None
+        return s.rfind(pattern)  # Returns -1 if not found
     return None
 
 
 def _matches(args: list[Any]) -> bool | None:
     """Check if string matches regex pattern.
 
-    Per CQL spec: Returns true if the pattern is found anywhere in the string.
+    Per CQL spec: Returns true if the entire string matches the pattern.
     """
     if len(args) >= 2 and args[0] is not None and args[1] is not None:
         s = str(args[0])
         pattern = str(args[1])
         try:
-            return bool(re.search(pattern, s))
+            return bool(re.fullmatch(pattern, s))
         except re.error:
             return None
     return None
