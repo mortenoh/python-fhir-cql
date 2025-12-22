@@ -231,6 +231,26 @@ def fn_low_boundary(ctx: EvaluationContext, collection: list[Any], precision: in
         return []
     value = collection[0]
 
+    # Unwrap _PrimitiveWithExtension and convert strings to date/time types
+    from ..visitor import _PrimitiveWithExtension
+    from ...types import FHIRDate, FHIRDateTime, FHIRTime
+
+    if isinstance(value, _PrimitiveWithExtension):
+        value = value.value
+
+    # Parse date/datetime strings
+    if isinstance(value, str):
+        # Try parsing as datetime first (contains 'T')
+        if "T" in value:
+            parsed = FHIRDateTime.parse(value)
+            if parsed:
+                value = parsed
+        else:
+            # Try as date
+            parsed = FHIRDate.parse(value)
+            if parsed:
+                value = parsed
+
     if isinstance(value, (int, float, Decimal)):
         decimal_value = Decimal(str(value))
         input_precision = _get_decimal_precision(decimal_value)
@@ -251,10 +271,11 @@ def fn_low_boundary(ctx: EvaluationContext, collection: list[Any], precision: in
 
     if isinstance(value, FHIRDate):
         # For lowBoundary, fill in minimum values for unspecified components
-        # Return at the requested output precision
-        # Precision: 4=YYYY, 6=YYYY-MM, 8=YYYY-MM-DD
+        # Per FHIRPath spec, when no precision is specified, return DateTime with full precision
+        # This enables proper comparison between Date and DateTime values
+        # Precision: 4=YYYY, 6=YYYY-MM, 8=YYYY-MM-DD, 10+=DateTime
         if precision is None:
-            precision = 8
+            precision = 17  # Default to full DateTime precision for comparison
         year = value.year
         month = value.month if value.month is not None else 1
         day = value.day if value.day is not None else 1
@@ -262,8 +283,23 @@ def fn_low_boundary(ctx: EvaluationContext, collection: list[Any], precision: in
             return [FHIRDate(year=year, month=None, day=None)]
         elif precision <= 6:
             return [FHIRDate(year=year, month=month, day=None)]
-        else:
+        elif precision <= 8:
             return [FHIRDate(year=year, month=month, day=day)]
+        else:
+            # Return DateTime for time-level precision
+            # For lowBoundary: use +14:00 for earliest UTC
+            return [
+                FHIRDateTime(
+                    year=year,
+                    month=month,
+                    day=day,
+                    hour=0,
+                    minute=0,
+                    second=0,
+                    millisecond=0,
+                    tz_offset="+14:00",
+                )
+            ]
 
     if isinstance(value, FHIRDateTime):
         # For lowBoundary datetime, fill in minimum values for unspecified components
@@ -343,6 +379,26 @@ def fn_high_boundary(
         return []
     value = collection[0]
 
+    # Unwrap _PrimitiveWithExtension and convert strings to date/time types
+    from ..visitor import _PrimitiveWithExtension
+    from ...types import FHIRDate, FHIRDateTime, FHIRTime
+
+    if isinstance(value, _PrimitiveWithExtension):
+        value = value.value
+
+    # Parse date/datetime strings
+    if isinstance(value, str):
+        # Try parsing as datetime first (contains 'T')
+        if "T" in value:
+            parsed = FHIRDateTime.parse(value)
+            if parsed:
+                value = parsed
+        else:
+            # Try as date
+            parsed = FHIRDate.parse(value)
+            if parsed:
+                value = parsed
+
     if isinstance(value, (int, float, Decimal)):
         decimal_value = Decimal(str(value))
         input_precision = _get_decimal_precision(decimal_value)
@@ -365,8 +421,10 @@ def fn_high_boundary(
         import calendar
 
         # For highBoundary, fill in maximum values for unspecified components
+        # Per FHIRPath spec, when no precision is specified, return DateTime with full precision
+        # This enables proper comparison between Date and DateTime values
         if precision is None:
-            precision = 8
+            precision = 17  # Default to full DateTime precision for comparison
         year = value.year
         month = value.month if value.month is not None else 12
         day = value.day if value.day is not None else calendar.monthrange(year, month)[1]
@@ -374,8 +432,23 @@ def fn_high_boundary(
             return [FHIRDate(year=year, month=None, day=None)]
         elif precision <= 6:
             return [FHIRDate(year=year, month=month, day=None)]
-        else:
+        elif precision <= 8:
             return [FHIRDate(year=year, month=month, day=day)]
+        else:
+            # Return DateTime for time-level precision
+            # For highBoundary: use -12:00 for latest UTC
+            return [
+                FHIRDateTime(
+                    year=year,
+                    month=month,
+                    day=day,
+                    hour=23,
+                    minute=59,
+                    second=59,
+                    millisecond=999,
+                    tz_offset="-12:00",
+                )
+            ]
 
     if isinstance(value, FHIRDateTime):
         import calendar
@@ -388,7 +461,9 @@ def fn_high_boundary(
         month = value.month if value.month is not None else 12
         day = value.day if value.day is not None else calendar.monthrange(year, month)[1]
         hour = value.hour if value.hour is not None else 23
-        minute = value.minute if value.minute is not None else 59
+        # If hour is specified but minute is not, FHIR rules say minute is implicitly 0 (T08 = T08:00)
+        # If neither hour nor minute is specified, use 59 for highBoundary
+        minute = value.minute if value.minute is not None else (0 if value.hour is not None else 59)
         second = value.second if value.second is not None else 59
         millisecond = value.millisecond if value.millisecond is not None else 999
         # For highBoundary: use existing tz or -12:00 for latest UTC

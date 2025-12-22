@@ -974,8 +974,13 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
             self.ctx.push_index(i)
             try:
                 # Create visitor with item as single-element collection
+                # Note: sub_visitor.__init__ also pushes $this, so we need to pop it after
                 sub_visitor = FHIRPathEvaluatorVisitor(self.ctx, [item])
-                criteria_result = sub_visitor.visit(criteria_ctx)
+                try:
+                    criteria_result = sub_visitor.visit(criteria_ctx)
+                finally:
+                    # Pop the $this that sub_visitor.__init__ pushed
+                    self.ctx.pop_this()
                 if self._to_boolean(criteria_result) is True:
                     result.append(item)
             finally:
@@ -990,8 +995,13 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
             self.ctx.push_this(item)
             self.ctx.push_index(i)
             try:
+                # Note: sub_visitor.__init__ also pushes $this, so we need to pop it after
                 sub_visitor = FHIRPathEvaluatorVisitor(self.ctx, [item])
-                projection_result = sub_visitor.visit(projection_ctx)
+                try:
+                    projection_result = sub_visitor.visit(projection_ctx)
+                finally:
+                    # Pop the $this that sub_visitor.__init__ pushed
+                    self.ctx.pop_this()
                 if projection_result:
                     result.extend(projection_result if isinstance(projection_result, list) else [projection_result])
             finally:
@@ -1000,26 +1010,42 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
         return result
 
     def _evaluate_repeat(self, collection: list[Any], expr_ctx: ParserRuleContext) -> list[Any]:
-        """Evaluate repeat() - recursively apply expression until no new items."""
+        """Evaluate repeat() - recursively apply expression until no new items.
+
+        Per FHIRPath spec: repeat() invokes the expression for each element in the
+        input collection and adds all unique elements returned from the expression
+        to the result. The process repeats on newly added elements until no new
+        elements are added.
+
+        Unlike select(), the input collection items are NOT included in the result,
+        only items returned by the expression.
+        """
         result = []
-        seen = set()
+        seen: set[int] = set()
         work_list = list(collection)
 
         while work_list:
             item = work_list.pop(0)
-            item_id = id(item) if isinstance(item, dict) else hash(str(item))
 
-            if item_id in seen:
-                continue
-            seen.add(item_id)
-            result.append(item)
-
+            # Evaluate expression for this item
             self.ctx.push_this(item)
             try:
+                # Note: sub_visitor.__init__ also pushes $this, so we need to pop it after
                 sub_visitor = FHIRPathEvaluatorVisitor(self.ctx, [item])
-                new_items = sub_visitor.visit(expr_ctx)
+                try:
+                    new_items = sub_visitor.visit(expr_ctx)
+                finally:
+                    # Pop the $this that sub_visitor.__init__ pushed
+                    self.ctx.pop_this()
                 if new_items:
-                    work_list.extend(new_items if isinstance(new_items, list) else [new_items])
+                    for new_item in new_items if isinstance(new_items, list) else [new_items]:
+                        # Track uniqueness
+                        item_id = id(new_item) if isinstance(new_item, dict) else hash(str(new_item))
+                        if item_id not in seen:
+                            seen.add(item_id)
+                            result.append(new_item)
+                            # Continue processing on new items
+                            work_list.append(new_item)
             finally:
                 self.ctx.pop_this()
 
@@ -1034,8 +1060,12 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
             self.ctx.push_this(item)
             self.ctx.push_index(i)
             try:
+                # Note: sub_visitor.__init__ also pushes $this, so we need to pop it after
                 sub_visitor = FHIRPathEvaluatorVisitor(self.ctx, [item])
-                criteria_result = sub_visitor.visit(criteria_ctx)
+                try:
+                    criteria_result = sub_visitor.visit(criteria_ctx)
+                finally:
+                    self.ctx.pop_this()
                 if self._to_boolean(criteria_result) is not True:
                     return [False]
             finally:
@@ -1049,8 +1079,12 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
             self.ctx.push_this(item)
             self.ctx.push_index(i)
             try:
+                # Note: sub_visitor.__init__ also pushes $this, so we need to pop it after
                 sub_visitor = FHIRPathEvaluatorVisitor(self.ctx, [item])
-                criteria_result = sub_visitor.visit(criteria_ctx)
+                try:
+                    criteria_result = sub_visitor.visit(criteria_ctx)
+                finally:
+                    self.ctx.pop_this()
                 if self._to_boolean(criteria_result) is True:
                     return [True]
             finally:
@@ -1059,7 +1093,12 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
         return [False]
 
     def _evaluate_sort(self, collection: list[Any], criteria_args: list) -> list[Any]:
-        """Evaluate sort() with criteria expressions."""
+        """Evaluate sort() with criteria expressions.
+
+        Per FHIRPath spec:
+        - Empty values sort first (at the start) for both ascending and descending
+        - Non-empty values sort in ascending or descending order based on the criteria
+        """
         if not collection:
             return []
 
@@ -1086,8 +1125,12 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
                             if len(children) > 1:
                                 expr_to_eval = children[1]
 
+                    # Note: sub_visitor.__init__ also pushes $this, so we need to pop it after
                     sub_visitor = FHIRPathEvaluatorVisitor(self.ctx, [item])
-                    key_result = sub_visitor.visit(expr_to_eval)
+                    try:
+                        key_result = sub_visitor.visit(expr_to_eval)
+                    finally:
+                        self.ctx.pop_this()
 
                     # Get the single value for the key
                     key_value = key_result[0] if key_result else None
@@ -1098,40 +1141,51 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
                 self.ctx.pop_this()
                 self.ctx.pop_index()
 
-        # Sort using the keys
-        def sort_key(entry: tuple[Any, list[tuple[Any, bool]]]) -> tuple[Any, ...]:
-            _, keys = entry
-            result: list[Any] = []
-            for val, desc in keys:
-                # Handle None values (sort them last)
-                is_none = val is None
-                if desc:
-                    # For descending, we need to negate numeric values
-                    if isinstance(val, (int, float)):
-                        result.append((is_none, -val))
-                    elif isinstance(val, str):
-                        # For strings, we can't easily negate, so we reverse later
-                        result.append((is_none, val, True))  # True = descending
-                    else:
-                        result.append((is_none, val))
-                else:
-                    result.append((is_none, val))
-            return tuple(result)
+        # Sort using functools.cmp_to_key for proper multi-key descending support
+        import functools
 
-        # Sort with custom key handling for descending strings
+        def compare_items(
+            a: tuple[Any, list[tuple[Any, bool]]], b: tuple[Any, list[tuple[Any, bool]]]
+        ) -> int:
+            """Compare two items by their sort keys."""
+            _, keys_a = a
+            _, keys_b = b
+
+            for (val_a, desc), (val_b, _) in zip(keys_a, keys_b):
+                # Handle None/empty values - they sort first for both directions
+                a_is_none = val_a is None
+                b_is_none = val_b is None
+
+                if a_is_none and b_is_none:
+                    continue  # Both empty, move to next key
+                if a_is_none:
+                    return -1  # a (empty) comes first
+                if b_is_none:
+                    return 1  # b (empty) comes first, so a comes after
+
+                # Both have values, compare them
+                try:
+                    if val_a < val_b:
+                        cmp = -1
+                    elif val_a > val_b:
+                        cmp = 1
+                    else:
+                        cmp = 0
+                except TypeError:
+                    # Can't compare, treat as equal
+                    cmp = 0
+
+                if cmp != 0:
+                    # For descending, reverse the comparison
+                    return -cmp if desc else cmp
+
+            return 0  # All keys equal
+
         try:
-            sorted_items = sorted(items_with_keys, key=sort_key)
+            sorted_items = sorted(items_with_keys, key=functools.cmp_to_key(compare_items))
         except TypeError:
             # Mixed types that can't be compared
             return collection
-
-        # Handle string descending by reversing after stable sort
-        # This is a simplification - complex multi-key sorts may need more work
-        has_desc_string = any(any(isinstance(k[0], str) and k[1] for k in keys) for _, keys in items_with_keys)
-        if has_desc_string and len(criteria_args) == 1:
-            # Simple case: single string key with descending
-            if items_with_keys and items_with_keys[0][1] and items_with_keys[0][1][0][1]:
-                sorted_items = sorted_items[::-1]
 
         return [item for item, _ in sorted_items]
 
@@ -1151,6 +1205,7 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
 
         # For empty collection, evaluate criterion without $this
         if not collection:
+            # Note: sub_visitor with empty input doesn't push $this
             sub_visitor = FHIRPathEvaluatorVisitor(self.ctx, [])
             criterion_result = sub_visitor.visit(criterion_ctx)
             condition = self._to_boolean(criterion_result)
@@ -1167,18 +1222,22 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
             item = collection[0]
             self.ctx.push_this(item)
             try:
+                # Note: sub_visitor.__init__ also pushes $this, so we need to pop it after
                 sub_visitor = FHIRPathEvaluatorVisitor(self.ctx, [item])
-                criterion_result = sub_visitor.visit(criterion_ctx)
-                condition = self._to_boolean(criterion_result)
+                try:
+                    criterion_result = sub_visitor.visit(criterion_ctx)
+                    condition = self._to_boolean(criterion_result)
 
-                if condition is True and true_ctx:
-                    result = sub_visitor.visit(true_ctx)
-                    return result if isinstance(result, list) else [result] if result is not None else []
-                elif otherwise_ctx:
-                    # Per FHIRPath spec: if criterion is empty (None) or False, return otherwise
-                    result = sub_visitor.visit(otherwise_ctx)
-                    return result if isinstance(result, list) else [result] if result is not None else []
-                return []
+                    if condition is True and true_ctx:
+                        result = sub_visitor.visit(true_ctx)
+                        return result if isinstance(result, list) else [result] if result is not None else []
+                    elif otherwise_ctx:
+                        # Per FHIRPath spec: if criterion is empty (None) or False, return otherwise
+                        result = sub_visitor.visit(otherwise_ctx)
+                        return result if isinstance(result, list) else [result] if result is not None else []
+                    return []
+                finally:
+                    self.ctx.pop_this()
             finally:
                 self.ctx.pop_this()
 
@@ -1214,8 +1273,12 @@ class FHIRPathEvaluatorVisitor(fhirpathVisitor):
             self.ctx.push_index(i)
             try:
                 sub_visitor = FHIRPathEvaluatorVisitor(self.ctx, [item])
-                result = sub_visitor.visit(aggregator_ctx)
-                total = result[0] if result else None
+                try:
+                    result = sub_visitor.visit(aggregator_ctx)
+                    total = result[0] if result else None
+                finally:
+                    # Pop the $this that sub_visitor.__init__ pushed
+                    self.ctx.pop_this()
             finally:
                 self.ctx.pop_this()
                 self.ctx.pop_total()
