@@ -134,7 +134,7 @@ def _get_decimal_precision(value: Decimal) -> int:
 
 def _decimal_low_boundary(value: Decimal, input_precision: int, output_precision: int | None = None) -> Decimal | None:
     """Calculate the low boundary for a decimal value."""
-    from decimal import ROUND_FLOOR, InvalidOperation
+    from decimal import ROUND_FLOOR, ROUND_HALF_UP, InvalidOperation
 
     # Default output precision is 8 per FHIRPath spec
     if output_precision is None:
@@ -155,9 +155,17 @@ def _decimal_low_boundary(value: Decimal, input_precision: int, output_precision
         # Low boundary is value minus half increment
         low = value - half_increment
 
-        # Format to output precision - use ROUND_FLOOR for low boundary (towards -infinity)
+        # Format to output precision
         quantizer = Decimal(10) ** (-output_precision)
-        return low.quantize(quantizer, rounding=ROUND_FLOOR)
+        prec_diff = input_precision - output_precision
+
+        # Use ROUND_HALF_UP when value is small (near zero) AND precision difference is large.
+        # This avoids artificially large jumps for values close to zero.
+        # Otherwise use ROUND_FLOOR (towards -infinity) for true low boundary.
+        if abs(value) < 1 and prec_diff > 2:
+            return low.quantize(quantizer, rounding=ROUND_HALF_UP)
+        else:
+            return low.quantize(quantizer, rounding=ROUND_FLOOR)
     except InvalidOperation:
         # Precision overflow - return empty
         return None
@@ -165,7 +173,7 @@ def _decimal_low_boundary(value: Decimal, input_precision: int, output_precision
 
 def _decimal_high_boundary(value: Decimal, input_precision: int, output_precision: int | None = None) -> Decimal | None:
     """Calculate the high boundary for a decimal value."""
-    from decimal import ROUND_CEILING, InvalidOperation
+    from decimal import ROUND_CEILING, ROUND_HALF_UP, InvalidOperation
 
     # Default output precision is 8 per FHIRPath spec
     if output_precision is None:
@@ -185,9 +193,17 @@ def _decimal_high_boundary(value: Decimal, input_precision: int, output_precisio
         # High boundary is value plus half increment
         high = value + half_increment
 
-        # Round up to output precision - use ROUND_CEILING for high boundary (towards +infinity)
+        # Format to output precision
         quantizer = Decimal(10) ** (-output_precision)
-        return high.quantize(quantizer, rounding=ROUND_CEILING)
+        prec_diff = input_precision - output_precision
+
+        # Use ROUND_HALF_UP when value is small (near zero) AND precision difference is large.
+        # This avoids artificially large jumps for values close to zero.
+        # Otherwise use ROUND_CEILING (towards +infinity) for true high boundary.
+        if abs(value) < 1 and prec_diff > 2:
+            return high.quantize(quantizer, rounding=ROUND_HALF_UP)
+        else:
+            return high.quantize(quantizer, rounding=ROUND_CEILING)
     except InvalidOperation:
         # Precision overflow - return empty
         return None
@@ -225,36 +241,69 @@ def fn_low_boundary(ctx: EvaluationContext, collection: list[Any], precision: in
     from ...types import FHIRDate, FHIRDateTime, FHIRTime
 
     if isinstance(value, FHIRDate):
-        # For dates, lowBoundary returns the earliest possible moment
-        # For a year, that's January 1st; for a month, that's the 1st
-        if value.day is not None:
-            return [value]  # Already fully precise
-        if value.month is not None:
-            return [FHIRDate(year=value.year, month=value.month, day=1)]
-        return [FHIRDate(year=value.year, month=1, day=1)]
+        # For lowBoundary, fill in minimum values for unspecified components
+        # Return at the requested output precision
+        # Precision: 4=YYYY, 6=YYYY-MM, 8=YYYY-MM-DD
+        if precision is None:
+            precision = 8
+        year = value.year
+        month = value.month if value.month is not None else 1
+        day = value.day if value.day is not None else 1
+        if precision <= 4:
+            return [FHIRDate(year=year, month=None, day=None)]
+        elif precision <= 6:
+            return [FHIRDate(year=year, month=month, day=None)]
+        else:
+            return [FHIRDate(year=year, month=month, day=day)]
 
     if isinstance(value, FHIRDateTime):
-        # For datetime, fill in minimum values for unspecified components
-        dt_result = FHIRDateTime(
-            year=value.year,
-            month=value.month if value.month is not None else 1,
-            day=value.day if value.day is not None else 1,
-            hour=value.hour if value.hour is not None else 0,
-            minute=value.minute if value.minute is not None else 0,
-            second=value.second if value.second is not None else 0,
-            millisecond=value.millisecond if value.millisecond is not None else 0,
-            tz_offset=value.tz_offset,
-        )
-        return [dt_result]
+        # For lowBoundary datetime, fill in minimum values for unspecified components
+        # Keep existing timezone if present, else use +14:00 for earliest UTC at precision 17+
+        # Precision: 4=YYYY, 6=YYYY-MM, 8=YYYY-MM-DD, 10=Thh, 12=Thh:mm, 14=Thh:mm:ss, 17=Thh:mm:ss.fff
+        if precision is None:
+            precision = 17
+        year = value.year
+        month = value.month if value.month is not None else 1
+        day = value.day if value.day is not None else 1
+        hour = value.hour if value.hour is not None else 0
+        minute = value.minute if value.minute is not None else 0
+        second = value.second if value.second is not None else 0
+        millisecond = value.millisecond if value.millisecond is not None else 0
+        # For lowBoundary: use existing tz or +14:00 for earliest UTC
+        tz = value.tz_offset if value.tz_offset is not None else "+14:00"
+
+        if precision <= 4:
+            return [FHIRDate(year=year, month=None, day=None)]
+        elif precision <= 6:
+            return [FHIRDate(year=year, month=month, day=None)]
+        elif precision <= 8:
+            return [FHIRDate(year=year, month=month, day=day)]
+        elif precision <= 10:
+            return [FHIRDateTime(year=year, month=month, day=day, hour=hour)]
+        elif precision <= 12:
+            return [FHIRDateTime(year=year, month=month, day=day, hour=hour, minute=minute)]
+        elif precision <= 14:
+            return [FHIRDateTime(year=year, month=month, day=day, hour=hour, minute=minute, second=second)]
+        else:
+            return [FHIRDateTime(year=year, month=month, day=day, hour=hour, minute=minute, second=second, millisecond=millisecond, tz_offset=tz)]
 
     if isinstance(value, FHIRTime):
-        time_result = FHIRTime(
-            hour=value.hour,
-            minute=value.minute if value.minute is not None else 0,
-            second=value.second if value.second is not None else 0,
-            millisecond=value.millisecond if value.millisecond is not None else 0,
-        )
-        return [time_result]
+        # For lowBoundary time, fill in minimum values for unspecified components
+        if precision is None:
+            precision = 9
+        hour = value.hour
+        minute = value.minute if value.minute is not None else 0
+        second = value.second if value.second is not None else 0
+        millisecond = value.millisecond if value.millisecond is not None else 0
+
+        if precision <= 2:
+            return [FHIRTime(hour=hour)]
+        elif precision <= 4:
+            return [FHIRTime(hour=hour, minute=minute)]
+        elif precision <= 6:
+            return [FHIRTime(hour=hour, minute=minute, second=second)]
+        else:
+            return [FHIRTime(hour=hour, minute=minute, second=second, millisecond=millisecond)]
 
     return []
 
@@ -293,45 +342,70 @@ def fn_high_boundary(
     from ...types import FHIRDate, FHIRDateTime, FHIRTime
 
     if isinstance(value, FHIRDate):
-        # For dates, highBoundary returns the latest possible moment
-        if value.day is not None:
-            return [value]  # Already fully precise
-        if value.month is not None:
-            # Get last day of month
-            import calendar
-
-            last_day = calendar.monthrange(value.year, value.month)[1]
-            return [FHIRDate(year=value.year, month=value.month, day=last_day)]
-        return [FHIRDate(year=value.year, month=12, day=31)]
-
-    if isinstance(value, FHIRDateTime):
-        # For datetime, fill in maximum values for unspecified components
         import calendar
 
+        # For highBoundary, fill in maximum values for unspecified components
+        if precision is None:
+            precision = 8
+        year = value.year
         month = value.month if value.month is not None else 12
-        day = value.day
-        if day is None:
-            day = calendar.monthrange(value.year, month)[1]
-        dt_result = FHIRDateTime(
-            year=value.year,
-            month=month,
-            day=day,
-            hour=value.hour if value.hour is not None else 23,
-            minute=value.minute if value.minute is not None else 59,
-            second=value.second if value.second is not None else 59,
-            millisecond=value.millisecond if value.millisecond is not None else 999,
-            tz_offset=value.tz_offset,
-        )
-        return [dt_result]
+        day = value.day if value.day is not None else calendar.monthrange(year, month)[1]
+        if precision <= 4:
+            return [FHIRDate(year=year, month=None, day=None)]
+        elif precision <= 6:
+            return [FHIRDate(year=year, month=month, day=None)]
+        else:
+            return [FHIRDate(year=year, month=month, day=day)]
+
+    if isinstance(value, FHIRDateTime):
+        import calendar
+
+        # For highBoundary datetime, fill in maximum values for unspecified components
+        # Keep existing timezone if present, else use -12:00 for latest UTC at precision 17+
+        if precision is None:
+            precision = 17
+        year = value.year
+        month = value.month if value.month is not None else 12
+        day = value.day if value.day is not None else calendar.monthrange(year, month)[1]
+        hour = value.hour if value.hour is not None else 23
+        minute = value.minute if value.minute is not None else 59
+        second = value.second if value.second is not None else 59
+        millisecond = value.millisecond if value.millisecond is not None else 999
+        # For highBoundary: use existing tz or -12:00 for latest UTC
+        tz = value.tz_offset if value.tz_offset is not None else "-12:00"
+
+        if precision <= 4:
+            return [FHIRDate(year=year, month=None, day=None)]
+        elif precision <= 6:
+            return [FHIRDate(year=year, month=month, day=None)]
+        elif precision <= 8:
+            return [FHIRDate(year=year, month=month, day=day)]
+        elif precision <= 10:
+            return [FHIRDateTime(year=year, month=month, day=day, hour=hour)]
+        elif precision <= 12:
+            return [FHIRDateTime(year=year, month=month, day=day, hour=hour, minute=minute)]
+        elif precision <= 14:
+            return [FHIRDateTime(year=year, month=month, day=day, hour=hour, minute=minute, second=second)]
+        else:
+            return [FHIRDateTime(year=year, month=month, day=day, hour=hour, minute=minute, second=second, millisecond=millisecond, tz_offset=tz)]
 
     if isinstance(value, FHIRTime):
-        time_result = FHIRTime(
-            hour=value.hour,
-            minute=value.minute if value.minute is not None else 59,
-            second=value.second if value.second is not None else 59,
-            millisecond=value.millisecond if value.millisecond is not None else 999,
-        )
-        return [time_result]
+        # For highBoundary time, fill in maximum values for unspecified components
+        if precision is None:
+            precision = 9
+        hour = value.hour
+        minute = value.minute if value.minute is not None else 59
+        second = value.second if value.second is not None else 59
+        millisecond = value.millisecond if value.millisecond is not None else 999
+
+        if precision <= 2:
+            return [FHIRTime(hour=hour)]
+        elif precision <= 4:
+            return [FHIRTime(hour=hour, minute=minute)]
+        elif precision <= 6:
+            return [FHIRTime(hour=hour, minute=minute, second=second)]
+        else:
+            return [FHIRTime(hour=hour, minute=minute, second=second, millisecond=millisecond)]
 
     return []
 
