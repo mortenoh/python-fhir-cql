@@ -61,6 +61,22 @@ class CQLEvaluatorVisitor(cqlVisitor):
         self.context = context or CQLContext()
         self._library: CQLLibrary | None = None
         self._in_negation: bool = False  # Flag for handling -2147483648
+        self._cached_now: datetime | None = None  # Cached Now() value for consistency
+
+    def _get_now(self) -> datetime:
+        """Get the current datetime, caching for consistency within evaluation.
+
+        CQL requires that Now() returns the same value throughout a single
+        evaluation context. This ensures expressions like 'Now() = Now()'
+        return true.
+        """
+        if self._cached_now is not None:
+            return self._cached_now
+        if self.context.now is not None:
+            self._cached_now = self.context.now
+        else:
+            self._cached_now = datetime.now()
+        return self._cached_now
 
     @property
     def library(self) -> CQLLibrary | None:
@@ -1689,6 +1705,21 @@ class CQLEvaluatorVisitor(cqlVisitor):
         if left is None or right is None:
             return None
 
+        # Handle "starts/ends X on or before/after" with quantity offset for intervals
+        # E.g., "Interval1 starts 1 day or less on or after day of start of Interval2"
+        if isinstance(left, CQLInterval) and ("starts" in op_text or "ends" in op_text):
+            # Extract start or end point of left interval
+            if "starts" in op_text:
+                left_point = left.low
+            else:  # ends
+                left_point = left.high
+
+            if left_point is not None and not isinstance(right, CQLInterval):
+                # Compare left point to right point with quantity offset
+                result = self._timing_with_quantity_offset(left_point, right, op_text, ctx)
+                if result is not None:
+                    return result
+
         # Handle interval timing
         if isinstance(left, CQLInterval) and isinstance(right, CQLInterval):
             # Check for precision-aware interval containment
@@ -1757,6 +1788,13 @@ class CQLEvaluatorVisitor(cqlVisitor):
             left_trunc = self._truncate_to_precision(left, precision)
             right_trunc = self._truncate_to_precision(right, precision)
             if left_trunc is None or right_trunc is None:
+                # If we can't truncate to the requested precision, check if we can
+                # determine the result from higher-level components.
+                # E.g., "DateTime(2005, 10, 10) after day of DateTime(2005, 9)"
+                # We can't get "day of" DateTime(2005, 9), but Oct is after Sept.
+                result = self._compare_datetime_uncertain_precision(left, right, precision, op_text)
+                if result is not None:
+                    return result
                 return None
             if "before" in op_text:
                 return left_trunc < right_trunc
@@ -2159,6 +2197,236 @@ class CQLEvaluatorVisitor(cqlVisitor):
 
         # All components are equal up to precision - "same X"
         return True
+
+    def _timing_with_quantity_offset(
+        self, left_point: Any, right_point: Any, op_text: str, ctx: Any
+    ) -> bool | None:
+        """Handle timing expressions with quantity offset like '1 day or less on or after day of'.
+
+        Args:
+            left_point: The extracted point from left interval (start or end)
+            right_point: The right comparison point
+            op_text: The operator text (e.g., 'starts1dayor lesson orafterdayof')
+            ctx: The parser context
+
+        Returns:
+            True if the constraint is satisfied, False otherwise, None for uncertainty.
+        """
+        op_lower = op_text.lower().replace(" ", "")
+
+        # Parse temporal relationship
+        is_before = "orbefore" in op_lower or "before" in op_lower and "onor" in op_lower
+        is_after = "orafter" in op_lower or "after" in op_lower and "onor" in op_lower
+
+        # If neither before nor after, try to parse from the context
+        if not is_before and not is_after:
+            if "before" in op_lower:
+                is_before = True
+            elif "after" in op_lower:
+                is_after = True
+            else:
+                return None
+
+        # Extract precision from "dayof", "monthof", etc.
+        precisions = ["millisecond", "second", "minute", "hour", "day", "month", "year"]
+        precision = None
+        for p in precisions:
+            if f"{p}of" in op_lower:
+                precision = p
+                break
+
+        # Extract quantity offset (e.g., "1day")
+        # Look for patterns like "1day", "2hours", etc.
+        quantity_value = None
+        quantity_unit = None
+        import re
+
+        # Match patterns like "1day", "2hours", "1dayor" etc.
+        qty_match = re.search(r"(\d+)(year|month|week|day|hour|minute|second|millisecond)s?", op_lower)
+        if qty_match:
+            quantity_value = int(qty_match.group(1))
+            quantity_unit = qty_match.group(2)
+
+        # Check for "or less" or "or more" qualifier
+        is_or_less = "orless" in op_lower
+        is_or_more = "ormore" in op_lower
+
+        # If no quantity, this isn't the right handler
+        if quantity_value is None or quantity_unit is None:
+            return None
+
+        # Get datetime components
+        left_components = self._datetime_components(left_point, normalize_timezone=False)
+        right_components = self._datetime_components(right_point, normalize_timezone=False)
+
+        if left_components is None or right_components is None:
+            return None
+
+        # Get precision index for comparison
+        precision_map = {
+            "year": 0,
+            "month": 1,
+            "day": 2,
+            "hour": 3,
+            "minute": 4,
+            "second": 5,
+            "millisecond": 6,
+        }
+        precision_index = precision_map.get(precision, 2)  # Default to day
+
+        # First check: temporal relationship at precision
+        # For "on or after", left must be >= right at precision
+        # For "on or before", left must be <= right at precision
+
+        # Truncate to precision for comparison
+        left_trunc = left_components[: precision_index + 1]
+        right_trunc = right_components[: precision_index + 1]
+
+        # Fill with zeros if needed for comparison
+        while len(left_trunc) < precision_index + 1:
+            left_trunc.append(0)
+        while len(right_trunc) < precision_index + 1:
+            right_trunc.append(0)
+
+        # Check for None values
+        for i in range(len(left_trunc)):
+            if left_trunc[i] is None:
+                left_trunc[i] = 0
+            if right_trunc[i] is None:
+                right_trunc[i] = 0
+
+        # Compare at precision
+        temporal_ok = False
+        if is_after:
+            # "on or after" - left >= right at precision
+            temporal_ok = tuple(left_trunc) >= tuple(right_trunc)
+        elif is_before:
+            # "on or before" - left <= right at precision
+            temporal_ok = tuple(left_trunc) <= tuple(right_trunc)
+
+        if not temporal_ok:
+            return False
+
+        # Second check: quantity offset constraint
+        # Calculate difference in the quantity unit
+        diff = self._calculate_difference(left_point, right_point, quantity_unit)
+        if diff is None:
+            return None
+
+        # Absolute difference
+        abs_diff = abs(diff)
+
+        # Check constraint
+        if is_or_less:
+            return abs_diff <= quantity_value
+        elif is_or_more:
+            return abs_diff >= quantity_value
+        else:
+            # Exact match
+            return abs_diff == quantity_value
+
+    def _calculate_difference(self, left: Any, right: Any, unit: str) -> int | None:
+        """Calculate the difference between two datetime values in the specified unit."""
+        left_dt = self._to_datetime_with_defaults(left, preserve_local=True)
+        right_dt = self._to_datetime_with_defaults(right, preserve_local=True)
+
+        if left_dt is None or right_dt is None:
+            return None
+
+        delta = left_dt - right_dt
+        total_seconds = delta.total_seconds()
+
+        unit_lower = unit.lower()
+        if unit_lower in ("year", "years"):
+            # Approximate - use 365 days
+            return int(total_seconds / (365 * 24 * 3600))
+        elif unit_lower in ("month", "months"):
+            # Approximate - use 30 days
+            return int(total_seconds / (30 * 24 * 3600))
+        elif unit_lower in ("week", "weeks"):
+            return int(total_seconds / (7 * 24 * 3600))
+        elif unit_lower in ("day", "days"):
+            return int(total_seconds / (24 * 3600))
+        elif unit_lower in ("hour", "hours"):
+            return int(total_seconds / 3600)
+        elif unit_lower in ("minute", "minutes"):
+            return int(total_seconds / 60)
+        elif unit_lower in ("second", "seconds"):
+            return int(total_seconds)
+        elif unit_lower in ("millisecond", "milliseconds"):
+            return int(total_seconds * 1000)
+
+        return None
+
+    def _compare_datetime_uncertain_precision(
+        self, left: Any, right: Any, precision: str, op_text: str
+    ) -> bool | None:
+        """Compare datetimes when one doesn't have the requested precision.
+
+        This handles cases like "DateTime(2005, 10, 10) after day of DateTime(2005, 9)"
+        where right doesn't have day precision, but we can determine the result
+        from higher-level components (year=2005, month=10 vs month=9).
+
+        Returns:
+            True/False if we can determine the result, None if uncertain.
+        """
+        # Get components for comparison
+        left_components = self._datetime_components(left, normalize_timezone=False)
+        right_components = self._datetime_components(right, normalize_timezone=False)
+
+        if left_components is None or right_components is None:
+            return None
+
+        # Precision hierarchy: year=0, month=1, day=2, hour=3, minute=4, second=5, ms=6
+        precision_map = {
+            "year": 0,
+            "month": 1,
+            "day": 2,
+            "hour": 3,
+            "minute": 4,
+            "second": 5,
+            "millisecond": 6,
+        }
+        target_precision = precision_map.get(precision.lower())
+        if target_precision is None:
+            return None
+
+        is_before = "before" in op_text.lower()
+        is_after = "after" in op_text.lower()
+
+        if not is_before and not is_after:
+            return None
+
+        # Compare components from highest to lowest precision
+        # If we find a definitive difference before reaching the uncertain component, return
+        for i in range(target_precision + 1):
+            left_val = left_components[i] if i < len(left_components) else None
+            right_val = right_components[i] if i < len(right_components) else None
+
+            # If both have values at this level, compare
+            if left_val is not None and right_val is not None:
+                if left_val < right_val:
+                    # Left is definitely before right
+                    return is_before
+                elif left_val > right_val:
+                    # Left is definitely after right
+                    return is_after
+                # If equal, continue to next level
+            elif left_val is not None and right_val is None:
+                # Right doesn't have this precision level
+                # We can't determine the result at this level, but if we're at a
+                # higher level and found equality, we need to check if left's
+                # remaining components push it definitively one way.
+                # For "after": left is after if its remaining values are positive enough
+                # For "before": left is before if its remaining values are small enough
+                # This is uncertain - return None
+                return None
+            elif left_val is None and right_val is not None:
+                # Left doesn't have this precision level
+                return None
+            # Both None - uncertain at this level
+
+        return None
 
     def _datetime_components(self, value: Any, normalize_timezone: bool = True) -> list[int | None] | None:
         """Get datetime/time components as a list [year, month, day, hour, minute, second, ms].
@@ -2598,20 +2866,15 @@ class CQLEvaluatorVisitor(cqlVisitor):
         """
         name_lower = name.lower()
 
-        # Try the function registry first for pure functions
-        registry = get_registry()
-        if registry.has(name_lower):
-            return registry.call(name_lower, args)
-
-        # Context-dependent functions that need self.context or other instance methods
-
-        # Date/Time constructors using context.now
+        # Context-dependent time functions - handled before registry for consistency
+        # CQL requires Now(), Today(), TimeOfDay() to return the same value within
+        # a single evaluation context.
         if name_lower == "today":
-            d = self.context.now.date() if self.context.now else datetime.now().date()
+            d = self._get_now().date()
             return FHIRDate(year=d.year, month=d.month, day=d.day)
 
         if name_lower == "now":
-            now = self.context.now or datetime.now()
+            now = self._get_now()
             return FHIRDateTime(
                 year=now.year,
                 month=now.month,
@@ -2623,9 +2886,16 @@ class CQLEvaluatorVisitor(cqlVisitor):
             )
 
         if name_lower == "timeofday":
-            now = self.context.now or datetime.now()
+            now = self._get_now()
             t = now.time()
             return FHIRTime(hour=t.hour, minute=t.minute, second=t.second, millisecond=t.microsecond // 1000)
+
+        # Try the function registry for pure functions
+        registry = get_registry()
+        if registry.has(name_lower):
+            return registry.call(name_lower, args)
+
+        # Context-dependent functions that need self.context or other instance methods
 
         # Interval functions
         if name_lower in ("start", "startof"):
@@ -2712,25 +2982,25 @@ class CQLEvaluatorVisitor(cqlVisitor):
         if name_lower == "ageinyears":
             birthdate = self._get_patient_birthdate()
             if birthdate:
-                return self._calculate_age_in_years(birthdate, self.context.now or datetime.now())
+                return self._calculate_age_in_years(birthdate, self._get_now())
             return None
 
         if name_lower == "ageinmonths":
             birthdate = self._get_patient_birthdate()
             if birthdate:
-                return self._calculate_age_in_months(birthdate, self.context.now or datetime.now())
+                return self._calculate_age_in_months(birthdate, self._get_now())
             return None
 
         if name_lower == "ageinweeks":
             birthdate = self._get_patient_birthdate()
             if birthdate:
-                return self._calculate_age_in_weeks(birthdate, self.context.now or datetime.now())
+                return self._calculate_age_in_weeks(birthdate, self._get_now())
             return None
 
         if name_lower == "ageindays":
             birthdate = self._get_patient_birthdate()
             if birthdate:
-                return self._calculate_age_in_days(birthdate, self.context.now or datetime.now())
+                return self._calculate_age_in_days(birthdate, self._get_now())
             return None
 
         if name_lower == "ageinyearsat":
@@ -3446,14 +3716,9 @@ class CQLEvaluatorVisitor(cqlVisitor):
             delta = end_date - start_date
             return delta.days // 7
         elif unit_lower in ("day", "days"):
-            # For days, use full datetime to get accurate calculation
-            # Use local time for comparison per CQL semantics
-            start_dt = self._to_datetime_with_defaults(start, preserve_local=True)
-            end_dt = self._to_datetime_with_defaults(end, preserve_local=True)
-            if start_dt is not None and end_dt is not None:
-                delta = end_dt - start_dt
-                return int(delta.total_seconds() // (24 * 3600))
-            # Fallback to date-only calculation
+            # For "difference in days", count calendar day boundaries crossed
+            # This is the integer difference in day values, not elapsed time
+            # CQL spec: "difference in days between DateTime(2000, 10, 15) and DateTime(2000, 10, 25) is 10"
             delta = end_date - start_date
             return delta.days
         return None

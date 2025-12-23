@@ -564,6 +564,42 @@ def compare_results(actual: Any, expected: Any) -> bool:
     if actual is None or expected is None:
         return False
 
+    # Handle FHIRTime comparison with tolerance for dynamic time tests
+    # Tests like TimeOfDay() evaluate expected value at a slightly different time,
+    # so we allow a small tolerance for millisecond differences.
+    if isinstance(actual, FHIRTime) and isinstance(expected, FHIRTime):
+        if (
+            actual.hour == expected.hour
+            and actual.minute == expected.minute
+            and actual.second == expected.second
+        ):
+            # Same time up to second, allow millisecond difference
+            ms_diff = abs((actual.millisecond or 0) - (expected.millisecond or 0))
+            # Allow up to 100ms difference for evaluation timing
+            return ms_diff <= 100
+        return False
+
+    # Handle normalized FHIRTime string format (e.g., "@T12:10:15.628")
+    # These are produced by normalize_result for FHIRTime values
+    if isinstance(actual, str) and isinstance(expected, str):
+        time_pattern = r"^@T(\d{2}):(\d{2}):(\d{2})\.(\d{3})$"
+        actual_match = re.match(time_pattern, actual)
+        expected_match = re.match(time_pattern, expected)
+        if actual_match and expected_match:
+            # Compare hour, minute, second - must be exact
+            if (
+                actual_match.group(1) == expected_match.group(1)
+                and actual_match.group(2) == expected_match.group(2)
+                and actual_match.group(3) == expected_match.group(3)
+            ):
+                # Allow millisecond tolerance
+                actual_ms = int(actual_match.group(4))
+                expected_ms = int(expected_match.group(4))
+                ms_diff = abs(actual_ms - expected_ms)
+                if ms_diff <= 100:
+                    return True
+            # If times differ by more than milliseconds, continue to normal comparison
+
     # Handle quantity comparison
     if isinstance(expected, dict) and "value" in expected and "unit" in expected:
         if isinstance(actual, dict) and "value" in actual:
