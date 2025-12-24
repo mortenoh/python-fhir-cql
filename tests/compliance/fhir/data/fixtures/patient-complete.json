@@ -1,0 +1,53 @@
+{
+  "resourceType": "Patient",
+  "identifier": [
+    {
+      "system": "http://example.org/mrn",
+      "value": "12345"
+    }
+  ],
+  "active": true,
+  "name": [
+    {
+      "use": "official",
+      "family": "Doe",
+      "given": ["John", "Jacob"]
+    },
+    {
+      "use": "nickname",
+      "given": ["Johnny"]
+    }
+  ],
+  "telecom": [
+    {
+      "system": "phone",
+      "value": "555-1234",
+      "use": "home"
+    },
+    {
+      "system": "email",
+      "value": "john.doe@example.org"
+    }
+  ],
+  "gender": "male",
+  "birthDate": "1980-01-15",
+  "address": [
+    {
+      "use": "home",
+      "line": ["123 Main St"],
+      "city": "Anytown",
+      "state": "CA",
+      "postalCode": "12345",
+      "country": "USA"
+    }
+  ],
+  "maritalStatus": {
+    "coding": [
+      {
+        "system": "http://terminology.hl7.org/CodeSystem/v3-MaritalStatus",
+        "code": "M",
+        "display": "Married"
+      }
+    ]
+  }
+}
